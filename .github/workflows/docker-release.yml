@@ -13,60 +13,46 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set current version
-        id: setcurrentversion
-        run: echo "::set-output name=current::$(cat VERSION)"
-      - name: Set Release Version
-        id: setreleaseversion
-        run: echo "::set-output name=release::$(cat RELEASE_VERSION)"
-      - name: Debug Cat command
-        run: |
-          cat VERSION
-          cat RELEASE_VERSION
-      - name: Debug versions
-        run: |
-          echo ">>>>> Current version is ${{ steps.setcurrentversion.outputs.current }}"
-          echo ">>>>> Release version is ${{ steps.setreleaseversion.outputs.release }}"
-      - name: Set
+      - name: Set versions
         id: set
         run: |
           echo "ver=$(cat VERSION)" >> $GITHUB_OUTPUT
           echo "rel=$(cat RELEASE_VERSION)" >> $GITHUB_OUTPUT
-      - name: Get
+      - name: Display versions
         run: |
-          echo "ver is ${{ steps.set.outputs.ver }}"
-          echo "rel is ${{ steps.set.outputs.rel }}"
+          echo ">>>>> ver is ${{ steps.set.outputs.ver }}"
+          echo ">>>>> rel is ${{ steps.set.outputs.rel }}"
 
   build-and-push:
     needs: checkversions
     runs-on: ubuntu-latest
-    if: ${{ needs.check-versions.steps.setcurrentversion.outputs.current == needs.check-versions.steps.setreleaseversion.outputs.release }}
+    if: ${{ needs.checkversions.outputs.ver == needs.checkversions.outputs.rel }}
     steps:
+      - name: Display versions
+        run: |
+          echo ">>>>> ver is ${{ needs.checkversions.outputs.ver }}"
+          echo ">>>>> rel is ${{ needs.checkversions.outputs.rel }}"
       - name: Checkout
         uses: actions/checkout@v3
-#      - name: Login to Docker Hub
-#        uses: docker/login-action@v2
-#        with:
-#          username: ${{ secrets.DOCKERHUB_USERNAME }}
-#          password: ${{ secrets.DOCKERHUB_TOKEN }}
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v2
-#      - name: Set up JDK 17
-#        uses: actions/setup-java@v3
-#        with:
-#          java-version: '17'
-#          distribution: 'corretto'
-#      - name: Make gradlew executable
-#        run: chmod +x ./gradlew
-#      - name: Build jar
-#        run: ./gradlew build
-      - name: Debug versions
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      - name: Build jar
+        run: ./gradlew build
+      - name: Build Docker image
+        run: docker build -t healthylifestyle/assistant:${{ needs.checkversions.outputs.ver }} -t healthylifestyle/assistant:latest .
+      - name: Push image to Docker Hub
         run: |
-          echo ">>>>> Current version 1 ${{ needs.checkversions.outputs.ver }}"
-          echo ">>>>> Current version 2 ${{ needs.checkversions.steps.set.outputs.ver }}"
-#      - name: Build Docker image
-#        run: docker build -t healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }} -t healthylifestyle/assistant:latest .
-#      - name: Push image to Docker Hub
-#        run: |
-#          docker push healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }}
-#          docker push healthylifestyle/assistant:latest
+          docker push healthylifestyle/assistant:${{ needs.checkversions.outputs.ver }}
+          docker push healthylifestyle/assistant:latest
