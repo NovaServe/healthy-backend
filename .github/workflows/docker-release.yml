@@ -7,6 +7,9 @@ on:
 jobs:
   checkversions:
     runs-on: ubuntu-latest
+    outputs:
+      ver: ${{ steps.set.outputs.ver }}
+      rel: ${{ steps.set.outputs.rel }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -59,11 +62,8 @@ jobs:
 #        run: ./gradlew build
       - name: Debug versions
         run: |
-          echo ">>>>> Current version 1 ${{ needs.steps.setcurrentversion.outputs.current }}"
-          echo ">>>>> Current version 2 ${{ needs.checkversions.outputs.current }}"
-          echo ">>>>> Current version 3 ${{ needs.checkversions.steps.setcurrentversion.outputs.current }}"
-          echo ">>>>> Current version 4 ${{ needs.checkversions.steps.set.outputs.ver }}"
-          echo ">>>>> Current version 5 ${{ needs.checkversions.outputs.ver }}"
+          echo ">>>>> Current version 1 ${{ needs.checkversions.outputs.ver }}"
+          echo ">>>>> Current version 2 ${{ needs.checkversions.steps.set.outputs.ver }}"
 #      - name: Build Docker image
 #        run: docker build -t healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }} -t healthylifestyle/assistant:latest .
 #      - name: Push image to Docker Hub
