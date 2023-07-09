@@ -50,8 +50,9 @@ jobs:
 #        run: ./gradlew build
       - name: Debug versions
         run: |
-          echo ">>>>> Current version is ${{ needs.check-versions.steps.setcurrentversion.outputs.current }}"
-          echo ">>>>> Release version is ${{ needs.check-versions.outputs.release }}"
+          echo ">>>>> Current version 1 ${{ needs.steps.setcurrentversion.outputs.current }}"
+          echo ">>>>> Current version 2 ${{ needs.check-versions.outputs.current }}"
+          echo ">>>>> Current version 2 ${{ needs.check-versions.steps.setcurrentversion.outputs.current }}"
 #      - name: Build Docker image
 #        run: docker build -t healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }} -t healthylifestyle/assistant:latest .
 #      - name: Push image to Docker Hub
