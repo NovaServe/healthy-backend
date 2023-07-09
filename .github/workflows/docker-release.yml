@@ -40,9 +40,13 @@ jobs:
         run: chmod +x ./gradlew
       - name: Build jar
         run: ./gradlew build
-      - name: Build Docker image
-        run: docker build -t healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }} -t healthylifestyle/assistant:latest .
-      - name: Push image to Docker Hub
+      - name: Debug current version
         run: |
-          docker push healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }}
-          docker push healthylifestyle/assistant:latest
+          echo ">>>>> Current version is ${{ needs.check-versions.outputs.current-version }}"
+          echo ">>>>> Release version is ${{ needs.check-versions.outputs.release-version }}"
+#      - name: Build Docker image
+#        run: docker build -t healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }} -t healthylifestyle/assistant:latest .
+#      - name: Push image to Docker Hub
+#        run: |
+#          docker push healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }}
+#          docker push healthylifestyle/assistant:latest
