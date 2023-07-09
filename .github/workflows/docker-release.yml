@@ -36,11 +36,13 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: |
-            assistant:latest
-            assistant:${{ needs.check-versions.outputs.current-version }}
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      - name: Build jar
+        run: ./gradlew build
+      - name: Build Docker image
+        run: docker build -t healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }} -t healthylifestyle/assistant:latest .
+      - name: Push image to Docker Hub
+        run: |
+          docker push healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }}
+          docker push healthylifestyle/assistant:latest
