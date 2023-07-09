@@ -41,4 +41,4 @@ jobs:
         with:
           push: true
           repository: healthylifestyle/assistant
-          tags: latest, $${{ needs.check-versions.outputs.current-version }}
+          tags: latest, ${{ needs.check-versions.outputs.current-version }}
