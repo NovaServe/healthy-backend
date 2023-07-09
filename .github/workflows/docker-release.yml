@@ -40,6 +40,5 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: |
-            healthylifestyle/assistant:latest
-            healthylifestyle/assistant:$${{ needs.check-versions.outputs.current-version }}
+          repository: healthylifestyle/assistant
+          tags: latest, $${{ needs.check-versions.outputs.current-version }}
