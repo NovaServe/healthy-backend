@@ -16,6 +16,16 @@ jobs:
       - name: set-release-version
         id: set-release-version
         run: echo "::set-output name={release-version}::$(cat RELEASE_VERSION)"
+
+      - name: Debut Cat command
+        run: |
+          cat VERSION
+          cat RELEASE_VERSION
+
+      - name: Debug versions
+        run: |
+          echo ">>>>> Current version is ${{ steps.set-current-version.outputs.current-version }}"
+          echo ">>>>> Release version is ${{ steps.set-release-version.outputs.release-version }}"
         
   build-and-push:
     needs: check-versions
@@ -38,11 +48,11 @@ jobs:
           distribution: 'corretto'
       - name: Make gradlew executable
         run: chmod +x ./gradlew
-      - name: Build jar
-        run: ./gradlew build
-      - name: Debug current version
+#      - name: Build jar
+#        run: ./gradlew build
+      - name: Debug versions
         run: |
-          echo ">>>>> Current version is ${{ needs.check-versions.outputs.current-version }}"
+          echo ">>>>> Current version is ${{ needs.check-versions.steps.set-current-version.outputs.current-version }}"
           echo ">>>>> Release version is ${{ needs.check-versions.outputs.release-version }}"
 #      - name: Build Docker image
 #        run: docker build -t healthylifestyle/assistant:${{ needs.check-versions.outputs.current-version }} -t healthylifestyle/assistant:latest .
