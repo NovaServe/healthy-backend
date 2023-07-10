@@ -6,7 +6,6 @@ plugins {
 }
 
 group = 'healthy.lifestyle.assistant'
-version = '0.0.1'
 
 java {
 	sourceCompatibility = '17'
@@ -17,7 +16,8 @@ repositories {
 }
 
 jar {
-	archiveFileName = 'app.jar'
+	archivesBaseName = 'app'
+	enabled = false
 }
 
 dependencies {
