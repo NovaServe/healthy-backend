@@ -54,5 +54,5 @@ jobs:
         run: docker build -t healthylifestyle/assistant:${{ needs.checkversions.outputs.ver }} -t healthylifestyle/assistant:latest .
       - name: Push image to Docker Hub
         run: |
-          docker push healthylifestyle/assistant:${{ needs.checkversions.outputs.ver }}
-          docker push healthylifestyle/assistant:latest
+          docker push healthylifestyle/app:${{ needs.checkversions.outputs.ver }}
+          docker push healthylifestyle/app:latest
