@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.users.repository;
 
-import java.util.Set;
-
 import healthy.lifestyle.backend.activities.repository.Activity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
