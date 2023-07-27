@@ -60,7 +60,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build jar
-        run: ./gradlew clean build
+        run: ./gradlew clean build --info
 
       - name: Build Docker image
         run: docker build -t healthylifestyle/backend:${{ needs.checkversions.outputs.ver }} -t healthylifestyle/backend:latest .

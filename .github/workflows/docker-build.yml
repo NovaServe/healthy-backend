@@ -46,7 +46,11 @@ jobs:
        run: pwd && ls -l
 
      - name: Create log directories
-       run: sudo mkdir /vartest/
+       run: | 
+         sudo mkdir /vartest/
+         sudo mkdir /vartest/log/
+         sudo mkdir /vartest/log/test/
+         ls -l /
        
      - name: Build
        run: ./gradlew clean build --info
