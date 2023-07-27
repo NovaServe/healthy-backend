@@ -41,6 +41,9 @@ jobs:
          distribution: 'corretto'
      - name: Make gradlew executable
        run: chmod +x ./gradlew
+
+     - name: Create log directories
+       run: mkdir /vartest/
        
      - name: Build
        run: ./gradlew clean build --info
