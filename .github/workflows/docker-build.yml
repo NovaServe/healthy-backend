@@ -50,7 +50,8 @@ jobs:
          sudo mkdir /vartest/
          sudo mkdir /vartest/log/
          sudo mkdir /vartest/log/test/
-         ls -l /
+         sudo touch /vartest/log/test/logback.log
+         ls -l /vartest/log/test/
        
      - name: Build
        run: ./gradlew clean build --info
