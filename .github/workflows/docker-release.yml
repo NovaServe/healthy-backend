@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  checkversions:
+  check-versions:
     runs-on: ubuntu-latest
 
     outputs:
@@ -60,7 +60,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build jar
-        run: ./gradlew build
+        run: ./gradlew clean build
 
       - name: Build Docker image
         run: docker build -t healthylifestyle/backend:${{ needs.checkversions.outputs.ver }} -t healthylifestyle/backend:latest .
