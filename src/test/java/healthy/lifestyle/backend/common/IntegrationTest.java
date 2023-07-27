@@ -17,11 +17,12 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest
 public abstract class IntegrationTest {
     @Container
-    private static PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer(
-                    DockerImageName.parse("postgres:12.15"))
-            .withDatabaseName("healthy_db")
-            .withUsername("healthy_user")
-            .withPassword("healthy_password");
+    private static PostgreSQLContainer<?> postgresqlContainer =
+            (PostgreSQLContainer<?>) new PostgreSQLContainer(DockerImageName.parse("postgres:12.15"))
+                    .withDatabaseName("healthy_db")
+                    .withUsername("healthy_user")
+                    .withPassword("healthy_password")
+                    .withExposedPorts(5432);
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
