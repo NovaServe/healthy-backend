@@ -42,8 +42,11 @@ jobs:
      - name: Make gradlew executable
        run: chmod +x ./gradlew
 
+     - name: Info
+       run: pwd && ls -l
+
      - name: Create log directories
-       run: mkdir /vartest/
+       run: sudo mkdir /vartest/
        
      - name: Build
        run: ./gradlew clean build --info
