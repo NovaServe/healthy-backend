@@ -51,7 +51,7 @@ jobs:
          sudo mkdir /vartest/log/
          sudo mkdir /vartest/log/test/
          sudo touch /vartest/log/test/logback.log
-         chmod u+rw,g+rw,o+rw /vartest/log/test/logback.log
+         sudo chmod u+rw,g+rw,o+rw /vartest/log/test/logback.log
          ls -l /vartest/log/test/
        
      - name: Build
