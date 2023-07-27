@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <springProperty scope="context" name="logDirPath" source="log.dir.path"/>
+
     <springProfile name="local">
         <include resource="logback-prod.xml"/>
     </springProfile>
@@ -9,6 +11,6 @@
     </springProfile>
 
     <springProfile name="test">
-        <include resource="logback-test.xml"/>
+        <include resource="logback-testing.xml"/>
     </springProfile>
 </configuration>
