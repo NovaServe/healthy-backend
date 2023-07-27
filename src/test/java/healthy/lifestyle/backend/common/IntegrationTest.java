@@ -10,13 +10,15 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers
 @AutoConfigureMockMvc
 @SpringBootTest
 public abstract class IntegrationTest {
     @Container
-    private static PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer()
+    private static PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer(
+                    DockerImageName.parse("postgres"))
             .withDatabaseName("test")
             .withUsername("username")
             .withPassword("password");
