@@ -18,10 +18,10 @@ import org.testcontainers.utility.DockerImageName;
 public abstract class IntegrationTest {
     @Container
     private static PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer(
-                    DockerImageName.parse("postgres"))
-            .withDatabaseName("test")
-            .withUsername("username")
-            .withPassword("password");
+                    DockerImageName.parse("postgres:12.15"))
+            .withDatabaseName("healthy_db")
+            .withUsername("healthy_user")
+            .withPassword("healthy_password");
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
