@@ -17,16 +17,18 @@ public class AppUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, unique = false)
-    private String name;
+    @Column(name = "username", nullable = true, unique = true)
+    private String username;
 
-    @Column(name = "name", nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "name", nullable = false, unique = false)
+    @Column(name = "full_name", nullable = true, unique = false)
+    private String fullName;
+
+    @Column(name = "password", nullable = false, unique = false)
     private String password;
 
-    @Column(name = "role_id")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id") // FOREIGN KEY(role_id) REFERENCES roles(id)
     private UserRole role;
