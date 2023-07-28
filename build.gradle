@@ -22,7 +22,6 @@ jar {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
 	// Database
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -39,7 +38,9 @@ dependencies {
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 
 	// Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '5.3.1'
+	testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.9.2'
 	testImplementation "org.testcontainers:testcontainers:1.18.3"
 	testImplementation "org.testcontainers:postgresql:1.18.3"
 	testImplementation "org.testcontainers:junit-jupiter:1.18.3"

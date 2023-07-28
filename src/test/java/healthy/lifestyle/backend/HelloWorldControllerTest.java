@@ -8,13 +8,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.common.IntegrationTest;
+import healthy.lifestyle.backend.common.E2EBaseTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-class HelloWorldControllerTest extends IntegrationTest {
+class HelloWorldControllerTest extends E2EBaseTest {
     @Autowired
     private MockMvc mockMvc;
 
