@@ -6,6 +6,7 @@
 
     <property name="clob.type" value="clob" dbms="postgresql" />
 
-    <include file="changelog/users_init.xml"/>
+    <include file="changelog/no_1_user.xml"/>
 
+    <include file="changelog/no_2_workout.xml"/>
 </databaseChangeLog>
