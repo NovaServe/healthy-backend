@@ -1,7 +1,11 @@
-package healthy.lifestyle.backend.common;
+package healthy.lifestyle.backend.base;
 
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import healthy.lifestyle.backend.data.DataConfiguration;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -9,12 +13,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers
-@AutoConfigureMockMvc
 @SpringBootTest
-public abstract class E2EBaseTest {
+@Testcontainers
+@Import(DataConfiguration.class)
+public abstract class JpaBaseTest {
     @Container
-    static PostgreSQLContainer<?> postgresqlContainer =
+    private static PostgreSQLContainer<?> postgresqlContainer =
             (PostgreSQLContainer<?>) new PostgreSQLContainer(DockerImageName.parse("postgres:12.15"))
                     .withDatabaseName("healthy_db")
                     .withUsername("healthy_user")
@@ -23,6 +27,7 @@ public abstract class E2EBaseTest {
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
+        //        registry.add("spring.datasource.url", postgresqlContainer::getJdbcUrl);
         registry.add(
                 "spring.datasource.url",
                 () -> String.format(
@@ -30,5 +35,10 @@ public abstract class E2EBaseTest {
                         postgresqlContainer.getFirstMappedPort(), postgresqlContainer.getDatabaseName()));
         registry.add("spring.datasource.username", postgresqlContainer::getUsername);
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
+    }
+
+    @Test
+    void postgresqlContainerTest() {
+        assertThat(postgresqlContainer.isRunning()).isTrue();
     }
 }
