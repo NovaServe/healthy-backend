@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="exercises" author="Oleg Kucherenko" context="structure">
+        <comment>Create exercises, body_parts, http_refs, m2m tables</comment>
+
+        <createTable tableName="exercises">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="title" type="varchar">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="description" type="varchar">
+                <constraints nullable="true" unique="false"/>
+            </column>
+            <column name="is_custom" type="boolean">
+                <constraints nullable="false" unique="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="body_parts">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+
+        <sqlFile path="bodyPartInit.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+
+        <createTable tableName="exercises_body_parts">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="exercise_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_exercise_id"
+                             references="exercises(id)"/>
+            </column>
+            <column name="body_part_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_body_part_id"
+                             references="body_parts(id)"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="http_refs">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="ref" type="varchar">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="description" type="varchar">
+                <constraints nullable="true" unique="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="exercises_http_refs">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="exercise_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_exercise_id"
+                             references="exercises(id)"/>
+            </column>
+            <column name="http_ref_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_http_ref_id"
+                             references="http_refs(id)"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="users_exercises">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_user_id"
+                             references="users(id)"/>
+            </column>
+            <column name="exercise_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_exercise_id"
+                             references="exercises(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
