@@ -79,8 +79,8 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     private void validateCreateExerciseRequestDto(CreateExerciseRequestDto requestDto, long userId) {
         // Validate fields for not-allowed symbols
-        if (!(validationService.checkText(requestDto.getTitle())
-                && validationService.checkText(requestDto.getDescription()))) {
+        if (!validationService.validatedText(requestDto.getTitle())
+                || !validationService.validatedText(requestDto.getDescription())) {
             throw new ApiException(ErrorMessage.INVALID_SYMBOLS, HttpStatus.BAD_REQUEST);
         }
 

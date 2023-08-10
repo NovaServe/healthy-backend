@@ -1,8 +1,9 @@
 package healthy.lifestyle.backend.workout.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-import healthy.lifestyle.backend.base.JpaBaseTest;
+import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -13,11 +14,41 @@ import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 /**
  * @see ExerciseRepository
  */
-class ExerciseRepositoryTest extends JpaBaseTest {
+@SpringBootTest
+@Testcontainers
+@Import(DataConfiguration.class)
+class ExerciseRepositoryTest {
+    @Container
+    static PostgreSQLContainer<?> postgresqlContainer =
+            (PostgreSQLContainer<?>) new PostgreSQLContainer(DockerImageName.parse("postgres:12.15"))
+                    .withDatabaseName("healthy_db")
+                    .withUsername("healthy_user")
+                    .withPassword("healthy_password")
+                    .withReuse(true);
+
+    @DynamicPropertySource
+    static void postgresProperties(DynamicPropertyRegistry registry) {
+        registry.add(
+                "spring.datasource.url",
+                () -> String.format(
+                        "jdbc:postgresql://localhost:%s/%s",
+                        postgresqlContainer.getFirstMappedPort(), postgresqlContainer.getDatabaseName()));
+        registry.add("spring.datasource.username", postgresqlContainer::getUsername);
+        registry.add("spring.datasource.password", postgresqlContainer::getPassword);
+    }
+
     @Autowired
     ExerciseRepository exerciseRepository;
 
@@ -27,6 +58,11 @@ class ExerciseRepositoryTest extends JpaBaseTest {
     @BeforeEach
     void beforeEach() {
         dataHelper.deleteAll();
+    }
+
+    @Test
+    void postgresqlContainerTest() {
+        assertThat(postgresqlContainer.isRunning()).isTrue();
     }
 
     @Test
