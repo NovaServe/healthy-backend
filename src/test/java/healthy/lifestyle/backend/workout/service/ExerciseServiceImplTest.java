@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.base.UnitBaseTest;
 import healthy.lifestyle.backend.common.ValidationServiceImpl;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -17,13 +16,16 @@ import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * @see ExerciseServiceImpl
  */
-class ExerciseServiceImplTest extends UnitBaseTest {
+@ExtendWith(MockitoExtension.class)
+class ExerciseServiceImplTest {
     @Mock
     private ExerciseRepository exerciseRepository;
 
@@ -117,7 +119,7 @@ class ExerciseServiceImplTest extends UnitBaseTest {
                 .build();
 
         // Stubs
-        when(validationService.checkText(any(String.class))).thenReturn(true);
+        when(validationService.validatedText(any(String.class))).thenReturn(true);
 
         when(bodyPartRepository.existsById(anyLong())).thenReturn(true);
         when(bodyPartRepository.getReferenceById(1L)).thenReturn(bodyPart1);
