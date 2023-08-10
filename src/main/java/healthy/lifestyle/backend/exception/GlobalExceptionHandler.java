@@ -1,5 +1,7 @@
 package healthy.lifestyle.backend.exception;
 
+import static java.util.Objects.nonNull;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -9,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.beanvalidation.SpringValidatorAdapter;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,6 +33,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<ApiException>(exception, exception.getHttpStatus());
     }
 
+    /**
+     * @see FieldError
+     * @see org.springframework.validation.ObjectError
+     * @see SpringValidatorAdapter
+     */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
@@ -37,7 +45,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, String> errors = new HashMap<>();
 
         ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
+            String fieldName = "Method argument not valid";
+            if (error instanceof FieldError) {
+                fieldName = ((FieldError) error).getField();
+            } else {
+                if (nonNull(error.getArguments()) && error.getArguments().length > 1) {
+                    StringBuilder stringBuilder = new StringBuilder();
+                    for (int i = 1; i < error.getArguments().length; i++) {
+                        stringBuilder.append(error.getArguments()[i].toString());
+                        stringBuilder.append(",");
+                    }
+                    stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                    fieldName = stringBuilder.toString();
+                }
+            }
             String message = error.getDefaultMessage();
             errors.put(fieldName, message);
             logger.error("{}: {}", fieldName, message);
