@@ -33,9 +33,9 @@ class ExerciseRepositoryTest {
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
             (PostgreSQLContainer<?>) new PostgreSQLContainer(DockerImageName.parse("postgres:12.15"))
-                    .withDatabaseName("healthy_db")
-                    .withUsername("healthy_user")
-                    .withPassword("healthy_password")
+                    .withDatabaseName("test_db")
+                    .withUsername("test_user")
+                    .withPassword("test_password")
                     .withReuse(true);
 
     @DynamicPropertySource
