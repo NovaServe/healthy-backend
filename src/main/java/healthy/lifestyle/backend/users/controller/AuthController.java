@@ -1,6 +1,8 @@
 package healthy.lifestyle.backend.users.controller;
 
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.users.dto.LoginRequestDto;
+import healthy.lifestyle.backend.users.dto.LoginResponseDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupResponseDto;
 import healthy.lifestyle.backend.users.service.UserService;
@@ -22,21 +24,32 @@ public class AuthController {
     }
 
     /**
-     * Creates a new user
-     *
+     * Creates new user<br>
      * Access: Any
      *
      * @throws healthy.lifestyle.backend.exception.GlobalExceptionHandler Validation error
      *
-     * @throws ApiException ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST
+     * @throws ApiException (ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST)<br>
      * If user already exists
      *
-     * @throws ApiException ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR
-     * If ROLE_USER not found
+     * @throws ApiException (ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)<br>
+     * If ROLE_USER is not found
      */
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto requestDto) {
         SignupResponseDto responseDto = userService.createUser(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+    }
+
+    /**
+     * Logins user<br>
+     * Access: Any
+     *
+     * @throws healthy.lifestyle.backend.exception.GlobalExceptionHandler Validation error
+     */
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto requestDto) {
+        LoginResponseDto responseDto = userService.login(requestDto);
+        return ResponseEntity.ok(responseDto);
     }
 }
