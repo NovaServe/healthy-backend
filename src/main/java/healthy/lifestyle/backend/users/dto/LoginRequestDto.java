@@ -68,7 +68,7 @@ public class LoginRequestDto {
         private String password;
         private String confirmPassword;
 
-        public Builder usernameOrEmail(String email) {
+        public Builder usernameOrEmail(String usernameOrEmail) {
             this.usernameOrEmail = usernameOrEmail.trim();
             return this;
         }

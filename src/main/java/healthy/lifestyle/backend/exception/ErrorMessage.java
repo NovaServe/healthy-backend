@@ -6,7 +6,8 @@ public enum ErrorMessage {
     INVALID_NESTED_OBJECT("Invalid nested object"),
     ALREADY_EXISTS("Already exists"),
     SERVER_ERROR("Server error"),
-    INVALID_TOKEN("Invalid token");
+    INVALID_TOKEN("Invalid token"),
+    AUTHENTICATION_ERROR("Authentication error");
 
     private final String name;
 
