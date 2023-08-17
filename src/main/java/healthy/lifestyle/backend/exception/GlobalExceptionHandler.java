@@ -23,14 +23,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiException> handleApiException(ApiException exception, WebRequest webRequest) {
+    public ResponseEntity<ExceptionDto> handleApiException(ApiException exception, WebRequest webRequest) {
         logger.error(
                 "GlobalExceptionHandler.handleApiException(): {}, {}, {}",
                 webRequest.getDescription(false),
                 exception.getHttpStatus(),
                 exception.getStackTrace());
 
-        return new ResponseEntity<ApiException>(exception, exception.getHttpStatus());
+        ExceptionDto exceptionDto = new ExceptionDto(exception.getMessage());
+        return new ResponseEntity<ExceptionDto>(exceptionDto, exception.getHttpStatus());
     }
 
     /**

@@ -11,8 +11,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
+import healthy.lifestyle.backend.users.dto.LoginRequestDto;
+import healthy.lifestyle.backend.users.dto.LoginResponseDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
 import healthy.lifestyle.backend.users.model.Role;
+import healthy.lifestyle.backend.users.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +23,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -39,9 +45,9 @@ class AuthControllerTest {
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
             (PostgreSQLContainer<?>) new PostgreSQLContainer(DockerImageName.parse("postgres:12.15"))
-                    .withDatabaseName("healthy_db")
-                    .withUsername("healthy_user")
-                    .withPassword("healthy_password")
+                    .withDatabaseName("test_db")
+                    .withUsername("test_user")
+                    .withPassword("test_password")
                     .withReuse(true);
 
     @DynamicPropertySource
@@ -63,6 +69,11 @@ class AuthControllerTest {
 
     @Autowired
     DataHelper dataHelper;
+
+    @Autowired
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @BeforeEach
     void beforeEach() {
@@ -93,6 +104,28 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(notNullValue())))
+                .andDo(print());
+    }
+
+    @Test
+    void signup_Negative_UserAlreadyExists() throws Exception {
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user =
+                dataHelper.createUser("Test Full Name", "test-username", "test@email.com", "test-password", role, null);
+
+        SignupRequestDto requestDto = new SignupRequestDto.Builder()
+                .username("test-username")
+                .email("test@email.com")
+                .password("test-password")
+                .confirmPassword("test-password")
+                .fullName("Test Full Name")
+                .build();
+
+        mockMvc.perform(post(URL + "/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("Already exists")))
                 .andDo(print());
     }
 
@@ -194,6 +227,130 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fullName", is(equalTo("Not allowed symbols"))))
+                .andDo(print());
+    }
+
+    @Test
+    void login() throws Exception {
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser(
+                "Test Full Name",
+                "test-username",
+                "test@email.com",
+                passwordEncoder().encode("test-password"),
+                role,
+                null);
+
+        LoginRequestDto requestDto = new LoginRequestDto.Builder()
+                .usernameOrEmail("test@email.com")
+                .password("test-password")
+                .confirmPassword("test-password")
+                .build();
+
+        MvcResult mvcResult = mockMvc.perform(post(URL + "/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token", is(notNullValue())))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        LoginResponseDto responseDto = objectMapper.readValue(responseContent, LoginResponseDto.class);
+        String token = responseDto.getToken();
+        String[] tokenParts = token.split("\\.");
+        assertEquals(3, tokenParts.length);
+        assertTrue(tokenParts[0].length() >= 10);
+        assertTrue(tokenParts[1].length() >= 10);
+        assertTrue(tokenParts[2].length() >= 10);
+    }
+
+    @Test
+    void login_Negative_UserNotFound() throws Exception {
+        LoginRequestDto requestDto = new LoginRequestDto.Builder()
+                .usernameOrEmail("test@email.com")
+                .password("test-password")
+                .confirmPassword("test-password")
+                .build();
+
+        mockMvc.perform(post(URL + "/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", is("Authentication error")))
+                .andDo(print());
+    }
+
+    @Test
+    void login_Negative_WrongPassword() throws Exception {
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser(
+                "Test Full Name",
+                "test-username",
+                "test@email.com",
+                passwordEncoder().encode("test-password"),
+                role,
+                null);
+
+        LoginRequestDto requestDto = new LoginRequestDto.Builder()
+                .usernameOrEmail("test@email.com")
+                .password("wrong-password")
+                .confirmPassword("wrong-password")
+                .build();
+
+        mockMvc.perform(post(URL + "/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", is("Authentication error")))
+                .andDo(print());
+    }
+
+    @Test
+    void login_Negative_InvalidUsername() throws Exception {
+        LoginRequestDto requestDto = new LoginRequestDto.Builder()
+                .usernameOrEmail("tes t@email.com")
+                .password("test-password")
+                .confirmPassword("test-password")
+                .build();
+
+        mockMvc.perform(post(URL + "/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.usernameOrEmail", is("Not allowed symbols")))
+                .andDo(print());
+    }
+
+    @Test
+    void login_Negative_InvalidPassword() throws Exception {
+        LoginRequestDto requestDto = new LoginRequestDto.Builder()
+                .usernameOrEmail("test@email.com")
+                .password("test password")
+                .confirmPassword("test password")
+                .build();
+
+        mockMvc.perform(post(URL + "/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.password", is("Not allowed symbols")))
+                .andDo(print());
+    }
+
+    @Test
+    void login_Negative_PasswordsMismatch() throws Exception {
+        LoginRequestDto requestDto = new LoginRequestDto.Builder()
+                .usernameOrEmail("test@email.com")
+                .password("test-password-1")
+                .confirmPassword("test-password-2")
+                .build();
+
+        mockMvc.perform(post(URL + "/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.password,confirmPassword", is("Passwords don't match")))
                 .andDo(print());
     }
 }
