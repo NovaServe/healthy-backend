@@ -4,7 +4,7 @@ import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.service.UserService;
+import healthy.lifestyle.backend.users.service.AuthService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
@@ -17,14 +17,11 @@ import org.springframework.stereotype.Component;
 public class JwtTokenProvider {
     private final SecurityProps securityProps;
 
-    private UserService userService;
+    private final AuthService authService;
 
-    public JwtTokenProvider(SecurityProps securityProps) {
+    public JwtTokenProvider(SecurityProps securityProps, AuthService authService) {
         this.securityProps = securityProps;
-    }
-
-    public void setUserService(UserService userService) {
-        this.userService = userService;
+        this.authService = authService;
     }
 
     public String generateToken(Authentication authentication) {
@@ -72,7 +69,7 @@ public class JwtTokenProvider {
             }
 
             String usernameOrEmail = claims.getBody().getSubject();
-            if (userService
+            if (authService
                     .findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
                     .isEmpty()) {
                 throw new ApiException(ErrorMessage.INVALID_TOKEN, HttpStatus.UNAUTHORIZED);

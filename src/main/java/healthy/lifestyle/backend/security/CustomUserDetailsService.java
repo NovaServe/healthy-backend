@@ -2,7 +2,7 @@ package healthy.lifestyle.backend.security;
 
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.repository.UserRepository;
+import healthy.lifestyle.backend.users.service.AuthService;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,18 +12,20 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
-    private final UserRepository userRepository;
+    private final AuthService authService;
 
-    public CustomUserDetailsService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public CustomUserDetailsService(AuthService authService) {
+        this.authService = authService;
     }
 
     @Override
-    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        User user = userRepository
+    @Transactional
+    public UserDetails loadUserByUsername(String usernameOrEmail) {
+        User user = authService
                 .findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
                 .orElseThrow(() -> {
                     String message =
@@ -31,8 +33,9 @@ public class CustomUserDetailsService implements UserDetailsService {
                     return new UsernameNotFoundException(message);
                 });
 
-        return new org.springframework.security.core.userdetails.User(
+        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
                 user.getEmail(), user.getPassword(), mapRolesToAuthorities(Set.of(user.getRole())));
+        return userDetails;
     }
 
     private Collection<? extends GrantedAuthority> mapRolesToAuthorities(Set<Role> roles) {

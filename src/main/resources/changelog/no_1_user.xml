@@ -37,5 +37,7 @@
                 <constraints nullable="false" foreignKeyName="fk_role_id" references="roles(id)"/>
             </column>
         </createTable>
+
+        <sqlFile path="rolesInit.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
     </changeSet>
 </databaseChangeLog>
