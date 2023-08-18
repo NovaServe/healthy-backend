@@ -7,7 +7,7 @@ import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.service.UserServiceImpl;
+import healthy.lifestyle.backend.users.service.AuthService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,7 @@ class JwtTokenProviderTest {
     SecurityProps securityProps;
 
     @Mock
-    UserServiceImpl userService;
+    AuthService authService;
 
     @InjectMocks
     JwtTokenProvider jwtTokenProvider;
@@ -79,14 +79,13 @@ class JwtTokenProviderTest {
                 .password(password)
                 .role(role)
                 .build();
-        jwtTokenProvider.setUserService(userService);
-        when(userService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail))
+        when(authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail))
                 .thenReturn(Optional.of(user));
         Authentication authentication = new UsernamePasswordAuthenticationToken(usernameOrEmail, password);
         String token = jwtTokenProvider.generateToken(authentication);
         boolean isValidated = jwtTokenProvider.validateToken(token);
         assertTrue(isValidated);
-        verify(userService, times(1)).findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
+        verify(authService, times(1)).findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
     }
 
     @Test
@@ -97,8 +96,7 @@ class JwtTokenProviderTest {
         when(securityProps.Jwt()).thenReturn(jwt);
         String usernameOrEmail = "test@email.com";
         String password = "test-password";
-        jwtTokenProvider.setUserService(userService);
-        when(userService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail))
+        when(authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail))
                 .thenReturn(Optional.empty());
         Authentication authentication = new UsernamePasswordAuthenticationToken(usernameOrEmail, password);
         String token = jwtTokenProvider.generateToken(authentication);
