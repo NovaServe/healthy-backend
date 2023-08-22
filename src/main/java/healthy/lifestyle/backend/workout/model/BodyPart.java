@@ -17,6 +17,7 @@ public class BodyPart {
     private String name;
 
     @ManyToMany(mappedBy = "bodyParts")
+    @OrderBy("id")
     private Set<Exercise> exercises;
 
     public BodyPart() {}
@@ -26,7 +27,7 @@ public class BodyPart {
         this.name = name;
     }
 
-    public BodyPart(Builder builder) {
+    private BodyPart(Builder builder) {
         this.id = builder.id;
         this.name = builder.name;
     }

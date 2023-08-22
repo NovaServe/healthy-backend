@@ -21,6 +21,7 @@ public class Exercise {
     private boolean isCustom;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @OrderBy("id")
     @JoinTable(
             name = "exercises_body_parts",
             joinColumns = @JoinColumn(name = "exercise_id", referencedColumnName = "id"),
@@ -28,6 +29,7 @@ public class Exercise {
     private Set<BodyPart> bodyParts;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @OrderBy("id")
     @JoinTable(
             name = "exercises_http_refs",
             joinColumns = @JoinColumn(name = "exercise_id", referencedColumnName = "id"),
@@ -35,6 +37,7 @@ public class Exercise {
     private Set<HttpRef> httpRefs;
 
     @ManyToMany(mappedBy = "exercises")
+    @OrderBy("id")
     private Set<User> users;
 
     public Exercise() {}

@@ -32,7 +32,7 @@
             </column>
         </createTable>
 
-        <sqlFile path="bodyPartInit.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/body_parts_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
 
         <createTable tableName="exercises_body_parts">
             <column name="id" type="bigint" autoIncrement="true">
@@ -90,5 +90,7 @@
                              references="exercises(id)"/>
             </column>
         </createTable>
+
+        <sqlFile path="sql/default_exercises.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
     </changeSet>
 </databaseChangeLog>

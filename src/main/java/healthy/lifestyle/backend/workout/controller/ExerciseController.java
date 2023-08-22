@@ -1,20 +1,33 @@
 package healthy.lifestyle.backend.workout.controller;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.workout.dto.CreateExerciseRequestDto;
+import healthy.lifestyle.backend.workout.dto.GetExercisesResponseDto;
 import healthy.lifestyle.backend.workout.service.ExerciseService;
+import java.util.Optional;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/api/v1/exercises")
 public class ExerciseController {
     private final ExerciseService exerciseService;
+    private final AuthService authService;
 
-    public ExerciseController(ExerciseService exerciseService) {
+    public ExerciseController(ExerciseService exerciseService, AuthService authService) {
         this.exerciseService = exerciseService;
+        this.authService = authService;
     }
 
     /**
@@ -36,5 +49,22 @@ public class ExerciseController {
     @PostMapping("/")
     private ResponseEntity<?> createCustomExercise(@RequestBody CreateExerciseRequestDto requestDto) {
         return null;
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<GetExercisesResponseDto> getExercises(
+            @RequestParam(name = "isCustomOnly", required = false) Boolean isCustomOnly) {
+        if (isNull(isCustomOnly)) isCustomOnly = false;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (nonNull(authentication) && authentication.isAuthenticated()) {
+            String usernameOrEmail = authentication.getName();
+            Optional<User> userOptional = authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
+            if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
+            GetExercisesResponseDto responseDtoList =
+                    exerciseService.getExercises(userOptional.get().getId(), isCustomOnly);
+            return ResponseEntity.ok(responseDtoList);
+        }
+        throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
     }
 }

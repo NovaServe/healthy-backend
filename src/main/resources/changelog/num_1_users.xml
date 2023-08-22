@@ -38,6 +38,6 @@
             </column>
         </createTable>
 
-        <sqlFile path="rolesInit.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/roles_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
     </changeSet>
 </databaseChangeLog>
