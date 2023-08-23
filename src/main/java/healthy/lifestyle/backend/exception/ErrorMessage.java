@@ -7,7 +7,8 @@ public enum ErrorMessage {
     ALREADY_EXISTS("Already exists"),
     SERVER_ERROR("Server error"),
     INVALID_TOKEN("Invalid token"),
-    AUTHENTICATION_ERROR("Authentication error");
+    AUTHENTICATION_ERROR("Authentication error"),
+    USER_NOT_FOUND("User not found");
 
     private final String name;
 

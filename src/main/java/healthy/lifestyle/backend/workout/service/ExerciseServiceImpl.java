@@ -13,8 +13,8 @@ import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -148,10 +148,8 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     private CreateExerciseResponseDto mapExerciseToCreateResponseDto(Exercise exercise) {
         Set<BodyPartResponseDto> bodyPartsDto = null;
-
         if (nonNull(exercise.getBodyParts())) {
             bodyPartsDto = new HashSet<BodyPartResponseDto>();
-
             for (BodyPart elt : exercise.getBodyParts()) {
                 BodyPartResponseDto bodyPartDto = new BodyPartResponseDto.Builder()
                         .id(elt.getId())
@@ -162,10 +160,8 @@ public class ExerciseServiceImpl implements ExerciseService {
         }
 
         Set<HttpRefResponseDto> httpRefsDto = null;
-
         if (nonNull(exercise.getHttpRefs())) {
             httpRefsDto = new HashSet<HttpRefResponseDto>();
-
             for (HttpRef elt : exercise.getHttpRefs()) {
                 HttpRefResponseDto httpRefDto = new HttpRefResponseDto.Builder()
                         .id(elt.getId())
@@ -184,5 +180,65 @@ public class ExerciseServiceImpl implements ExerciseService {
                 .bodyParts(bodyPartsDto)
                 .httpRefs(httpRefsDto)
                 .build();
+    }
+
+    @Override
+    public GetExercisesResponseDto getExercises(long userId, boolean isCustomOnly) {
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        List<Exercise> exercisesImmutableReference;
+        if (isCustomOnly) exercisesImmutableReference = exerciseRepository.findByUserId(userId, sort);
+        else {
+            exercisesImmutableReference = exerciseRepository.findAllDefault(sort);
+            List<Exercise> userExercises = exerciseRepository.findByUserId(userId, sort);
+            if (nonNull(userExercises) && userExercises.size() > 0) {
+                List<Exercise> exercisesMutableReference = new ArrayList<>(exercisesImmutableReference);
+                exercisesMutableReference.addAll(userExercises);
+                return mapExercisesToGetExercisesResponseDto(exercisesMutableReference);
+            }
+        }
+        return mapExercisesToGetExercisesResponseDto(exercisesImmutableReference);
+    }
+
+    private GetExercisesResponseDto mapExercisesToGetExercisesResponseDto(List<Exercise> exercises) {
+        GetExercisesResponseDto responseDto = new GetExercisesResponseDto();
+
+        for (Exercise exercise : exercises) {
+
+            Set<BodyPartResponseDto> bodyPartsDto = null;
+            if (nonNull(exercise.getBodyParts())) {
+                bodyPartsDto = new LinkedHashSet<>();
+                for (BodyPart elt : exercise.getBodyParts()) {
+                    BodyPartResponseDto bodyPartDto = new BodyPartResponseDto.Builder()
+                            .id(elt.getId())
+                            .name(elt.getName())
+                            .build();
+                    bodyPartsDto.add(bodyPartDto);
+                }
+            }
+
+            Set<HttpRefResponseDto> httpRefsDto = null;
+            if (nonNull(exercise.getHttpRefs())) {
+                httpRefsDto = new LinkedHashSet<>();
+                for (HttpRef elt : exercise.getHttpRefs()) {
+                    HttpRefResponseDto httpRefDto = new HttpRefResponseDto.Builder()
+                            .id(elt.getId())
+                            .name(elt.getName())
+                            .description(elt.getDescription())
+                            .ref(elt.getRef())
+                            .build();
+                    httpRefsDto.add(httpRefDto);
+                }
+            }
+
+            responseDto.addExercise(new ExerciseResponseDto.Builder()
+                    .id(exercise.getId())
+                    .title(exercise.getTitle())
+                    .description(exercise.getDescription())
+                    .bodyParts(bodyPartsDto)
+                    .httpRefs(httpRefsDto)
+                    .build());
+        }
+
+        return responseDto;
     }
 }

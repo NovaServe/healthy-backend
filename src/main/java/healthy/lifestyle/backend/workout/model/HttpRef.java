@@ -20,6 +20,7 @@ public class HttpRef {
     private String description;
 
     @ManyToMany(mappedBy = "httpRefs")
+    @OrderBy("id")
     private Set<Exercise> exercises;
 
     public HttpRef() {}

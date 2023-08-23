@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -207,5 +208,32 @@ class ExerciseRepositoryTest {
         // Test
         Optional<Exercise> actualOpt = exerciseRepository.findByTitleAndUserId(exercise.getTitle(), user.getId());
         assertTrue(actualOpt.isEmpty());
+    }
+
+    @Test
+    void findAllDefault() {
+        dataHelper.createExercise("Exercise 1", "Title 1", false, null, null);
+        dataHelper.createExercise("Exercise 2", "Title 2", false, null, null);
+        dataHelper.createExercise("Exercise 3", "Title 3", true, null, null);
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        List<Exercise> exercises = exerciseRepository.findAllDefault(sort);
+        assertEquals(2, exercises.size());
+    }
+
+    @Test
+    void findByUserId() {
+        Exercise exercise1 = dataHelper.createExercise("Exercise 1", "Title 1", false, null, null);
+        Exercise exercise2 = dataHelper.createExercise("Exercise 2", "Title 2", false, null, null);
+        Exercise exercise3 = dataHelper.createExercise("Exercise 3", "Title 3", true, null, null);
+        Exercise exercise4 = dataHelper.createExercise("Exercise 4", "Title 4", true, null, null);
+        Exercise exercise5 = dataHelper.createExercise("Exercise 5", "Title 5", true, null, null);
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user1 = dataHelper.createUser(
+                "Full Name", "username-one", "user1@email.com", "password1", role, Set.of(exercise3, exercise4));
+        User user2 = dataHelper.createUser(
+                "Full Name", "username-two", "user2@email.com", "password2", role, Set.of(exercise5));
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        List<Exercise> exercises = exerciseRepository.findByUserId(user1.getId(), sort);
+        assertEquals(2, exercises.size());
     }
 }
