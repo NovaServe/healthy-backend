@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,10 +15,7 @@ import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
-import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
-import healthy.lifestyle.backend.workout.dto.GetExercisesResponseDto;
-import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
+import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
@@ -95,6 +93,56 @@ class ExerciseControllerTest {
     @Test
     void postgresqlContainerTest() {
         assertThat(postgresqlContainer.isRunning()).isTrue();
+    }
+
+    @Test
+    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
+    void createCustomExercisePositive() throws Exception {
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser(
+                "Test Full Name",
+                "test-username",
+                "test@email.com",
+                passwordEncoder().encode("test-password"),
+                role,
+                null);
+        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
+        BodyPart bodyPart2 = dataHelper.createBodyPart("Body Part 2");
+        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
+        HttpRef httpRef2 = dataHelper.createHttpRef("Ref 2", "http://ref2.com");
+
+        BodyPartRequestDto bodyPartRequestDto1 =
+                new BodyPartRequestDto.Builder().id(bodyPart1.getId()).build();
+        BodyPartRequestDto bodyPartRequestDto2 =
+                new BodyPartRequestDto.Builder().id(bodyPart2.getId()).build();
+        HttpRefRequestDto httpRefRequestDto1 =
+                new HttpRefRequestDto.Builder().id(httpRef1.getId()).build();
+        HttpRefRequestDto httpRefRequestDto2 =
+                new HttpRefRequestDto.Builder().id(httpRef2.getId()).build();
+        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
+                .title("Test title")
+                .description("Test desc")
+                .bodyParts(Set.of(bodyPartRequestDto1, bodyPartRequestDto2))
+                .httpRefs(Set.of(httpRefRequestDto1, httpRefRequestDto2))
+                .build();
+
+        MvcResult mvcResult = mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", is(notNullValue())))
+                .andExpect(jsonPath("$.title", is(notNullValue())))
+                .andExpect(jsonPath("$.description", is(notNullValue())))
+                .andExpect(jsonPath("$.bodyParts", is(notNullValue())))
+                .andExpect(jsonPath("$.httpRefs", is(notNullValue())))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        CreateExerciseResponseDto responseDto =
+                objectMapper.readValue(responseContent, CreateExerciseResponseDto.class);
+        assertEquals(2, responseDto.getBodyParts().size());
+        assertEquals(2, responseDto.getHttpRefs().size());
     }
 
     @Test

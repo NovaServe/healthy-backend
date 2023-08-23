@@ -1,9 +1,11 @@
 package healthy.lifestyle.backend.workout.dto;
 
+import healthy.lifestyle.backend.validation.IdValidation;
 import jakarta.validation.constraints.NotNull;
 
 public class BodyPartRequestDto {
-    @NotNull private long id;
+    @NotNull @IdValidation
+    private long id;
 
     public BodyPartRequestDto() {}
 
