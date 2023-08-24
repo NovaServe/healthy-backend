@@ -41,6 +41,7 @@ public class ExerciseController {
      * If there are invalid ids of body parts (or, if present, http refs), ErrorMessage.INVALID_NESTED_OBJECT, 400 Bad Request<br>
      * @see CreateExerciseRequestDto
      * @see healthy.lifestyle.backend.workout.dto.CreateExerciseResponseDto
+     * @see healthy.lifestyle.backend.workout.service.ExerciseService
      */
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -58,6 +59,17 @@ public class ExerciseController {
         throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
     }
 
+    /**
+     * Retrieve all exercises, ROLE_USER access is required
+     * @param isCustomOnly False if omitted (default)
+     * @example ?isCustomOnly=true<br>
+     * ?isCustomOnly=false is same as no request parameter
+     * @return GetExercisesResponseDto List of default and user's custom exercises (if isCustomOnly is set to false
+     * or omitted), or user's custom exercises only (if isCustomOnly is set to true)
+     * @throws healthy.lifestyle.backend.exception.GlobalExceptionHandler If validation error occurs
+     * @see GetExercisesResponseDto
+     * @see healthy.lifestyle.backend.workout.service.ExerciseService
+     */
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<GetExercisesResponseDto> getExercises(
