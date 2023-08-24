@@ -41,8 +41,6 @@ public class ExerciseController {
      * If there are invalid ids of body parts (or, if present, http refs), ErrorMessage.INVALID_NESTED_OBJECT, 400 Bad Request<br>
      * @see CreateExerciseRequestDto
      * @see healthy.lifestyle.backend.workout.dto.CreateExerciseResponseDto
-     * @see healthy.lifestyle.backend.workout.dto.BodyPartRequestDto
-     * @see healthy.lifestyle.backend.workout.dto.HttpRefRequestDto
      */
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")

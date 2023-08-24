@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.workout.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -141,8 +142,205 @@ class ExerciseControllerTest {
         String responseContent = mvcResult.getResponse().getContentAsString();
         CreateExerciseResponseDto responseDto =
                 objectMapper.readValue(responseContent, CreateExerciseResponseDto.class);
+
+        assertNotNull(responseDto.getId());
+        assertEquals(requestDto.getTitle(), responseDto.getTitle());
+        assertEquals(requestDto.getDescription(), responseDto.getDescription());
         assertEquals(2, responseDto.getBodyParts().size());
         assertEquals(2, responseDto.getHttpRefs().size());
+
+        List<BodyPartRequestDto> expectedBodyParts = requestDto.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPartRequestDto::getId))
+                .toList();
+        List<BodyPartResponseDto> actualBodyParts = responseDto.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                .toList();
+        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
+        assertEquals(bodyPart1.getName(), actualBodyParts.get(0).getName());
+        assertEquals(expectedBodyParts.get(1).getId(), actualBodyParts.get(1).getId());
+        assertEquals(bodyPart2.getName(), actualBodyParts.get(1).getName());
+
+        List<HttpRefRequestDto> expectedHttpRefs = requestDto.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRefRequestDto::getId))
+                .toList();
+        List<HttpRefResponseDto> actualHttpRefs = responseDto.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                .toList();
+        assertEquals(expectedHttpRefs.get(0).getId(), actualHttpRefs.get(0).getId());
+        assertEquals(httpRef1.getName(), actualHttpRefs.get(0).getName());
+        assertEquals(httpRef1.getRef(), actualHttpRefs.get(0).getRef());
+        assertEquals(httpRef1.getDescription(), actualHttpRefs.get(0).getDescription());
+
+        assertEquals(expectedHttpRefs.get(1).getId(), actualHttpRefs.get(1).getId());
+        assertEquals(httpRef2.getName(), actualHttpRefs.get(1).getName());
+        assertEquals(httpRef2.getRef(), actualHttpRefs.get(1).getRef());
+        assertEquals(httpRef2.getDescription(), actualHttpRefs.get(1).getDescription());
+    }
+
+    @Test
+    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
+    void createCustomExerciseNegativeNoHttpRefs() throws Exception {
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser(
+                "Test Full Name",
+                "test-username",
+                "test@email.com",
+                passwordEncoder().encode("test-password"),
+                role,
+                null);
+        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
+        BodyPart bodyPart2 = dataHelper.createBodyPart("Body Part 2");
+
+        BodyPartRequestDto bodyPartRequestDto1 =
+                new BodyPartRequestDto.Builder().id(bodyPart1.getId()).build();
+        BodyPartRequestDto bodyPartRequestDto2 =
+                new BodyPartRequestDto.Builder().id(bodyPart2.getId()).build();
+
+        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
+                .title("Test title")
+                .description("Test desc")
+                .bodyParts(Set.of(bodyPartRequestDto1, bodyPartRequestDto2))
+                .build();
+
+        MvcResult mvcResult = mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", is(notNullValue())))
+                .andExpect(jsonPath("$.title", is(notNullValue())))
+                .andExpect(jsonPath("$.description", is(notNullValue())))
+                .andExpect(jsonPath("$.bodyParts", is(notNullValue())))
+                .andExpect(jsonPath("$.httpRefs", is(nullValue())))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        CreateExerciseResponseDto responseDto =
+                objectMapper.readValue(responseContent, CreateExerciseResponseDto.class);
+        assertEquals(2, responseDto.getBodyParts().size());
+
+        List<BodyPartRequestDto> expectedBodyParts = requestDto.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPartRequestDto::getId))
+                .toList();
+        List<BodyPartResponseDto> actualBodyParts = responseDto.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                .toList();
+        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
+        assertEquals(bodyPart1.getName(), actualBodyParts.get(0).getName());
+        assertEquals(expectedBodyParts.get(1).getId(), actualBodyParts.get(1).getId());
+        assertEquals(bodyPart2.getName(), actualBodyParts.get(1).getName());
+    }
+
+    @Test
+    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
+    void createCustomExerciseNegativeNoBodyParts() throws Exception {
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser(
+                "Test Full Name",
+                "test-username",
+                "test@email.com",
+                passwordEncoder().encode("test-password"),
+                role,
+                null);
+        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
+        HttpRef httpRef2 = dataHelper.createHttpRef("Ref 2", "http://ref2.com");
+
+        HttpRefRequestDto httpRefRequestDto1 =
+                new HttpRefRequestDto.Builder().id(httpRef1.getId()).build();
+        HttpRefRequestDto httpRefRequestDto2 =
+                new HttpRefRequestDto.Builder().id(httpRef2.getId()).build();
+        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
+                .title("Test title")
+                .description("Test desc")
+                .httpRefs(Set.of(httpRefRequestDto1, httpRefRequestDto2))
+                .build();
+
+        mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("Invalid nested object")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
+    void createCustomExerciseNegativeWrongBodyPartId() throws Exception {
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser(
+                "Test Full Name",
+                "test-username",
+                "test@email.com",
+                passwordEncoder().encode("test-password"),
+                role,
+                null);
+        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
+        long wrongBodyPartId = 1000L;
+        BodyPartRequestDto bodyPartRequestDto1 =
+                new BodyPartRequestDto.Builder().id(bodyPart1.getId()).build();
+        BodyPartRequestDto bodyPartRequestDto2 =
+                new BodyPartRequestDto.Builder().id(wrongBodyPartId).build();
+
+        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
+        HttpRef httpRef2 = dataHelper.createHttpRef("Ref 2", "http://ref2.com");
+        HttpRefRequestDto httpRefRequestDto1 =
+                new HttpRefRequestDto.Builder().id(httpRef1.getId()).build();
+        HttpRefRequestDto httpRefRequestDto2 =
+                new HttpRefRequestDto.Builder().id(httpRef2.getId()).build();
+
+        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
+                .title("Test title")
+                .description("Test desc")
+                .bodyParts(Set.of(bodyPartRequestDto1, bodyPartRequestDto2))
+                .httpRefs(Set.of(httpRefRequestDto1, httpRefRequestDto2))
+                .build();
+
+        mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("Invalid nested object")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
+    void createCustomExerciseNegativeHttpRefId() throws Exception {
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser(
+                "Test Full Name",
+                "test-username",
+                "test@email.com",
+                passwordEncoder().encode("test-password"),
+                role,
+                null);
+        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
+        BodyPart bodyPart2 = dataHelper.createBodyPart("Body Part 2");
+        BodyPartRequestDto bodyPartRequestDto1 =
+                new BodyPartRequestDto.Builder().id(bodyPart1.getId()).build();
+        BodyPartRequestDto bodyPartRequestDto2 =
+                new BodyPartRequestDto.Builder().id(bodyPart2.getId()).build();
+
+        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
+        long wrongHttpRefId = 1000L;
+        HttpRefRequestDto httpRefRequestDto1 =
+                new HttpRefRequestDto.Builder().id(httpRef1.getId()).build();
+        HttpRefRequestDto httpRefRequestDto2 =
+                new HttpRefRequestDto.Builder().id(wrongHttpRefId).build();
+
+        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
+                .title("Test title")
+                .description("Test desc")
+                .bodyParts(Set.of(bodyPartRequestDto1, bodyPartRequestDto2))
+                .httpRefs(Set.of(httpRefRequestDto1, httpRefRequestDto2))
+                .build();
+
+        mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("Invalid nested object")))
+                .andDo(print());
     }
 
     @Test
