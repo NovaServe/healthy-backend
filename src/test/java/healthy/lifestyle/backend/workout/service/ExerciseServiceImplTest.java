@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.common.ValidationServiceImpl;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.*;
@@ -38,9 +37,6 @@ class ExerciseServiceImplTest {
     @Mock
     private HttpRefRepository httpRefRepository;
 
-    @Mock
-    private ValidationServiceImpl validationService;
-
     @InjectMocks
     ExerciseServiceImpl exerciseService;
 
@@ -48,61 +44,50 @@ class ExerciseServiceImplTest {
 
     @Test
     void createExercise_Positive() {
-        // Data
+        // Request dto
         BodyPartRequestDto bodyPartRequestDto1 =
                 new BodyPartRequestDto.Builder().id(1L).build();
         BodyPartRequestDto bodyPartRequestDto2 =
                 new BodyPartRequestDto.Builder().id(2L).build();
-
         HttpRefRequestDto httpRefRequestDto1 =
                 new HttpRefRequestDto.Builder().id(1L).build();
         HttpRefRequestDto httpRefRequestDto2 =
                 new HttpRefRequestDto.Builder().id(2L).build();
-        HttpRefRequestDto httpRefRequestDto3 =
-                new HttpRefRequestDto.Builder().id(3L).build();
+        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
+                .title("Test exercise title")
+                .description("Test exercise description")
+                .bodyParts(Set.of(bodyPartRequestDto1, bodyPartRequestDto2))
+                .httpRefs(Set.of(httpRefRequestDto1, httpRefRequestDto2))
+                .build();
 
-        String exerciseTitle = "Narrow push-ups";
-        String exerciseDescription = "Train triceps";
-
-        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto(
-                exerciseTitle,
-                exerciseDescription,
-                Set.of(bodyPartRequestDto1, bodyPartRequestDto2),
-                Set.of(httpRefRequestDto1, httpRefRequestDto2, httpRefRequestDto3));
-
-        long userId = 1L;
-
-        BodyPart bodyPart1 = new BodyPart.Builder().id(1L).name("Arms").build();
-        BodyPart bodyPart2 = new BodyPart.Builder().id(2L).name("Triceps").build();
-        HttpRef httpRef1 = new HttpRef.Builder()
+        // Stubs data
+        BodyPart bodyPartStub1 = new BodyPart.Builder().id(1L).name("Arms").build();
+        BodyPart bodyPartStub2 = new BodyPart.Builder().id(2L).name("Triceps").build();
+        HttpRef httpRefStub1 = new HttpRef.Builder()
                 .id(1L)
                 .name("Media1")
                 .ref("https://ref1.com")
                 .description("Description1")
                 .build();
-        HttpRef httpRef2 = new HttpRef.Builder()
+        HttpRef httpRefStub2 = new HttpRef.Builder()
                 .id(2L)
                 .name("Media2")
                 .ref("https://ref2.com")
                 .description("Description2")
                 .build();
-        HttpRef httpRef3 = new HttpRef.Builder()
-                .id(3L)
-                .name("Media3")
-                .ref("https://ref3.com")
-                .build();
-        Exercise exercise = new Exercise.Builder()
+        Exercise exerciseStub = new Exercise.Builder()
                 .id(1L)
-                .title(exerciseTitle)
-                .description(exerciseDescription)
-                .bodyParts(Set.of(bodyPart1, bodyPart2))
-                .httpRefs(Set.of(httpRef1, httpRef2, httpRef3))
+                .title("Test exercise title")
+                .description("Test exercise description")
+                .bodyParts(Set.of(bodyPartStub1, bodyPartStub2))
+                .httpRefs(Set.of(httpRefStub1, httpRefStub2))
                 .build();
 
+        // Expected response dto
         BodyPartResponseDto bodyPartResponseDto1 =
-                new BodyPartResponseDto.Builder().id(1L).name("Arms").build();
+                new BodyPartResponseDto.Builder().id(1L).name("Body part 1").build();
         BodyPartResponseDto bodyPartResponseDto2 =
-                new BodyPartResponseDto.Builder().id(2L).name("Triceps").build();
+                new BodyPartResponseDto.Builder().id(2L).name("Body part 2").build();
         HttpRefResponseDto httpRefResponseDto1 = new HttpRefResponseDto.Builder()
                 .id(1L)
                 .name("Media1")
@@ -115,26 +100,19 @@ class ExerciseServiceImplTest {
                 .ref("https://ref2.com")
                 .description("Description2")
                 .build();
-        HttpRefResponseDto httpRefResponseDto3 = new HttpRefResponseDto.Builder()
-                .id(3L)
-                .name("Media3")
-                .ref("https://ref3.com")
-                .build();
+
+        long userId = 1L;
 
         // Stubs
-        when(validationService.validatedText(any(String.class))).thenReturn(true);
-
         when(bodyPartRepository.existsById(anyLong())).thenReturn(true);
-        when(bodyPartRepository.getReferenceById(1L)).thenReturn(bodyPart1);
-        when(bodyPartRepository.getReferenceById(2L)).thenReturn(bodyPart2);
-
+        when(bodyPartRepository.getReferenceById(1L)).thenReturn(bodyPartStub1);
+        when(bodyPartRepository.getReferenceById(2L)).thenReturn(bodyPartStub2);
         when(httpRefRepository.existsById(anyLong())).thenReturn(true);
-        when(httpRefRepository.getReferenceById(1L)).thenReturn(httpRef1);
-        when(httpRefRepository.getReferenceById(2L)).thenReturn(httpRef2);
-        when(httpRefRepository.getReferenceById(3L)).thenReturn(httpRef3);
-
-        when(exerciseRepository.findByTitleAndUserId(exerciseTitle, userId)).thenReturn(Optional.empty());
-        when(exerciseRepository.save(any(Exercise.class))).thenReturn(exercise);
+        when(httpRefRepository.getReferenceById(1L)).thenReturn(httpRefStub1);
+        when(httpRefRepository.getReferenceById(2L)).thenReturn(httpRefStub2);
+        when(exerciseRepository.findByTitleAndUserId("Test exercise title", userId))
+                .thenReturn(Optional.empty());
+        when(exerciseRepository.save(any(Exercise.class))).thenReturn(exerciseStub);
 
         // Test
         CreateExerciseResponseDto actual = exerciseService.createExercise(requestDto, userId);
@@ -143,32 +121,35 @@ class ExerciseServiceImplTest {
         assertEquals(requestDto.getDescription(), actual.getDescription());
 
         assertEquals(requestDto.getBodyParts().size(), actual.getBodyParts().size());
-        List<BodyPartRequestDto> initialBodyParts = Arrays.asList(bodyPartRequestDto1, bodyPartRequestDto2);
-        initialBodyParts.sort(Comparator.comparing(BodyPartRequestDto::getId));
+        List<BodyPartRequestDto> expectedBodyParts = requestDto.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPartRequestDto::getId))
+                .toList();
+        List<BodyPartResponseDto> actualBodyParts = actual.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                .toList();
 
-        List<BodyPartResponseDto> actualBodyParts = new ArrayList<>(actual.getBodyParts());
-        actualBodyParts.sort(Comparator.comparing(BodyPartResponseDto::getId));
-
-        for (int i = 0; i < initialBodyParts.size(); i++) {
-            assertEquals(initialBodyParts.get(i).getId(), actualBodyParts.get(i).getId());
-            assertNotNull(actualBodyParts.get(i).getName());
-        }
+        assertEquals(expectedBodyParts.size(), actualBodyParts.size());
+        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
+        assertEquals(bodyPartStub1.getName(), actualBodyParts.get(0).getName());
+        assertEquals(expectedBodyParts.get(1).getId(), actualBodyParts.get(1).getId());
+        assertEquals(bodyPartStub2.getName(), actualBodyParts.get(1).getName());
 
         assertEquals(requestDto.getHttpRefs().size(), actual.getHttpRefs().size());
-        List<HttpRefRequestDto> initialHttpRefs =
-                Arrays.asList(httpRefRequestDto1, httpRefRequestDto2, httpRefRequestDto3);
-        initialHttpRefs.sort(Comparator.comparing(HttpRefRequestDto::getId));
-
-        List<HttpRefResponseDto> actualHttpRefs = new ArrayList<HttpRefResponseDto>(actual.getHttpRefs());
-        actualHttpRefs.sort(Comparator.comparing(HttpRefResponseDto::getId));
-
-        for (int i = 0; i < initialHttpRefs.size(); i++) {
-            assertEquals(initialHttpRefs.get(i).getId(), actualHttpRefs.get(i).getId());
-            assertNotNull(actualHttpRefs.get(i).getRef());
-            if (i == 0 || i == 1) {
-                assertNotNull(actualHttpRefs.get(i).getDescription());
-            }
-        }
+        List<HttpRefRequestDto> expectedHttpRefs = requestDto.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRefRequestDto::getId))
+                .toList();
+        List<HttpRefResponseDto> actualHttpRefs = actual.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                .toList();
+        assertEquals(expectedHttpRefs.size(), actualHttpRefs.size());
+        assertEquals(expectedHttpRefs.get(0).getId(), actualHttpRefs.get(0).getId());
+        assertEquals(httpRefStub1.getName(), actualHttpRefs.get(0).getName());
+        assertEquals(httpRefStub1.getRef(), actualHttpRefs.get(0).getRef());
+        assertEquals(httpRefStub1.getDescription(), actualHttpRefs.get(0).getDescription());
+        assertEquals(expectedHttpRefs.get(1).getId(), actualHttpRefs.get(1).getId());
+        assertEquals(httpRefStub2.getName(), actualHttpRefs.get(1).getName());
+        assertEquals(httpRefStub2.getRef(), actualHttpRefs.get(1).getRef());
+        assertEquals(httpRefStub2.getDescription(), actualHttpRefs.get(1).getDescription());
     }
 
     @Test
