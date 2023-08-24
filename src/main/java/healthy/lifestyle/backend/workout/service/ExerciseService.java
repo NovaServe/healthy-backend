@@ -5,7 +5,7 @@ import healthy.lifestyle.backend.workout.dto.CreateExerciseResponseDto;
 import healthy.lifestyle.backend.workout.dto.GetExercisesResponseDto;
 
 public interface ExerciseService {
-    CreateExerciseResponseDto createExercise(CreateExerciseRequestDto requestDto, Long userId);
+    CreateExerciseResponseDto createExercise(CreateExerciseRequestDto requestDto, long userId);
 
     GetExercisesResponseDto getExercises(long userId, boolean isCustomOnly);
 }

@@ -57,7 +57,7 @@ public class Exercise {
         this.httpRefs = httpRefs;
     }
 
-    public Exercise(Builder builder) {
+    private Exercise(Builder builder) {
         this.id = builder.id;
         this.title = builder.title;
         this.description = builder.description;
