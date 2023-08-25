@@ -44,17 +44,22 @@ public class DataHelper {
         return bodyPartRepository.save(bodyPart);
     }
 
-    public HttpRef createHttpRef(String name, String ref, String description) {
+    public HttpRef createHttpRef(String name, String ref, String description, boolean isCustom) {
         HttpRef httpRef1 = new HttpRef.Builder()
                 .name(name)
                 .ref(ref)
                 .description(description)
+                .isCustom(isCustom)
                 .build();
         return httpRefRepository.save(httpRef1);
     }
 
+    public HttpRef createHttpRef(String name, String ref, String desc) {
+        return this.createHttpRef(name, ref, desc, false);
+    }
+
     public HttpRef createHttpRef(String name, String ref) {
-        return this.createHttpRef(name, ref, null);
+        return this.createHttpRef(name, ref, null, false);
     }
 
     public Exercise createExercise(

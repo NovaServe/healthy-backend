@@ -19,24 +19,29 @@ public class HttpRef {
     @Column(name = "description", unique = false, nullable = true)
     private String description;
 
+    @Column(name = "is_custom", unique = false, nullable = false)
+    private boolean isCustom;
+
     @ManyToMany(mappedBy = "httpRefs")
     @OrderBy("id")
     private Set<Exercise> exercises;
 
     public HttpRef() {}
 
-    public HttpRef(Long id, String name, String ref, String description) {
+    public HttpRef(Long id, String name, String ref, String description, boolean isCustom) {
         this.id = id;
         this.name = name;
         this.ref = ref;
         this.description = description;
+        this.isCustom = isCustom;
     }
 
-    public HttpRef(Builder builder) {
+    private HttpRef(Builder builder) {
         this.id = builder.id;
         this.name = builder.name;
         this.ref = builder.ref;
         this.description = builder.description;
+        this.isCustom = builder.isCustom;
     }
 
     public Long getId() {
@@ -71,6 +76,14 @@ public class HttpRef {
         this.description = description;
     }
 
+    public boolean isCustom() {
+        return isCustom;
+    }
+
+    public void setCustom(boolean custom) {
+        isCustom = custom;
+    }
+
     public Set<Exercise> getExercises() {
         return exercises;
     }
@@ -80,6 +93,8 @@ public class HttpRef {
         private String name;
         private String ref;
         private String description;
+
+        private boolean isCustom;
 
         public Builder id(Long id) {
             this.id = id;
@@ -98,6 +113,11 @@ public class HttpRef {
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder isCustom(boolean isCustom) {
+            this.isCustom = isCustom;
             return this;
         }
 
