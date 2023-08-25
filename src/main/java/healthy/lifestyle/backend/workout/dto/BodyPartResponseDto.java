@@ -12,7 +12,7 @@ public class BodyPartResponseDto {
         this.name = name;
     }
 
-    public BodyPartResponseDto(Builder builder) {
+    private BodyPartResponseDto(Builder builder) {
         this.id = builder.id;
         this.name = builder.name;
     }
