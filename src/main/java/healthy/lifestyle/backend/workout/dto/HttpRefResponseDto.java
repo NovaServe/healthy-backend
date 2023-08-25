@@ -5,14 +5,16 @@ public class HttpRefResponseDto {
     private String name;
     private String description;
     private String ref;
+    private boolean isCustom;
 
     public HttpRefResponseDto() {}
 
-    public HttpRefResponseDto(long id, String name, String description, String ref) {
+    public HttpRefResponseDto(long id, String name, String description, String ref, boolean isCustom) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.ref = ref;
+        this.isCustom = isCustom;
     }
 
     public HttpRefResponseDto(Builder builder) {
@@ -20,6 +22,7 @@ public class HttpRefResponseDto {
         this.name = builder.name;
         this.description = builder.description;
         this.ref = builder.ref;
+        this.isCustom = builder.isCustom;
     }
 
     public long getId() {
@@ -54,11 +57,20 @@ public class HttpRefResponseDto {
         this.ref = ref;
     }
 
+    public boolean isCustom() {
+        return isCustom;
+    }
+
+    public void setCustom(boolean custom) {
+        isCustom = custom;
+    }
+
     public static class Builder {
         private long id;
         private String name;
         private String description;
         private String ref;
+        private boolean isCustom;
 
         public Builder id(long id) {
             this.id = id;
@@ -77,6 +89,11 @@ public class HttpRefResponseDto {
 
         public Builder ref(String ref) {
             this.ref = ref;
+            return this;
+        }
+
+        public Builder isCustom(boolean isCustom) {
+            this.isCustom = isCustom;
             return this;
         }
 

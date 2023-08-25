@@ -61,6 +61,9 @@
             <column name="description" type="varchar">
                 <constraints nullable="true" unique="false"/>
             </column>
+            <column name="is_custom" type="boolean">
+                <constraints nullable="false" unique="false"/>
+            </column>
         </createTable>
 
         <createTable tableName="exercises_http_refs">
