@@ -75,11 +75,14 @@ public class ExerciseController {
     public ResponseEntity<GetExercisesResponseDto> getExercises(
             @RequestParam(name = "isCustomOnly", required = false) Boolean isCustomOnly) {
         if (isNull(isCustomOnly)) isCustomOnly = false;
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         if (nonNull(authentication) && authentication.isAuthenticated()) {
             String usernameOrEmail = authentication.getName();
             Optional<User> userOptional = authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
             if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
+
             GetExercisesResponseDto responseDtoList =
                     exerciseService.getExercises(userOptional.get().getId(), isCustomOnly);
             return ResponseEntity.ok(responseDtoList);
