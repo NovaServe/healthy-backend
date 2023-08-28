@@ -8,7 +8,8 @@ public enum ErrorMessage {
     SERVER_ERROR("Server error"),
     INVALID_TOKEN("Invalid token"),
     AUTHENTICATION_ERROR("Authentication error"),
-    USER_NOT_FOUND("User not found");
+    USER_NOT_FOUND("User not found"),
+    NOT_FOUND("Not found");
 
     private final String name;
 
