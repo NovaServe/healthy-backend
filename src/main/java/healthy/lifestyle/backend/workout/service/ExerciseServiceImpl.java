@@ -16,6 +16,7 @@ import java.util.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ExerciseServiceImpl implements ExerciseService {
@@ -152,6 +153,7 @@ public class ExerciseServiceImpl implements ExerciseService {
                 .build();
     }
 
+    @Transactional
     @Override
     public GetExercisesResponseDto getExercises(long userId, boolean isCustomOnly) {
         Sort sort = Sort.by(Sort.Direction.ASC, "id");

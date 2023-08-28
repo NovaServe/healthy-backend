@@ -2,11 +2,13 @@ package healthy.lifestyle.backend.exception;
 
 public class ExceptionDto {
     private String message;
+    private int code;
 
     public ExceptionDto() {}
 
-    public ExceptionDto(String message) {
+    public ExceptionDto(String message, int code) {
         this.message = message;
+        this.code = code;
     }
 
     public String getMessage() {
@@ -15,5 +17,13 @@ public class ExceptionDto {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
     }
 }
