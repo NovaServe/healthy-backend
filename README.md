@@ -80,7 +80,7 @@ Delete chat: DELETE /api/v1/chats/{chat_id} (JWT)<br>
 
 #### Chats Messages
 List all chat’s messages GET /api/v1/chats/{chat_id}/messages (JWT)<br>
-Create message  POST /api/v1/chats/{chat_id}/messages (JWT)<br>
+Create message POST /api/v1/chats/{chat_id}/messages (JWT)<br>
 
 [Top](#healthy-lifestyle-app)
 
