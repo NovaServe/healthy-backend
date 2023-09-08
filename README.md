@@ -1,8 +1,8 @@
 # Healthy Lifestyle App
 
-[REST API Endpoints](#rest-api-endpoints)
-[Database Schema](#database-schema)
-[Deployment Schema](#deployment-schema)
+[REST API Endpoints](#rest-api-endpoints)<br>
+[Database Schema](#database-schema)<br>
+[Deployment Schema](#deployment-schema)<br>
 
 ## REST API Endpoints
 
@@ -45,6 +45,7 @@ Delete custom workout: DELETE /api/v1/workouts/{workout_id} (JWT)<br>
 List template recipes: GET /api/v1/nutrition/recipes/templates<br>
 List all recipes or custom only: GET /api/v1/nutrition/recipes?isCustomOnly= (JWT)<br>
 Create custom recipe: POST /api/v1/nutrition/recipes (JWT)<br>
+Associate recipe (dish) as completed:  POST /api/v1/nutrition/recipes/{recipe_id}/{user_id} (JWT)<br>
 Update custom recipe: PATCH /api/v1/nutrition/recipes/{recipet_id} (JWT)<br>
 Delete custom recipe: DELETE /api/v1/nutrition/recipes/{recipe_id} (JWT)<br>
 
@@ -52,6 +53,7 @@ Delete custom recipe: DELETE /api/v1/nutrition/recipes/{recipe_id} (JWT)<br>
 List template supplements: GET /api/v1/nutrition/supplements/templates<br>
 List all supplements or custom only: GET /api/v1/nutrition/supplements?isCustomOnly= (JWT)<br>
 Create custom supplement: POST /api/v1/nutrition/supplements (JWT)<br>
+Associate supplement intake as completed:  POST /api/v1/nutrition/supplements/{supplement_id}/{user_id} (JWT)<br>
 Update custom supplement: PATCH /api/v1/nutrition/supplements/{supplement_id} (JWT)<br>
 Delete custom supplement: DELETE /api/v1/nutrition/supplements/{supplement_id} (JWT)<br>
 
@@ -59,6 +61,7 @@ Delete custom supplement: DELETE /api/v1/nutrition/supplements/{supplement_id} (
 List template meditations: GET /api/v1/meditations/templates<br>
 List all meditations or custom only: GET /api/v1/meditations?isCustomOnly= (JWT)<br>
 Create custom meditation: POST /api/v1/meditations (JWT)<br>
+Associate meditation as completed:  POST /api/v1/meditations/{meditation_id}/{user_id} (JWT)<br>
 Update custom meditation: PATCH /api/v1/meditations/{meditation_id} (JWT)<br>
 Delete custom meditation: DELETE /api/v1/meditations/{meditation_id} (JWT)<br>
 
@@ -76,8 +79,8 @@ Update chat (title only): PATCH /api/v1/chats/{chat_id} (JWT)<br>
 Delete chat: DELETE /api/v1/chats/{chat_id} (JWT)<br>
 
 #### Chats Messages
-List all chat’s messages GET /api/v1/chats/messages (JWT)<br>
-Create message  POST /api/v1/chats/messages (JWT)<br>
+List all chat’s messages GET /api/v1/chats/{chat_id}/messages (JWT)<br>
+Create message  POST /api/v1/chats/{chat_id}/messages (JWT)<br>
 
 [Top](#healthy-lifestyle-app)
 
@@ -107,28 +110,35 @@ Create message  POST /api/v1/chats/messages (JWT)<br>
 
 ### Users
 ![Users](docs/users.jpg)
+<br>
 [Top](#healthy-lifestyle-app)
 
 ### Workouts
 ![Workouts](docs/workouts.jpg)
+<br>
 [Top](#healthy-lifestyle-app)
 
 ### Nutrition
 ![Nutrition](docs/nutrition.jpg)
+<br>
 [Top](#healthy-lifestyle-app)
 
 ### Meditations
 ![Meditations](docs/meditations.jpg)
+<br>
 [Top](#healthy-lifestyle-app)
 
 ### Calendar
 ![Calendar](docs/calendar.jpg)
+<br>
 [Top](#healthy-lifestyle-app)
 
 ### Chats
 ![Chats](docs/chats.jpg)
+<br>
 [Top](#healthy-lifestyle-app)
 
 ## Deployment Schema
 ![Deployment](docs/deployment.jpg)
+<br>
 [Top](#healthy-lifestyle-app)
