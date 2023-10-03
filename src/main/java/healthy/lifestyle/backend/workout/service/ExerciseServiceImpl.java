@@ -133,8 +133,8 @@ public class ExerciseServiceImpl implements ExerciseService {
         return true;
     }
 
-    @Transactional
     @Override
+    @Transactional
     public List<ExerciseResponseDto> getCustomExercises(long userId) {
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
         List<Exercise> exercises = exerciseRepository.findCustomByUserId(userId, sort);
@@ -160,6 +160,7 @@ public class ExerciseServiceImpl implements ExerciseService {
     }
 
     @Override
+    @Transactional
     public List<ExerciseResponseDto> getDefaultExercises() {
         return exerciseRepository.findAllDefault(Sort.by(Sort.Direction.ASC, "id")).stream()
                 .map(exercise -> modelMapper.map(exercise, ExerciseResponseDto.class))
