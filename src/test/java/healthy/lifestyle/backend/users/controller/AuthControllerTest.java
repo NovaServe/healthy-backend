@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
+import healthy.lifestyle.backend.data.DataUtil;
 import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.LoginResponseDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
@@ -23,8 +24,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,9 +33,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * @see AuthController
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
@@ -44,19 +40,11 @@ import org.testcontainers.utility.DockerImageName;
 class AuthControllerTest {
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
-            (PostgreSQLContainer<?>) new PostgreSQLContainer(DockerImageName.parse("postgres:12.15"))
-                    .withDatabaseName("test_db")
-                    .withUsername("test_user")
-                    .withPassword("test_password")
-                    .withReuse(true);
+            new PostgreSQLContainer<>(DockerImageName.parse("postgres:12.15"));
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
-        registry.add(
-                "spring.datasource.url",
-                () -> String.format(
-                        "jdbc:postgresql://localhost:%s/%s",
-                        postgresqlContainer.getFirstMappedPort(), postgresqlContainer.getDatabaseName()));
+        registry.add("spring.datasource.url", postgresqlContainer::getJdbcUrl);
         registry.add("spring.datasource.username", postgresqlContainer::getUsername);
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
     }
@@ -71,9 +59,7 @@ class AuthControllerTest {
     DataHelper dataHelper;
 
     @Autowired
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    DataUtil dataUtil;
 
     @BeforeEach
     void beforeEach() {
@@ -88,102 +74,88 @@ class AuthControllerTest {
     }
 
     @Test
-    void signup_Positive() throws Exception {
+    void signupTest_shouldReturn201Created() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
 
-        SignupRequestDto requestDto = new SignupRequestDto.Builder()
-                .username("test-username")
-                .email("test@email.com")
-                .password("test-password")
-                .confirmPassword("test-password")
-                .fullName("Test Full Name")
-                .build();
-
+        // When
         mockMvc.perform(post(URL + "/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                // Then
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(notNullValue())))
                 .andDo(print());
     }
 
     @Test
-    void signup_Negative_UserAlreadyExists() throws Exception {
+    void signupTest_shouldReturn400BadRequest_whenUserAlreadyExists() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user =
-                dataHelper.createUser("Test Full Name", "test-username", "test@email.com", "test-password", role, null);
+        User user = dataHelper.createUser("one", role, null);
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
 
-        SignupRequestDto requestDto = new SignupRequestDto.Builder()
-                .username("test-username")
-                .email("test@email.com")
-                .password("test-password")
-                .confirmPassword("test-password")
-                .fullName("Test Full Name")
-                .build();
-
+        // When
         mockMvc.perform(post(URL + "/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Already exists")))
                 .andDo(print());
     }
 
     @Test
-    void signup_Negative_InvalidUsername() throws Exception {
+    void signupTest_shouldReturn400BadRequest_whenInvalidUsername() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
 
-        SignupRequestDto requestDto = new SignupRequestDto.Builder()
-                .username("test-usernam e")
-                .email("test@email.com")
-                .password("test-password")
-                .confirmPassword("test-password")
-                .fullName("Test Full Name")
-                .build();
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        signupRequestDto.setUsername("username 123 $");
 
+        // When
         mockMvc.perform(post(URL + "/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.username", is(equalTo("Not allowed symbols"))))
                 .andDo(print());
     }
 
     @Test
-    void signup_Negative_InvalidEmail() throws Exception {
+    void signupTest_shouldReturn400BadRequest_whenInvalidEmail() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
 
-        SignupRequestDto requestDto = new SignupRequestDto.Builder()
-                .username("test-username")
-                .email("test$@email.com")
-                .password("test-password")
-                .confirmPassword("test-password")
-                .fullName("Test Full Name")
-                .build();
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        signupRequestDto.setEmail("invalid-email-123-$@email.com");
 
+        // When
         mockMvc.perform(post(URL + "/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.email", is(equalTo("Not allowed symbols"))))
                 .andDo(print());
     }
 
     @Test
-    void signup_Negative_InvalidPassword() throws Exception {
+    void signupTest_shouldReturn400BadRequest_whenInvalidPassword() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
 
-        SignupRequestDto requestDto = new SignupRequestDto.Builder()
-                .username("test-username")
-                .email("test@email.com")
-                .password("test password")
-                .confirmPassword("test password")
-                .fullName("Test Full Name")
-                .build();
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        signupRequestDto.setPassword("Invalid password with space");
+        signupRequestDto.setConfirmPassword("Invalid password with space");
 
+        // When
         mockMvc.perform(post(URL + "/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.password", is(equalTo("Not allowed symbols"))))
                 .andExpect(jsonPath("$.confirmPassword", is(equalTo("Not allowed symbols"))))
@@ -191,65 +163,54 @@ class AuthControllerTest {
     }
 
     @Test
-    void signup_Negative_PasswordsMismatch() throws Exception {
+    void signupTest_shouldReturn400BadRequest_whenPasswordsMismatch() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
 
-        SignupRequestDto requestDto = new SignupRequestDto.Builder()
-                .username("test-username")
-                .email("test@email.com")
-                .password("test-password")
-                .confirmPassword("test_password")
-                .fullName("Test Full Name")
-                .build();
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        signupRequestDto.setConfirmPassword("Password mismatch");
 
+        // When
         mockMvc.perform(post(URL + "/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.password,confirmPassword", is(equalTo("Passwords don't match"))))
                 .andDo(print());
     }
 
     @Test
-    void signup_Negative_InvalidFullname() throws Exception {
+    void signupTest_shouldReturn400BadRequest_whenInvalidFullName() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
 
-        SignupRequestDto requestDto = new SignupRequestDto.Builder()
-                .username("test-username")
-                .email("test@email.com")
-                .password("test-password")
-                .confirmPassword("test-password")
-                .fullName("Test Full Name +")
-                .build();
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        signupRequestDto.setFullName("Invalid Full Name &");
 
+        // When
         mockMvc.perform(post(URL + "/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fullName", is(equalTo("Not allowed symbols"))))
                 .andDo(print());
     }
 
     @Test
-    void login() throws Exception {
+    void loginTest_shouldReturnTokenAnd200Ok() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                null);
+        User user = dataHelper.createUser("one", role, null);
 
-        LoginRequestDto requestDto = new LoginRequestDto.Builder()
-                .usernameOrEmail("test@email.com")
-                .password("test-password")
-                .confirmPassword("test-password")
-                .build();
+        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
 
+        // When
         MvcResult mvcResult = mockMvc.perform(post(URL + "/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token", is(notNullValue())))
                 .andDo(print())
@@ -266,89 +227,83 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_Negative_UserNotFound() throws Exception {
-        LoginRequestDto requestDto = new LoginRequestDto.Builder()
-                .usernameOrEmail("test@email.com")
-                .password("test-password")
-                .confirmPassword("test-password")
-                .build();
+    void loginTest_shouldReturn401Unauthorized_whenUserNotFound() throws Exception {
+        // Given
+        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
 
+        // When
         mockMvc.perform(post(URL + "/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                // Then
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message", is("Authentication error")))
                 .andDo(print());
     }
 
     @Test
-    void login_Negative_WrongPassword() throws Exception {
+    void loginTest_shouldReturn401Unauthorized_whenWrongPassword() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                null);
+        User user = dataHelper.createUser("one", role, null);
 
-        LoginRequestDto requestDto = new LoginRequestDto.Builder()
-                .usernameOrEmail("test@email.com")
-                .password("wrong-password")
-                .confirmPassword("wrong-password")
-                .build();
+        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        loginRequestDto.setPassword("Wrong-password");
+        loginRequestDto.setConfirmPassword("Wrong-password");
 
+        // When
         mockMvc.perform(post(URL + "/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                // Then
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message", is("Authentication error")))
                 .andDo(print());
     }
 
     @Test
-    void login_Negative_InvalidUsername() throws Exception {
-        LoginRequestDto requestDto = new LoginRequestDto.Builder()
-                .usernameOrEmail("tes t@email.com")
-                .password("test-password")
-                .confirmPassword("test-password")
-                .build();
+    void loginTest_shouldReturn401Unauthorized_whenInvalidUsername() throws Exception {
+        // Given
+        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        loginRequestDto.setUsernameOrEmail("Invalid username 123 $");
 
+        // When
         mockMvc.perform(post(URL + "/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.usernameOrEmail", is("Not allowed symbols")))
                 .andDo(print());
     }
 
     @Test
-    void login_Negative_InvalidPassword() throws Exception {
-        LoginRequestDto requestDto = new LoginRequestDto.Builder()
-                .usernameOrEmail("test@email.com")
-                .password("test password")
-                .confirmPassword("test password")
-                .build();
+    void loginTest_shouldReturn401Unauthorized_whenInvalidPassword() throws Exception {
+        // Given
+        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        loginRequestDto.setPassword("Invalid password with spaces");
 
+        // When
         mockMvc.perform(post(URL + "/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.password", is("Not allowed symbols")))
                 .andDo(print());
     }
 
     @Test
-    void login_Negative_PasswordsMismatch() throws Exception {
-        LoginRequestDto requestDto = new LoginRequestDto.Builder()
-                .usernameOrEmail("test@email.com")
-                .password("test-password-1")
-                .confirmPassword("test-password-2")
-                .build();
+    void loginTest_shouldReturn401Unauthorized_whenPasswordsMismatch() throws Exception {
+        // Given
+        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        loginRequestDto.setConfirmPassword("Password mismatch");
 
+        // When
         mockMvc.perform(post(URL + "/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.password,confirmPassword", is("Passwords don't match")))
                 .andDo(print());

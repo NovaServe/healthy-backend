@@ -3,7 +3,6 @@ package healthy.lifestyle.backend.workout.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -11,18 +10,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
+import healthy.lifestyle.backend.data.DataUtil;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,34 +42,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * @see ExerciseController
- * @see healthy.lifestyle.backend.workout.service.ExerciseServiceImpl
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
 @Import(DataConfiguration.class)
 class ExerciseControllerTest {
-    @Container
-    static PostgreSQLContainer<?> postgresqlContainer =
-            (PostgreSQLContainer<?>) new PostgreSQLContainer(DockerImageName.parse("postgres:12.15"))
-                    .withDatabaseName("test_db")
-                    .withUsername("test_user")
-                    .withPassword("test_password")
-                    .withReuse(true);
-
-    @DynamicPropertySource
-    static void postgresProperties(DynamicPropertyRegistry registry) {
-        registry.add(
-                "spring.datasource.url",
-                () -> String.format(
-                        "jdbc:postgresql://localhost:%s/%s",
-                        postgresqlContainer.getFirstMappedPort(), postgresqlContainer.getDatabaseName()));
-        registry.add("spring.datasource.username", postgresqlContainer::getUsername);
-        registry.add("spring.datasource.password", postgresqlContainer::getPassword);
-    }
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -80,16 +57,30 @@ class ExerciseControllerTest {
     DataHelper dataHelper;
 
     @Autowired
+    DataUtil dataUtil;
+
+    @Autowired
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    @Container
+    static PostgreSQLContainer<?> postgresqlContainer =
+            new PostgreSQLContainer<>(DockerImageName.parse("postgres:12.15"));
+
+    @DynamicPropertySource
+    static void postgresProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgresqlContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresqlContainer::getUsername);
+        registry.add("spring.datasource.password", postgresqlContainer::getPassword);
+    }
+
+    private static final String URL = "/api/v1/exercises";
 
     @BeforeEach
     void beforeEach() {
         dataHelper.deleteAll();
     }
-
-    private static final String URL = "/api/v1/exercises";
 
     @Test
     void postgresqlContainerTest() {
@@ -97,570 +88,300 @@ class ExerciseControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void createCustomExercisePositive() throws Exception {
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void createCustomExerciseTest_shouldReturnExerciseDtoAnd201Created() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                null);
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
-        BodyPart bodyPart2 = dataHelper.createBodyPart("Body Part 2");
-        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
-        HttpRef httpRef2 = dataHelper.createHttpRef("Ref 2", "http://ref2.com");
+        User user = dataHelper.createUser("one", role, null);
 
-        BodyPartRequestDto bodyPartRequestDto1 =
-                new BodyPartRequestDto.Builder().id(bodyPart1.getId()).build();
-        BodyPartRequestDto bodyPartRequestDto2 =
-                new BodyPartRequestDto.Builder().id(bodyPart2.getId()).build();
-        HttpRefRequestDto httpRefRequestDto1 =
-                new HttpRefRequestDto.Builder().id(httpRef1.getId()).build();
-        HttpRefRequestDto httpRefRequestDto2 =
-                new HttpRefRequestDto.Builder().id(httpRef2.getId()).build();
-        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
-                .title("Test title")
-                .description("Test desc")
-                .bodyParts(Set.of(bodyPartRequestDto1, bodyPartRequestDto2))
-                .httpRefs(Set.of(httpRefRequestDto1, httpRefRequestDto2))
-                .build();
+        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createBodyPart(id))
+                .toList();
 
+        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createHttpRef(id, false))
+                .toList();
+
+        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(1, bodyParts, httpRefs);
+
+        // When
         MvcResult mvcResult = mockMvc.perform(post(URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(createExerciseRequestDto)))
+                // Then
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(notNullValue())))
-                .andExpect(jsonPath("$.title", is(notNullValue())))
-                .andExpect(jsonPath("$.description", is(notNullValue())))
-                .andExpect(jsonPath("$.bodyParts", is(notNullValue())))
-                .andExpect(jsonPath("$.httpRefs", is(notNullValue())))
+                .andExpect(jsonPath("$.title", is(createExerciseRequestDto.getTitle())))
+                .andExpect(jsonPath("$.description", is(createExerciseRequestDto.getDescription())))
                 .andDo(print())
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        CreateExerciseResponseDto responseDto =
-                objectMapper.readValue(responseContent, CreateExerciseResponseDto.class);
+        ExerciseResponseDto exerciseResponseDto = objectMapper.readValue(responseContent, ExerciseResponseDto.class);
 
-        assertNotNull(responseDto.getId());
-        assertEquals(requestDto.getTitle(), responseDto.getTitle());
-        assertEquals(requestDto.getDescription(), responseDto.getDescription());
-        assertEquals(2, responseDto.getBodyParts().size());
-        assertEquals(2, responseDto.getHttpRefs().size());
+        assertEquals(
+                createExerciseRequestDto.getBodyParts().size(),
+                exerciseResponseDto.getBodyParts().size());
+        assertEquals(
+                createExerciseRequestDto.getHttpRefs().size(),
+                exerciseResponseDto.getHttpRefs().size());
 
-        List<BodyPartRequestDto> expectedBodyParts = requestDto.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartRequestDto::getId))
-                .toList();
-        List<BodyPartResponseDto> actualBodyParts = responseDto.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
-                .toList();
-        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
-        assertEquals(bodyPart1.getName(), actualBodyParts.get(0).getName());
-        assertEquals(expectedBodyParts.get(1).getId(), actualBodyParts.get(1).getId());
-        assertEquals(bodyPart2.getName(), actualBodyParts.get(1).getName());
+        assertThat(bodyParts)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exerciseResponseDto.getBodyParts());
 
-        List<HttpRefRequestDto> expectedHttpRefs = requestDto.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRefRequestDto::getId))
-                .toList();
-        List<HttpRefResponseDto> actualHttpRefs = responseDto.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
-                .toList();
-        assertEquals(expectedHttpRefs.get(0).getId(), actualHttpRefs.get(0).getId());
-        assertEquals(httpRef1.getName(), actualHttpRefs.get(0).getName());
-        assertEquals(httpRef1.getRef(), actualHttpRefs.get(0).getRef());
-        assertEquals(httpRef1.getDescription(), actualHttpRefs.get(0).getDescription());
-
-        assertEquals(expectedHttpRefs.get(1).getId(), actualHttpRefs.get(1).getId());
-        assertEquals(httpRef2.getName(), actualHttpRefs.get(1).getName());
-        assertEquals(httpRef2.getRef(), actualHttpRefs.get(1).getRef());
-        assertEquals(httpRef2.getDescription(), actualHttpRefs.get(1).getDescription());
+        assertThat(httpRefs)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exerciseResponseDto.getHttpRefs());
     }
 
     @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void createCustomExerciseNegativeNoHttpRefs() throws Exception {
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void createCustomExerciseTest_shouldReturnExerciseDtoAnd201Created_whenNoHttpRefsProvided() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                null);
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
-        BodyPart bodyPart2 = dataHelper.createBodyPart("Body Part 2");
+        User user = dataHelper.createUser("one", role, null);
 
-        BodyPartRequestDto bodyPartRequestDto1 =
-                new BodyPartRequestDto.Builder().id(bodyPart1.getId()).build();
-        BodyPartRequestDto bodyPartRequestDto2 =
-                new BodyPartRequestDto.Builder().id(bodyPart2.getId()).build();
+        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createBodyPart(id))
+                .toList();
 
-        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
-                .title("Test title")
-                .description("Test desc")
-                .bodyParts(Set.of(bodyPartRequestDto1, bodyPartRequestDto2))
-                .build();
+        CreateExerciseRequestDto createExerciseRequestDto =
+                dataUtil.createExerciseRequestDto(1, bodyParts, Collections.emptyList());
 
+        // When
         MvcResult mvcResult = mockMvc.perform(post(URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(createExerciseRequestDto)))
+                // Then
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(notNullValue())))
-                .andExpect(jsonPath("$.title", is(notNullValue())))
-                .andExpect(jsonPath("$.description", is(notNullValue())))
-                .andExpect(jsonPath("$.bodyParts", is(notNullValue())))
-                .andExpect(jsonPath("$.httpRefs", is(nullValue())))
+                .andExpect(jsonPath("$.title", is(createExerciseRequestDto.getTitle())))
+                .andExpect(jsonPath("$.description", is(createExerciseRequestDto.getDescription())))
                 .andDo(print())
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        CreateExerciseResponseDto responseDto =
-                objectMapper.readValue(responseContent, CreateExerciseResponseDto.class);
-        assertEquals(2, responseDto.getBodyParts().size());
+        ExerciseResponseDto exerciseResponseDto = objectMapper.readValue(responseContent, ExerciseResponseDto.class);
 
-        List<BodyPartRequestDto> expectedBodyParts = requestDto.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartRequestDto::getId))
+        assertEquals(
+                createExerciseRequestDto.getBodyParts().size(),
+                exerciseResponseDto.getBodyParts().size());
+        assertTrue(createExerciseRequestDto.getHttpRefs().isEmpty());
+
+        assertThat(bodyParts)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exerciseResponseDto.getBodyParts());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void createCustomExerciseTest_shouldReturnErrorMessageAnd400BadRequest_whenNoBodyPartsProvided() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser("one", role, null);
+
+        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
-        List<BodyPartResponseDto> actualBodyParts = responseDto.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+
+        CreateExerciseRequestDto createExerciseRequestDto =
+                dataUtil.createExerciseRequestDto(1, Collections.emptyList(), httpRefs);
+
+        // When
+        mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createExerciseRequestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("Invalid nested object")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void createCustomExerciseTest_shouldReturnErrorMessageAnd400BadRequest_whenWrongBodyPartIdsProvided()
+            throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser("one", role, null);
+
+        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createBodyPart(id))
                 .toList();
-        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
-        assertEquals(bodyPart1.getName(), actualBodyParts.get(0).getName());
-        assertEquals(expectedBodyParts.get(1).getId(), actualBodyParts.get(1).getId());
-        assertEquals(bodyPart2.getName(), actualBodyParts.get(1).getName());
-    }
 
-    @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void createCustomExerciseNegativeNoBodyParts() throws Exception {
-        Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                null);
-        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
-        HttpRef httpRef2 = dataHelper.createHttpRef("Ref 2", "http://ref2.com");
+        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createHttpRef(id, false))
+                .toList();
 
-        HttpRefRequestDto httpRefRequestDto1 =
-                new HttpRefRequestDto.Builder().id(httpRef1.getId()).build();
-        HttpRefRequestDto httpRefRequestDto2 =
-                new HttpRefRequestDto.Builder().id(httpRef2.getId()).build();
-        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
-                .title("Test title")
-                .description("Test desc")
-                .httpRefs(Set.of(httpRefRequestDto1, httpRefRequestDto2))
-                .build();
+        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(1, bodyParts, httpRefs);
+        createExerciseRequestDto.getBodyParts().get(0).setId(1000L);
+        createExerciseRequestDto.getBodyParts().get(0).setId(1001L);
 
+        // When
         mockMvc.perform(post(URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(createExerciseRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Invalid nested object")))
                 .andDo(print());
     }
 
     @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void createCustomExerciseNegativeWrongBodyPartId() throws Exception {
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void createCustomExerciseTest_shouldReturnErrorMessageAnd400BadRequest_whenWrongHttpRefIdsProvided()
+            throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                null);
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
-        long wrongBodyPartId = 1000L;
-        BodyPartRequestDto bodyPartRequestDto1 =
-                new BodyPartRequestDto.Builder().id(bodyPart1.getId()).build();
-        BodyPartRequestDto bodyPartRequestDto2 =
-                new BodyPartRequestDto.Builder().id(wrongBodyPartId).build();
+        User user = dataHelper.createUser("one", role, null);
 
-        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
-        HttpRef httpRef2 = dataHelper.createHttpRef("Ref 2", "http://ref2.com");
-        HttpRefRequestDto httpRefRequestDto1 =
-                new HttpRefRequestDto.Builder().id(httpRef1.getId()).build();
-        HttpRefRequestDto httpRefRequestDto2 =
-                new HttpRefRequestDto.Builder().id(httpRef2.getId()).build();
+        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createBodyPart(id))
+                .toList();
 
-        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
-                .title("Test title")
-                .description("Test desc")
-                .bodyParts(Set.of(bodyPartRequestDto1, bodyPartRequestDto2))
-                .httpRefs(Set.of(httpRefRequestDto1, httpRefRequestDto2))
-                .build();
+        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createHttpRef(id, false))
+                .toList();
 
+        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(1, bodyParts, httpRefs);
+        createExerciseRequestDto.getHttpRefs().get(0).setId(1000L);
+        createExerciseRequestDto.getHttpRefs().get(0).setId(1001L);
+
+        // When
         mockMvc.perform(post(URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
+                        .content(objectMapper.writeValueAsString(createExerciseRequestDto)))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Invalid nested object")))
                 .andDo(print());
     }
 
     @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void createCustomExerciseNegativeHttpRefId() throws Exception {
-        Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                null);
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
-        BodyPart bodyPart2 = dataHelper.createBodyPart("Body Part 2");
-        BodyPartRequestDto bodyPartRequestDto1 =
-                new BodyPartRequestDto.Builder().id(bodyPart1.getId()).build();
-        BodyPartRequestDto bodyPartRequestDto2 =
-                new BodyPartRequestDto.Builder().id(bodyPart2.getId()).build();
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getCustomExercisesTest_shouldReturnListOfExercisesAnd200Ok() throws Exception {
+        // Given
+        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createBodyPart(id))
+                .toList();
 
-        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
-        long wrongHttpRefId = 1000L;
-        HttpRefRequestDto httpRefRequestDto1 =
-                new HttpRefRequestDto.Builder().id(httpRef1.getId()).build();
-        HttpRefRequestDto httpRefRequestDto2 =
-                new HttpRefRequestDto.Builder().id(wrongHttpRefId).build();
+        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createHttpRef(id, false))
+                .toList();
 
-        CreateExerciseRequestDto requestDto = new CreateExerciseRequestDto.Builder()
-                .title("Test title")
-                .description("Test desc")
-                .bodyParts(Set.of(bodyPartRequestDto1, bodyPartRequestDto2))
-                .httpRefs(Set.of(httpRefRequestDto1, httpRefRequestDto2))
-                .build();
+        List<Exercise> defaultExercises = IntStream.rangeClosed(1, 3)
+                .mapToObj(id -> dataHelper.createExercise(id, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .toList();
 
-        mockMvc.perform(post(URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Invalid nested object")))
-                .andDo(print());
-    }
+        List<Exercise> customExercises = IntStream.rangeClosed(4, 6)
+                .mapToObj(id -> dataHelper.createExercise(id, true, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .toList();
 
-    @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void getExercises_DefaultAndCustom() throws Exception {
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
-        BodyPart bodyPart2 = dataHelper.createBodyPart("Body Part 2");
-        BodyPart bodyPart3 = dataHelper.createBodyPart("Body Part 3");
-        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
-        HttpRef httpRef2 = dataHelper.createHttpRef("Ref 2", "http://ref2.com");
-        HttpRef httpRef3 = dataHelper.createHttpRef("Ref 3", "http://ref1.com", "Desc 3");
-        // Default exercises
-        Exercise exercise1 =
-                dataHelper.createExercise("Exercise 1", "Description 1", false, Set.of(bodyPart1), Set.of(httpRef1));
-        Exercise exercise2 =
-                dataHelper.createExercise("Exercise 2", "Description 2", false, Set.of(bodyPart2), Set.of(httpRef2));
-        // Custom exercises
-        Exercise exercise3 = dataHelper.createExercise(
-                "Exercise 3", "Description 3", true, Set.of(bodyPart1, bodyPart2), Set.of(httpRef1, httpRef2));
-        Exercise exercise4 =
-                dataHelper.createExercise("Exercise 4", "Description 4", true, Set.of(bodyPart3), Set.of(httpRef3));
-        Exercise exercise5 =
-                dataHelper.createExercise("Exercise 5", "Description 5", true, Set.of(bodyPart3), Set.of(httpRef3));
+        List<Exercise> testUserCustomExercises = List.of(customExercises.get(0), customExercises.get(1));
 
         Role role = dataHelper.createRole("ROLE_USER");
-        User user1 = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
+        // Test user with 2 default and 2 custom exercises
+        User testUser = dataHelper.createUser(
+                "one",
                 role,
-                Set.of(exercise3, exercise4));
-        User user2 = dataHelper.createUser(
-                "Test Full Name",
-                "test-username-two",
-                "test2@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                Set.of(exercise5));
+                Set.of(
+                        defaultExercises.get(0),
+                        defaultExercises.get(1),
+                        testUserCustomExercises.get(0),
+                        testUserCustomExercises.get(1)));
 
+        User otherUser = dataHelper.createUser("two", role, Set.of(defaultExercises.get(2), customExercises.get(2)));
+
+        // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.exercises", is(notNullValue())))
                 .andDo(print())
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        GetExercisesResponseDto responseDto = objectMapper.readValue(responseContent, GetExercisesResponseDto.class);
-        assertEquals(4, responseDto.getExercises().size());
+        List<ExerciseResponseDto> responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<List<ExerciseResponseDto>>() {});
 
-        // Exercise 1 (default)
-        ExerciseResponseDto actualExercise = responseDto.getExercises().get(0);
-        Exercise expectedExercise = exercise1;
-        assertEquals(expectedExercise.getId(), actualExercise.getId());
-        assertEquals(expectedExercise.getTitle(), actualExercise.getTitle());
-        assertEquals(expectedExercise.getDescription(), actualExercise.getDescription());
-        assertEquals(
-                expectedExercise.getBodyParts().size(),
-                actualExercise.getBodyParts().size());
-        assertEquals(
-                expectedExercise.getHttpRefs().size(),
-                actualExercise.getHttpRefs().size());
+        assertEquals(2, responseDto.size());
 
-        List<BodyPart> expectedBodyParts = expectedExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPart::getId))
-                .toList();
-        List<BodyPartResponseDto> actualBodyParts = actualExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
-                .toList();
-        assertEquals(expectedBodyParts.size(), actualBodyParts.size());
-        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
-        assertEquals(expectedBodyParts.get(0).getName(), actualBodyParts.get(0).getName());
+        assertThat(testUserCustomExercises)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("isCustom", "bodyParts", "httpRefs", "users")
+                .isEqualTo(responseDto);
 
-        List<HttpRef> expectedHttpRefs = expectedExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRef::getId))
-                .toList();
-        List<HttpRefResponseDto> actualHttpRefs = actualExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
-                .toList();
-        assertEquals(expectedHttpRefs.size(), actualHttpRefs.size());
-        assertEquals(expectedHttpRefs.get(0).getId(), actualHttpRefs.get(0).getId());
-        assertEquals(expectedHttpRefs.get(0).getName(), actualHttpRefs.get(0).getName());
-        assertEquals(
-                expectedHttpRefs.get(0).getDescription(), actualHttpRefs.get(0).getDescription());
+        IntStream.range(0, testUserCustomExercises.size()).forEach(id -> {
+            List<BodyPart> bodyParts_ = testUserCustomExercises.get(id).getBodyParts().stream()
+                    .sorted(Comparator.comparingLong(BodyPart::getId))
+                    .toList();
 
-        // Exercise 2 (default)
-        actualExercise = responseDto.getExercises().get(1);
-        expectedExercise = exercise2;
-        assertEquals(expectedExercise.getId(), actualExercise.getId());
-        assertEquals(expectedExercise.getTitle(), actualExercise.getTitle());
-        assertEquals(expectedExercise.getDescription(), actualExercise.getDescription());
-        assertEquals(
-                expectedExercise.getBodyParts().size(),
-                actualExercise.getBodyParts().size());
-        assertEquals(
-                expectedExercise.getHttpRefs().size(),
-                actualExercise.getHttpRefs().size());
+            assertThat(bodyParts_)
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                    .isEqualTo(responseDto.get(id).getBodyParts());
 
-        expectedBodyParts = expectedExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPart::getId))
-                .toList();
-        actualBodyParts = actualExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
-                .toList();
-        assertEquals(expectedBodyParts.size(), actualBodyParts.size());
-        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
-        assertEquals(expectedBodyParts.get(0).getName(), actualBodyParts.get(0).getName());
+            List<HttpRef> httpRefs_ = testUserCustomExercises.get(id).getHttpRefs().stream()
+                    .sorted(Comparator.comparingLong(HttpRef::getId))
+                    .toList();
 
-        expectedHttpRefs = expectedExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRef::getId))
-                .toList();
-        actualHttpRefs = actualExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
-                .toList();
-        assertEquals(expectedHttpRefs.size(), actualHttpRefs.size());
-        assertEquals(expectedHttpRefs.get(0).getId(), actualHttpRefs.get(0).getId());
-        assertEquals(expectedHttpRefs.get(0).getName(), actualHttpRefs.get(0).getName());
-        assertEquals(
-                expectedHttpRefs.get(0).getDescription(), actualHttpRefs.get(0).getDescription());
-
-        // Exercise 3 (custom)
-        actualExercise = responseDto.getExercises().get(2);
-        expectedExercise = exercise3;
-        assertEquals(expectedExercise.getId(), actualExercise.getId());
-        assertEquals(expectedExercise.getTitle(), actualExercise.getTitle());
-        assertEquals(expectedExercise.getDescription(), actualExercise.getDescription());
-        assertEquals(
-                expectedExercise.getBodyParts().size(),
-                actualExercise.getBodyParts().size());
-        assertEquals(
-                expectedExercise.getHttpRefs().size(),
-                actualExercise.getHttpRefs().size());
-
-        expectedBodyParts = expectedExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPart::getId))
-                .toList();
-        actualBodyParts = actualExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
-                .toList();
-        assertEquals(expectedBodyParts.size(), actualBodyParts.size());
-        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
-        assertEquals(expectedBodyParts.get(0).getName(), actualBodyParts.get(0).getName());
-        assertEquals(expectedBodyParts.get(1).getId(), actualBodyParts.get(1).getId());
-        assertEquals(expectedBodyParts.get(1).getName(), actualBodyParts.get(1).getName());
-
-        expectedHttpRefs = expectedExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRef::getId))
-                .toList();
-        actualHttpRefs = actualExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
-                .toList();
-        assertEquals(expectedHttpRefs.size(), actualHttpRefs.size());
-        assertEquals(expectedHttpRefs.get(0).getId(), actualHttpRefs.get(0).getId());
-        assertEquals(expectedHttpRefs.get(0).getName(), actualHttpRefs.get(0).getName());
-        assertEquals(
-                expectedHttpRefs.get(0).getDescription(), actualHttpRefs.get(0).getDescription());
-        assertEquals(expectedHttpRefs.get(1).getId(), actualHttpRefs.get(1).getId());
-        assertEquals(expectedHttpRefs.get(1).getName(), actualHttpRefs.get(1).getName());
-        assertEquals(
-                expectedHttpRefs.get(1).getDescription(), actualHttpRefs.get(1).getDescription());
-
-        // Exercise 4 (custom)
-        actualExercise = responseDto.getExercises().get(3);
-        expectedExercise = exercise4;
-        assertEquals(expectedExercise.getId(), actualExercise.getId());
-        assertEquals(expectedExercise.getTitle(), actualExercise.getTitle());
-        assertEquals(expectedExercise.getDescription(), actualExercise.getDescription());
-        assertEquals(
-                expectedExercise.getBodyParts().size(),
-                actualExercise.getBodyParts().size());
-        assertEquals(
-                expectedExercise.getHttpRefs().size(),
-                actualExercise.getHttpRefs().size());
-
-        expectedBodyParts = expectedExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPart::getId))
-                .toList();
-        actualBodyParts = actualExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
-                .toList();
-        assertEquals(expectedBodyParts.size(), actualBodyParts.size());
-        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
-        assertEquals(expectedBodyParts.get(0).getName(), actualBodyParts.get(0).getName());
-
-        expectedHttpRefs = expectedExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRef::getId))
-                .toList();
-        actualHttpRefs = actualExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
-                .toList();
-        assertEquals(expectedHttpRefs.size(), actualHttpRefs.size());
-        assertEquals(expectedHttpRefs.get(0).getId(), actualHttpRefs.get(0).getId());
-        assertEquals(expectedHttpRefs.get(0).getName(), actualHttpRefs.get(0).getName());
-        assertEquals(
-                expectedHttpRefs.get(0).getDescription(), actualHttpRefs.get(0).getDescription());
+            assertThat(httpRefs_)
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                    .isEqualTo(responseDto.get(id).getHttpRefs());
+        });
     }
 
     @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void getExercises_CustomOnly() throws Exception {
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Body Part 1");
-        BodyPart bodyPart2 = dataHelper.createBodyPart("Body Part 2");
-        BodyPart bodyPart3 = dataHelper.createBodyPart("Body Part 3");
-        HttpRef httpRef1 = dataHelper.createHttpRef("Ref 1", "http://ref1.com", "Desc 1");
-        HttpRef httpRef2 = dataHelper.createHttpRef("Ref 2", "http://ref2.com");
-        HttpRef httpRef3 = dataHelper.createHttpRef("Ref 3", "http://ref1.com", "Desc 3");
-        // Default exercises
-        Exercise exercise1 =
-                dataHelper.createExercise("Exercise 1", "Description 1", false, Set.of(bodyPart1), Set.of(httpRef1));
-        Exercise exercise2 =
-                dataHelper.createExercise("Exercise 2", "Description 2", false, Set.of(bodyPart2), Set.of(httpRef2));
-        // Custom exercises
-        Exercise exercise3 = dataHelper.createExercise(
-                "Exercise 3", "Description 3", true, Set.of(bodyPart1, bodyPart2), Set.of(httpRef1, httpRef2));
-        Exercise exercise4 =
-                dataHelper.createExercise("Exercise 4", "Description 4", true, Set.of(bodyPart3), Set.of(httpRef3));
-        Exercise exercise5 =
-                dataHelper.createExercise("Exercise 5", "Description 5", true, Set.of(bodyPart3), Set.of(httpRef3));
+    void getDefaultExercisesTest_shouldReturnListOfExercisesAnd200Ok() throws Exception {
+        // Given
+        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createBodyPart(id))
+                .toList();
 
-        Role role = dataHelper.createRole("ROLE_USER");
-        User user1 = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                Set.of(exercise3, exercise4));
-        User user2 = dataHelper.createUser(
-                "Test Full Name",
-                "test-username-two",
-                "test2@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                Set.of(exercise5));
+        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createHttpRef(id, false))
+                .toList();
 
-        String postfix = "?isCustomOnly=true";
+        List<Exercise> defaultExercises = IntStream.rangeClosed(1, 3)
+                .mapToObj(id -> dataHelper.createExercise(id, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .toList();
+
+        List<Exercise> customExercises = IntStream.rangeClosed(4, 6)
+                .mapToObj(id -> dataHelper.createExercise(id, true, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .toList();
+
+        // When
+        String postfix = "/default";
         MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.exercises", is(notNullValue())))
                 .andDo(print())
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        GetExercisesResponseDto responseDto = objectMapper.readValue(responseContent, GetExercisesResponseDto.class);
-        assertEquals(2, responseDto.getExercises().size());
+        List<ExerciseResponseDto> responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<List<ExerciseResponseDto>>() {});
 
-        // Exercise 3 (custom)
-        ExerciseResponseDto actualExercise = responseDto.getExercises().get(0);
-        Exercise expectedExercise = exercise3;
-        assertEquals(expectedExercise.getId(), actualExercise.getId());
-        assertEquals(expectedExercise.getTitle(), actualExercise.getTitle());
-        assertEquals(expectedExercise.getDescription(), actualExercise.getDescription());
-        assertEquals(
-                expectedExercise.getBodyParts().size(),
-                actualExercise.getBodyParts().size());
-        assertEquals(
-                expectedExercise.getHttpRefs().size(),
-                actualExercise.getHttpRefs().size());
+        assertEquals(3, responseDto.size());
 
-        List<BodyPart> expectedBodyParts = expectedExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPart::getId))
-                .toList();
-        List<BodyPartResponseDto> actualBodyParts = actualExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
-                .toList();
-        assertEquals(expectedBodyParts.size(), actualBodyParts.size());
-        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
-        assertEquals(expectedBodyParts.get(0).getName(), actualBodyParts.get(0).getName());
-        assertEquals(expectedBodyParts.get(1).getId(), actualBodyParts.get(1).getId());
-        assertEquals(expectedBodyParts.get(1).getName(), actualBodyParts.get(1).getName());
+        assertThat(defaultExercises)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("isCustom", "bodyParts", "httpRefs", "users")
+                .isEqualTo(responseDto);
 
-        List<HttpRef> expectedHttpRefs = expectedExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRef::getId))
-                .toList();
-        List<HttpRefResponseDto> actualHttpRefs = actualExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
-                .toList();
-        assertEquals(expectedHttpRefs.size(), actualHttpRefs.size());
-        assertEquals(expectedHttpRefs.get(0).getId(), actualHttpRefs.get(0).getId());
-        assertEquals(expectedHttpRefs.get(0).getName(), actualHttpRefs.get(0).getName());
-        assertEquals(
-                expectedHttpRefs.get(0).getDescription(), actualHttpRefs.get(0).getDescription());
-        assertEquals(expectedHttpRefs.get(1).getId(), actualHttpRefs.get(1).getId());
-        assertEquals(expectedHttpRefs.get(1).getName(), actualHttpRefs.get(1).getName());
-        assertEquals(
-                expectedHttpRefs.get(1).getDescription(), actualHttpRefs.get(1).getDescription());
+        IntStream.range(0, defaultExercises.size()).forEach(id -> {
+            List<BodyPart> bodyParts_ = defaultExercises.get(id).getBodyParts().stream()
+                    .sorted(Comparator.comparingLong(BodyPart::getId))
+                    .toList();
 
-        // Exercise 4 (custom)
-        actualExercise = responseDto.getExercises().get(1);
-        expectedExercise = exercise4;
-        assertEquals(expectedExercise.getId(), actualExercise.getId());
-        assertEquals(expectedExercise.getTitle(), actualExercise.getTitle());
-        assertEquals(expectedExercise.getDescription(), actualExercise.getDescription());
-        assertEquals(
-                expectedExercise.getBodyParts().size(),
-                actualExercise.getBodyParts().size());
-        assertEquals(
-                expectedExercise.getHttpRefs().size(),
-                actualExercise.getHttpRefs().size());
+            assertThat(bodyParts_)
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                    .isEqualTo(responseDto.get(id).getBodyParts());
 
-        expectedBodyParts = expectedExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPart::getId))
-                .toList();
-        actualBodyParts = actualExercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
-                .toList();
-        assertEquals(expectedBodyParts.size(), actualBodyParts.size());
-        assertEquals(expectedBodyParts.get(0).getId(), actualBodyParts.get(0).getId());
-        assertEquals(expectedBodyParts.get(0).getName(), actualBodyParts.get(0).getName());
+            List<HttpRef> httpRefs_ = defaultExercises.get(id).getHttpRefs().stream()
+                    .sorted(Comparator.comparingLong(HttpRef::getId))
+                    .toList();
 
-        expectedHttpRefs = expectedExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRef::getId))
-                .toList();
-        actualHttpRefs = actualExercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
-                .toList();
-        assertEquals(expectedHttpRefs.size(), actualHttpRefs.size());
-        assertEquals(expectedHttpRefs.get(0).getId(), actualHttpRefs.get(0).getId());
-        assertEquals(expectedHttpRefs.get(0).getName(), actualHttpRefs.get(0).getName());
-        assertEquals(
-                expectedHttpRefs.get(0).getDescription(), actualHttpRefs.get(0).getDescription());
+            assertThat(httpRefs_)
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                    .isEqualTo(responseDto.get(id).getHttpRefs());
+        });
     }
 }

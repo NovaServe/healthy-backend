@@ -13,16 +13,26 @@ class UsernameValidatorTest {
     UsernameValidator usernameValidator;
 
     @Test
-    void validation_Positive() {
+    void validationTest_shouldReturnTrue() {
+        // Given
         String input = "test-username";
+
+        // When
         boolean actual = usernameValidator.validation(input);
+
+        // Then
         assertTrue(actual);
     }
 
     @Test
-    void validation_Negative() {
+    void validationTest_shouldReturnFalse() {
+        // Given
         String input = "test-usernam e";
+
+        // When
         boolean actual = usernameValidator.validation(input);
+
+        // Then
         assertFalse(actual);
     }
 }

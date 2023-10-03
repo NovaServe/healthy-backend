@@ -7,27 +7,32 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/**
- * @see FullnameValidator
- * @see FullnameValidation
- * @see healthy.lifestyle.backend.users.dto.SignupRequestDto
- */
 @ExtendWith(MockitoExtension.class)
 class FullnameValidatorTest {
     @InjectMocks
     FullnameValidator fullnameValidator;
 
     @Test
-    void validation_Positive() {
+    void validationTest_shouldReturnTrue() {
+        // Given
         String input = "Test Full Name";
+
+        // When
         boolean actual = fullnameValidator.validation(input);
+
+        // Then
         assertTrue(actual);
     }
 
     @Test
-    void validation_Negative() {
+    void validationTest_shouldReturnFalse() {
+        // Given
         String input = "Test Full Name +";
+
+        // When
         boolean actual = fullnameValidator.validation(input);
+
+        // Then
         assertFalse(actual);
     }
 }

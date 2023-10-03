@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import healthy.lifestyle.backend.data.DataUtil;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupResponseDto;
 import healthy.lifestyle.backend.users.model.Role;
@@ -18,14 +19,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-/**
- * @see UserServiceImpl
- */
 @ExtendWith(MockitoExtension.class)
-class UserServiceImplTest {
+class UserServiceTest {
     @InjectMocks
     UserServiceImpl userService;
 
@@ -36,19 +33,15 @@ class UserServiceImplTest {
     private RoleRepository roleRepository;
 
     @Spy
-    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private PasswordEncoder passwordEncoder;
+
+    @Spy
+    private DataUtil dataUtil;
 
     @Test
-    void createUser_Positive() {
-        // Data
-        SignupRequestDto requestDto = new SignupRequestDto.Builder()
-                .username("test-username")
-                .email("test@email.com")
-                .password(passwordEncoder.encode("test-password"))
-                .fullName("Test Full Name")
-                .build();
-
-        // Stub
+    void createUserTest_shouldReturnUserDto() {
+        // Given
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
 
@@ -62,8 +55,10 @@ class UserServiceImplTest {
             return saved;
         });
 
-        // Test
-        SignupResponseDto responseDto = userService.createUser(requestDto);
-        assertNotNull(responseDto);
+        // When
+        SignupResponseDto responseDto = userService.createUser(signupRequestDto);
+
+        // Then
+        assertEquals(1L, responseDto.getId());
     }
 }

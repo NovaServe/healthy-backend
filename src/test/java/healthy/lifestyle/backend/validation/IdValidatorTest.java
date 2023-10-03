@@ -13,22 +13,38 @@ class IdValidatorTest {
     IdValidator idValidator;
 
     @Test
-    void validationPositive() {
+    void validationTest_shouldReturnTrue() {
+        // Given
         long id = 0;
+
+        // When
         boolean validated = idValidator.validation(id);
+
+        // Then
         assertTrue(validated);
     }
 
     @Test
-    void validationNegative() {
+    void validationTest_shouldReturnFalse() {
+        // Given
         long id = -1;
+
+        // When
         boolean validated = idValidator.validation(id);
+
+        // Then
         assertFalse(validated);
     }
 
     @Test
-    void validationNegativeNull() {
-        boolean validated = idValidator.validation(null);
+    void validationTest_shouldReturnFalse_whenNullProvided() {
+        // Given
+        Long id = null;
+
+        // When
+        boolean validated = idValidator.validation(id);
+
+        // Then
         assertFalse(validated);
     }
 }

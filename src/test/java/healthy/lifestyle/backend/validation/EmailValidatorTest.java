@@ -13,23 +13,38 @@ class EmailValidatorTest {
     EmailValidator emailValidator;
 
     @Test
-    void validation_Positive() {
+    void validationTest_shouldReturnTrue() {
+        // Given
         String input = "test@email.com";
+
+        // When
         boolean actual = emailValidator.validation(input);
+
+        // Then
         assertTrue(actual);
     }
 
     @Test
-    void validation_Negative() {
+    void validationTest_shouldReturnFalse() {
+        // Given
         String input = "tes$t@email.com";
+
+        // When
         boolean actual = emailValidator.validation(input);
+
+        // Then
         assertFalse(actual);
     }
 
     @Test
-    void validation_Negative_Whitespace() {
+    void validationTest_shouldReturnFalse_whenWhitespace() {
+        // Given
         String input = "tes t@email.com";
+
+        // When
         boolean actual = emailValidator.validation(input);
+
+        // Then
         assertFalse(actual);
     }
 }

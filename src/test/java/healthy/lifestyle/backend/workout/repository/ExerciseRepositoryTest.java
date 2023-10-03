@@ -7,10 +7,9 @@ import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
-import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.*;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,28 +23,17 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * @see ExerciseRepository
- */
 @SpringBootTest
 @Testcontainers
 @Import(DataConfiguration.class)
 class ExerciseRepositoryTest {
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
-            (PostgreSQLContainer<?>) new PostgreSQLContainer(DockerImageName.parse("postgres:12.15"))
-                    .withDatabaseName("test_db")
-                    .withUsername("test_user")
-                    .withPassword("test_password")
-                    .withReuse(true);
+            new PostgreSQLContainer<>(DockerImageName.parse("postgres:12.15"));
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
-        registry.add(
-                "spring.datasource.url",
-                () -> String.format(
-                        "jdbc:postgresql://localhost:%s/%s",
-                        postgresqlContainer.getFirstMappedPort(), postgresqlContainer.getDatabaseName()));
+        registry.add("spring.datasource.url", postgresqlContainer::getJdbcUrl);
         registry.add("spring.datasource.username", postgresqlContainer::getUsername);
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
     }
@@ -67,173 +55,128 @@ class ExerciseRepositoryTest {
     }
 
     @Test
-    void findByTitleAndUserId_Positive() {
-        // Data
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Arms");
-        BodyPart bodyPart2 = dataHelper.createBodyPart("Triceps");
-
-        HttpRef httpRef1 = dataHelper.createHttpRef("Media1", "https://ref1.com", "Description1");
-        HttpRef httpRef2 = dataHelper.createHttpRef("Media2", "https://ref2.com", "Description2");
-        HttpRef httpRef3 = dataHelper.createHttpRef("Media3", "https://ref3.com");
-
-        Exercise exercise = dataHelper.createExercise(
-                "Narrow push-ups",
-                "Train triceps",
-                true,
-                Set.of(bodyPart1, bodyPart2),
-                Set.of(httpRef1, httpRef2, httpRef3));
-
-        bodyPart1.setExercises(Set.of(exercise));
-        bodyPart2.setExercises(Set.of(exercise));
-
+    void findCustomByTitleAndUserIdTest_shouldReturnCustomExercise() {
+        // Given
+        Exercise exercise = dataHelper.createExercise(1, true, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
-        User user =
-                dataHelper.createUser("my-username", "My User", "user@email.com", "password", role, Set.of(exercise));
+        User user = dataHelper.createUser("one", role, Set.of(exercise));
         dataHelper.exerciseAddUsers(exercise, Set.of(user));
 
-        // Test
-        Optional<Exercise> actualOpt = exerciseRepository.findByTitleAndUserId(exercise.getTitle(), user.getId());
-        assertTrue(actualOpt.isPresent());
-        Exercise actual = actualOpt.get();
-        assertEquals(exercise.getTitle(), actual.getTitle());
-        assertEquals(exercise.getDescription(), actual.getDescription());
-        assertEquals(exercise.getIsCustom(), actual.getIsCustom());
+        Exercise otherExercise = dataHelper.createExercise(2, true, null, null);
+        User otherUser = dataHelper.createUser("two", role, Set.of(otherExercise));
+        dataHelper.exerciseAddUsers(otherExercise, Set.of(otherUser));
 
-        assertEquals(exercise.getBodyParts().size(), actual.getBodyParts().size());
-        List<BodyPart> initialBodyParts = Arrays.asList(bodyPart1, bodyPart2);
-        initialBodyParts.sort(Comparator.comparing(BodyPart::getName));
+        // When
+        Optional<Exercise> actualExerciseOpt =
+                exerciseRepository.findCustomByTitleAndUserId(exercise.getTitle(), user.getId());
 
-        List<BodyPart> actualBodyParts = new ArrayList<>(actual.getBodyParts());
-        actualBodyParts.sort(Comparator.comparing(BodyPart::getName));
-
-        for (int i = 0; i < initialBodyParts.size(); i++) {
-            assertEquals(
-                    initialBodyParts.get(i).getName(), actualBodyParts.get(i).getName());
-        }
-
-        assertEquals(exercise.getHttpRefs().size(), actual.getHttpRefs().size());
-        List<HttpRef> initialHttpRefs = Arrays.asList(httpRef1, httpRef2, httpRef3);
-        initialHttpRefs.sort(Comparator.comparing(HttpRef::getName));
-
-        List<HttpRef> actualHttpRefs = new ArrayList<>(actual.getHttpRefs());
-        actualHttpRefs.sort(Comparator.comparing(HttpRef::getName));
-
-        for (int i = 0; i < initialHttpRefs.size(); i++) {
-            assertEquals(initialHttpRefs.get(i).getName(), actualHttpRefs.get(i).getName());
-            assertEquals(
-                    initialHttpRefs.get(i).getDescription(),
-                    actualHttpRefs.get(i).getDescription());
-            assertEquals(initialHttpRefs.get(i).getRef(), actualHttpRefs.get(i).getRef());
-        }
-
-        assertEquals(exercise.getUsers().size(), actual.getUsers().size());
+        // Then
+        assertTrue(actualExerciseOpt.isPresent());
+        Exercise actualExercise = actualExerciseOpt.get();
+        assertEquals(exercise.getTitle(), actualExercise.getTitle());
+        assertEquals(exercise.getDescription(), actualExercise.getDescription());
+        assertEquals(exercise.isCustom(), actualExercise.isCustom());
     }
 
     @Test
-    void findByTitleAndUserId_Negative_WrongTitle() {
-        // Test Data
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Arms");
-        BodyPart bodyPart2 = dataHelper.createBodyPart("Triceps");
-
-        HttpRef httpRef1 = dataHelper.createHttpRef("Media1", "https://ref1.com", "Description1");
-        HttpRef httpRef2 = dataHelper.createHttpRef("Media2", "https://ref2.com", "Description2");
-        HttpRef httpRef3 = dataHelper.createHttpRef("Media3", "https://ref3.com");
-
-        Exercise exercise = dataHelper.createExercise(
-                "Narrow push-ups",
-                "Train triceps",
-                true,
-                Set.of(bodyPart1, bodyPart2),
-                Set.of(httpRef1, httpRef2, httpRef3));
-
+    void findCustomByTitleAndUserId_shouldReturnOptionalEmpty_whenWrongTitleProvided() {
+        // Given
+        Exercise exercise = dataHelper.createExercise(1, true, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
-        User user =
-                dataHelper.createUser("my-username", "My User", "user@email.com", "password", role, Set.of(exercise));
+        User user = dataHelper.createUser("one", role, Set.of(exercise));
         dataHelper.exerciseAddUsers(exercise, Set.of(user));
 
-        // Test
-        Optional<Exercise> actualOpt = exerciseRepository.findByTitleAndUserId("Wrong title", user.getId());
+        // When
+        Optional<Exercise> actualOpt = exerciseRepository.findCustomByTitleAndUserId("Wrong title", user.getId());
+
+        // Then
         assertTrue(actualOpt.isEmpty());
     }
 
     @Test
-    void findByTitleAndUserId_Negative_WrongUserId() {
-        // Test Data
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Arms");
-        BodyPart bodyPart2 = dataHelper.createBodyPart("Triceps");
-
-        HttpRef httpRef1 = dataHelper.createHttpRef("Media1", "https://ref1.com", "Description1");
-        HttpRef httpRef2 = dataHelper.createHttpRef("Media2", "https://ref2.com", "Description2");
-        HttpRef httpRef3 = dataHelper.createHttpRef("Media3", "https://ref3.com");
-
-        Exercise exercise = dataHelper.createExercise(
-                "Narrow push-ups",
-                "Train triceps",
-                true,
-                Set.of(bodyPart1, bodyPart2),
-                Set.of(httpRef1, httpRef2, httpRef3));
-
+    void findCustomByTitleAndUserId_shouldReturnOptionalEmpty_whenWrongUserIdProvided() {
+        // Given
+        Exercise exercise = dataHelper.createExercise(1, true, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
-        User user =
-                dataHelper.createUser("my-username", "My User", "user@email.com", "password", role, Set.of(exercise));
+        User user = dataHelper.createUser("one", role, Set.of(exercise));
         dataHelper.exerciseAddUsers(exercise, Set.of(user));
+        long wrongUserId = 9999L;
 
-        // Test
-        Optional<Exercise> actualOpt = exerciseRepository.findByTitleAndUserId(exercise.getTitle(), 111L);
+        // When
+        Optional<Exercise> actualOpt = exerciseRepository.findCustomByTitleAndUserId(exercise.getTitle(), wrongUserId);
+
+        // Then
         assertTrue(actualOpt.isEmpty());
     }
 
     @Test
-    void findByTitleAndUserId_Negative_NotCustom() {
-        // Test Data
-        BodyPart bodyPart1 = dataHelper.createBodyPart("Arms");
-        BodyPart bodyPart2 = dataHelper.createBodyPart("Triceps");
-
-        HttpRef httpRef1 = dataHelper.createHttpRef("Media1", "https://ref1.com", "Description1");
-        HttpRef httpRef2 = dataHelper.createHttpRef("Media2", "https://ref2.com", "Description2");
-        HttpRef httpRef3 = dataHelper.createHttpRef("Media3", "https://ref3.com");
-
-        Exercise exercise = dataHelper.createExercise(
-                "Narrow push-ups",
-                "Train triceps",
-                false,
-                Set.of(bodyPart1, bodyPart2),
-                Set.of(httpRef1, httpRef2, httpRef3));
-
+    void findCustomByTitleAndUserId_shouldReturnOptionalEmpty_whenDefaultExerciseTitleProvided() {
+        // Given
+        Exercise exercise = dataHelper.createExercise(1, false, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
-        User user =
-                dataHelper.createUser("my-username", "My User", "user@email.com", "password", role, Set.of(exercise));
+        User user = dataHelper.createUser("one", role, Set.of(exercise));
         dataHelper.exerciseAddUsers(exercise, Set.of(user));
 
-        // Test
-        Optional<Exercise> actualOpt = exerciseRepository.findByTitleAndUserId(exercise.getTitle(), user.getId());
+        // When
+        Optional<Exercise> actualOpt = exerciseRepository.findCustomByTitleAndUserId(exercise.getTitle(), user.getId());
+
+        // Then
         assertTrue(actualOpt.isEmpty());
     }
 
     @Test
     void findAllDefault() {
-        dataHelper.createExercise("Exercise 1", "Title 1", false, null, null);
-        dataHelper.createExercise("Exercise 2", "Title 2", false, null, null);
-        dataHelper.createExercise("Exercise 3", "Title 3", true, null, null);
+        // Given
+        List<Exercise> exercisesDefault = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createExercise(id, false, null, null))
+                .toList();
+
+        List<Exercise> exercisesCustom = IntStream.rangeClosed(3, 4)
+                .mapToObj(id -> dataHelper.createExercise(id, true, null, null))
+                .toList();
+
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        List<Exercise> exercises = exerciseRepository.findAllDefault(sort);
-        assertEquals(2, exercises.size());
+
+        // When
+        List<Exercise> exercisesActual = exerciseRepository.findAllDefault(sort);
+
+        // Then
+        assertEquals(exercisesDefault.size(), exercisesActual.size());
+        assertThat(exercisesDefault)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("httpRefs", "bodyParts", "users")
+                .isEqualTo(exercisesActual);
     }
 
     @Test
-    void findByUserId() {
-        Exercise exercise1 = dataHelper.createExercise("Exercise 1", "Title 1", false, null, null);
-        Exercise exercise2 = dataHelper.createExercise("Exercise 2", "Title 2", false, null, null);
-        Exercise exercise3 = dataHelper.createExercise("Exercise 3", "Title 3", true, null, null);
-        Exercise exercise4 = dataHelper.createExercise("Exercise 4", "Title 4", true, null, null);
-        Exercise exercise5 = dataHelper.createExercise("Exercise 5", "Title 5", true, null, null);
+    void findCustomByUserIdTest_shouldReturnCustomExercises_whenUserIdProvided() {
+        // Given
+        List<Exercise> customExercises = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createExercise(id, true, null, null))
+                .toList();
+
+        List<Exercise> defaultExercises = IntStream.rangeClosed(3, 4)
+                .mapToObj(id -> dataHelper.createExercise(id, false, null, null))
+                .toList();
+
+        Exercise otherExercise = dataHelper.createExercise(2, true, null, null);
+
         Role role = dataHelper.createRole("ROLE_USER");
-        User user1 = dataHelper.createUser(
-                "Full Name", "username-one", "user1@email.com", "password1", role, Set.of(exercise3, exercise4));
-        User user2 = dataHelper.createUser(
-                "Full Name", "username-two", "user2@email.com", "password2", role, Set.of(exercise5));
+        User user = dataHelper.createUser("one", role, new HashSet<>(customExercises));
+        User otherUser = dataHelper.createUser("two", role, Set.of(otherExercise));
+
+        dataHelper.exerciseAddUsers(customExercises.get(0), Set.of(user));
+        dataHelper.exerciseAddUsers(customExercises.get(1), Set.of(user));
+        dataHelper.exerciseAddUsers(otherExercise, Set.of(otherUser));
+
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        List<Exercise> exercises = exerciseRepository.findByUserId(user1.getId(), sort);
-        assertEquals(2, exercises.size());
+
+        // When
+        List<Exercise> exercisesActual = exerciseRepository.findCustomByUserId(user.getId(), sort);
+
+        // Then
+        assertEquals(customExercises.size(), exercisesActual.size());
+        assertThat(customExercises)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("httpRefs", "bodyParts", "users")
+                .isEqualTo(exercisesActual);
     }
 }

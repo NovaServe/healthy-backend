@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.workout.controller;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
@@ -19,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("${api.basePath}/${api.version}/exercises/httpRefs")
@@ -40,7 +42,11 @@ public class HttpRefController {
      */
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<List<HttpRefResponseDto>> getHttpRefs() {
+    public ResponseEntity<List<HttpRefResponseDto>> getHttpRefs(
+            @RequestParam(name = "isDefaultOnly", required = false) Boolean isDefaultOnly) {
+
+        if (isNull(isDefaultOnly)) isDefaultOnly = false;
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (nonNull(authentication) && authentication.isAuthenticated()) {
@@ -48,8 +54,9 @@ public class HttpRefController {
             Optional<User> userOptional = authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
             if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
 
-            List<HttpRefResponseDto> responseDtoList =
-                    httpRefService.getHttpRefs(userOptional.get().getId(), Sort.by(Sort.Direction.ASC, "id"));
+            List<HttpRefResponseDto> responseDtoList = httpRefService.getHttpRefs(
+                    userOptional.get().getId(), Sort.by(Sort.Direction.ASC, "id"), isDefaultOnly);
+
             return new ResponseEntity<>(responseDtoList, HttpStatus.OK);
         }
 

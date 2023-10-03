@@ -13,16 +13,26 @@ class DescriptionValidatorTest {
     DescriptionValidator descriptionValidator;
 
     @Test
-    void validationPositive() {
+    void validationTest_shouldReturnTrue() {
+        // Given
         String input = "Desc 1";
+
+        // When
         boolean validated = descriptionValidator.validation(input);
+
+        // Then
         assertTrue(validated);
     }
 
     @Test
-    void validationNegative() {
+    void validationTest_shouldReturnFalse() {
+        // Given
         String input = "Desc 1 $";
+
+        // When
         boolean validated = descriptionValidator.validation(input);
+
+        // Then
         assertFalse(validated);
     }
 }

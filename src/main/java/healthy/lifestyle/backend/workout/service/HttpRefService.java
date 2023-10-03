@@ -5,5 +5,5 @@ import java.util.List;
 import org.springframework.data.domain.Sort;
 
 public interface HttpRefService {
-    List<HttpRefResponseDto> getHttpRefs(long userId, Sort sort);
+    List<HttpRefResponseDto> getHttpRefs(long userId, Sort sort, boolean isCustomOnly);
 }

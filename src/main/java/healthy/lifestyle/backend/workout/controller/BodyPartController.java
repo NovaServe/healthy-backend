@@ -4,7 +4,6 @@ import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
 import healthy.lifestyle.backend.workout.service.BodyPartService;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +26,6 @@ public class BodyPartController {
      * @see healthy.lifestyle.backend.workout.service.BodyPartServiceImpl
      */
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<List<BodyPartResponseDto>> getBodyParts() {
         List<BodyPartResponseDto> responseDto = bodyPartService.getBodyParts();
         return ResponseEntity.ok(responseDto);

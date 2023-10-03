@@ -5,7 +5,7 @@ import healthy.lifestyle.backend.validation.TitleValidation;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.util.Set;
+import java.util.List;
 
 public class CreateExerciseRequestDto {
     @NotBlank(message = "Title should contain at least 2 characters")
@@ -18,15 +18,15 @@ public class CreateExerciseRequestDto {
     private String description;
 
     @Size(max = 255, message = "Max size is 255 chars")
-    @NotNull private Set<BodyPartRequestDto> bodyParts;
+    @NotNull private List<BodyPartRequestDto> bodyParts;
 
     @Size(max = 2000, message = "Max size is 2000 chars")
-    private Set<HttpRefRequestDto> httpRefs;
+    private List<HttpRefRequestDto> httpRefs;
 
     public CreateExerciseRequestDto() {}
 
     public CreateExerciseRequestDto(
-            String title, String description, Set<BodyPartRequestDto> bodyParts, Set<HttpRefRequestDto> httpRefs) {
+            String title, String description, List<BodyPartRequestDto> bodyParts, List<HttpRefRequestDto> httpRefs) {
         this.title = title;
         this.description = description;
         this.bodyParts = bodyParts;
@@ -56,27 +56,27 @@ public class CreateExerciseRequestDto {
         this.description = description;
     }
 
-    public Set<BodyPartRequestDto> getBodyParts() {
+    public List<BodyPartRequestDto> getBodyParts() {
         return bodyParts;
     }
 
-    public void setBodyParts(Set<BodyPartRequestDto> bodyParts) {
+    public void setBodyParts(List<BodyPartRequestDto> bodyParts) {
         this.bodyParts = bodyParts;
     }
 
-    public Set<HttpRefRequestDto> getHttpRefs() {
+    public List<HttpRefRequestDto> getHttpRefs() {
         return httpRefs;
     }
 
-    public void setHttpRefs(Set<HttpRefRequestDto> httpRefs) {
+    public void setHttpRefs(List<HttpRefRequestDto> httpRefs) {
         this.httpRefs = httpRefs;
     }
 
     public static class Builder {
         private String title;
         private String description;
-        private Set<BodyPartRequestDto> bodyParts;
-        private Set<HttpRefRequestDto> httpRefs;
+        private List<BodyPartRequestDto> bodyParts;
+        private List<HttpRefRequestDto> httpRefs;
 
         public Builder title(String title) {
             this.title = title;
@@ -88,12 +88,12 @@ public class CreateExerciseRequestDto {
             return this;
         }
 
-        public Builder bodyParts(Set<BodyPartRequestDto> bodyParts) {
+        public Builder bodyParts(List<BodyPartRequestDto> bodyParts) {
             this.bodyParts = bodyParts;
             return this;
         }
 
-        public Builder httpRefs(Set<HttpRefRequestDto> httpRefs) {
+        public Builder httpRefs(List<HttpRefRequestDto> httpRefs) {
             this.httpRefs = httpRefs;
             return this;
         }
