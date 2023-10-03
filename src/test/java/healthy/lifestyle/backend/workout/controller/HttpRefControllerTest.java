@@ -39,11 +39,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * @see HttpRefController
- * @see healthy.lifestyle.backend.workout.service.HttpRefServiceImpl
- * @see healthy.lifestyle.backend.workout.dto.HttpRefResponseDto
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
@@ -51,19 +46,11 @@ import org.testcontainers.utility.DockerImageName;
 class HttpRefControllerTest {
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
-            (PostgreSQLContainer<?>) new PostgreSQLContainer(DockerImageName.parse("postgres:12.15"))
-                    .withDatabaseName("test_db")
-                    .withUsername("test_user")
-                    .withPassword("test_password")
-                    .withReuse(true);
+            new PostgreSQLContainer<>(DockerImageName.parse("postgres:12.15"));
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
-        registry.add(
-                "spring.datasource.url",
-                () -> String.format(
-                        "jdbc:postgresql://localhost:%s/%s",
-                        postgresqlContainer.getFirstMappedPort(), postgresqlContainer.getDatabaseName()));
+        registry.add("spring.datasource.url", postgresqlContainer::getJdbcUrl);
         registry.add("spring.datasource.username", postgresqlContainer::getUsername);
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
     }
@@ -95,37 +82,27 @@ class HttpRefControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void getHttpRefsPositiveDefaultAndCustom() throws Exception {
-        // Test subject
-        BodyPart bodyPart = dataHelper.createBodyPart("Body 1");
-        HttpRef httpRef1 = dataHelper.createHttpRef("Name 1", "Ref 1", "Desc 1", false);
-        HttpRef httpRef2 = dataHelper.createHttpRef("Name 2", "Ref 2", "Desc 2", true);
-        Exercise exercise1 = dataHelper.createExercise("Title 1", "Desc 1", true, Set.of(bodyPart), Set.of(httpRef2));
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getHttpRefsTest_shouldReturnDefaultAndCustomHttpRefsAnd200Ok_whenUserAuthorized() throws Exception {
+        // Given
+        BodyPart bodyPart = dataHelper.createBodyPart(1);
+        HttpRef httpRef1 = dataHelper.createHttpRef(1, false);
+        HttpRef httpRef2 = dataHelper.createHttpRef(2, true);
+
+        Exercise exercise1 = dataHelper.createExercise(1, true, Set.of(bodyPart), Set.of(httpRef2));
+
         Role role = dataHelper.createRole("ROLE_USER");
-        User user1 = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                Set.of(exercise1));
+        User user1 = dataHelper.createUser("one", role, Set.of(exercise1));
 
-        // Other
-        HttpRef httpRef3 = dataHelper.createHttpRef("Name 3", "Ref 3", "Desc 3", true);
-        Exercise exercise2 =
-                dataHelper.createExercise("Title 2", "Desc 2", true, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
-        User user2 = dataHelper.createUser(
-                "Test Full Name Two",
-                "test-username-two",
-                "test2@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                Set.of(exercise2));
+        HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
+        Exercise exercise2 = dataHelper.createExercise(2, true, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
+        User user2 = dataHelper.createUser("two", role, Set.of(exercise2));
 
-        Exercise exercise3 = dataHelper.createExercise("Title 3", "Desc 3", false, Set.of(bodyPart), Set.of(httpRef1));
+        Exercise exercise3 = dataHelper.createExercise(3, false, Set.of(bodyPart), Set.of(httpRef1));
 
+        // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andReturn();
@@ -147,37 +124,28 @@ class HttpRefControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void getHttpRefsPositiveDefaultOnly() throws Exception {
-        // Test subject
-        BodyPart bodyPart = dataHelper.createBodyPart("Body 1");
-        HttpRef httpRef1 = dataHelper.createHttpRef("Name 1", "Ref 1", "Desc 1", false);
-        HttpRef httpRef2 = dataHelper.createHttpRef("Name 2", "Ref 2", "Desc 2", false);
-        Exercise exercise1 = dataHelper.createExercise("Title 1", "Desc 1", true, Set.of(bodyPart), Set.of(httpRef2));
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getHttpRefsTest_shouldReturnDefaultHttpRefsAnd200Ok_whenUserNotAuthorized() throws Exception {
+        // Given
+        BodyPart bodyPart = dataHelper.createBodyPart(1);
+        HttpRef httpRef1 = dataHelper.createHttpRef(1, false);
+        HttpRef httpRef2 = dataHelper.createHttpRef(2, false);
+
+        Exercise exercise1 = dataHelper.createExercise(1, true, Set.of(bodyPart), Set.of(httpRef2));
+
         Role role = dataHelper.createRole("ROLE_USER");
-        User user1 = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                Set.of(exercise1));
+        User user1 = dataHelper.createUser("one", role, Set.of(exercise1));
 
-        // Other
-        HttpRef httpRef3 = dataHelper.createHttpRef("Name 3", "Ref 3", "Desc 3", true);
-        Exercise exercise2 =
-                dataHelper.createExercise("Title 2", "Desc 2", true, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
-        User user2 = dataHelper.createUser(
-                "Test Full Name Two",
-                "test-username-two",
-                "test2@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                Set.of(exercise2));
+        HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
+        Exercise exercise2 = dataHelper.createExercise(2, true, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
 
-        Exercise exercise3 = dataHelper.createExercise("Title 3", "Desc 3", false, Set.of(bodyPart), Set.of(httpRef1));
+        User user2 = dataHelper.createUser("two", role, Set.of(exercise2));
 
+        Exercise exercise3 = dataHelper.createExercise(3, false, Set.of(bodyPart), Set.of(httpRef1));
+
+        // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andReturn();
@@ -199,26 +167,25 @@ class HttpRefControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "test-username", password = "test-password", roles = "USER")
-    void getHttpRefsNegativeEmptyRepository() throws Exception {
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getHttpRefsTest_shouldReturnErrorMessageAnd500InternalServerError_whenNoHttpRefs() throws Exception {
+        // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser(
-                "Test Full Name",
-                "test-username",
-                "test@email.com",
-                passwordEncoder().encode("test-password"),
-                role,
-                null);
+        User user = dataHelper.createUser("one", role, null);
 
+        // When
         mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message", is("Server error")))
                 .andDo(print());
     }
 
     @Test
-    void getHttpRefsNegativeUnauthorized() throws Exception {
+    void getHttpRefsTest_shouldReturn401Unauthorized_whenUserNotAuthorized() throws Exception {
+        // When
         mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isUnauthorized())
                 .andDo(print());
     }

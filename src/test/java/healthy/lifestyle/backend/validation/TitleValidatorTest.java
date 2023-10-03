@@ -13,16 +13,26 @@ class TitleValidatorTest {
     TitleValidator titleValidator;
 
     @Test
-    void validationPositive() {
+    void validationTest_shouldReturnTrue() {
+        // Given
         String input = "Test title";
+
+        // When
         boolean validated = titleValidator.validation(input);
+
+        // Then
         assertTrue(validated);
     }
 
     @Test
-    void validationNegative() {
+    void validationTest_shouldReturnFalse() {
+        // Given
         String input = "Test title$";
+
+        // When
         boolean validated = titleValidator.validation(input);
+
+        // Then
         assertFalse(validated);
     }
 }

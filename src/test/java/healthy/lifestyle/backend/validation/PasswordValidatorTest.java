@@ -13,23 +13,38 @@ class PasswordValidatorTest {
     PasswordValidator passwordValidator;
 
     @Test
-    void validation_Positive() {
+    void validationTest_shouldReturnTrue() {
+        // Given
         String input = "test-password";
+
+        // When
         boolean actual = passwordValidator.validation(input);
+
+        // Then
         assertTrue(actual);
     }
 
     @Test
-    void validation_Negative() {
+    void validationTest_shouldReturnFalse() {
+        // Given
         String input = "test/password";
+
+        // When
         boolean actual = passwordValidator.validation(input);
+
+        // Then
         assertFalse(actual);
     }
 
     @Test
-    void validation_Negative_Whitespace() {
+    void validationTest_shouldReturnFalse_whenWhitespaceProvided() {
+        // Given
         String input = "test password";
+
+        // When
         boolean actual = passwordValidator.validation(input);
+
+        // Then
         assertFalse(actual);
     }
 }

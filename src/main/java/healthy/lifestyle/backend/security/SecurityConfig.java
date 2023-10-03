@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,15 @@ public class SecurityConfig {
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
     private final JwtAuthFilter jwtAuthFilter;
 
+    @Value("${api.basePath}/${api.version}/users/auth/**")
+    private String authUrl;
+
+    @Value("${api.basePath}/${api.version}/exercises/bodyParts")
+    private String bodyPartsUrl;
+
+    @Value("${api.basePath}/${api.version}/exercises/default")
+    private String defaultExercisesUrl;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -44,11 +54,11 @@ public class SecurityConfig {
                 .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(jwtAuthEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users/auth/signup")
+                        .requestMatchers(HttpMethod.POST, authUrl)
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users/auth/login")
+                        .requestMatchers(HttpMethod.GET, bodyPartsUrl)
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/helloworld")
+                        .requestMatchers(HttpMethod.GET, defaultExercisesUrl)
                         .permitAll()
                         .anyRequest()
                         .authenticated());

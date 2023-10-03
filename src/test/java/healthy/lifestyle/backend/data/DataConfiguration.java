@@ -9,4 +9,9 @@ public class DataConfiguration {
     public DataHelper dataHelper() {
         return new DataHelper();
     }
+
+    @Bean
+    public DataUtil dataUtil() {
+        return new DataUtil();
+    }
 }

@@ -1,6 +1,5 @@
 package healthy.lifestyle.backend.workout.controller;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
@@ -8,9 +7,9 @@ import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.workout.dto.CreateExerciseRequestDto;
-import healthy.lifestyle.backend.workout.dto.CreateExerciseResponseDto;
-import healthy.lifestyle.backend.workout.dto.GetExercisesResponseDto;
+import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.workout.service.ExerciseService;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,50 +31,50 @@ public class ExerciseController {
     }
 
     /**
-     * Create custom exercise, ROLE_USER access is required
-     * @param requestDto Http refs are optional
-     * @return CreateExerciseResponseDto, 201 Created
-     * @throws healthy.lifestyle.backend.exception.GlobalExceptionHandler If validation error occurs<br>
+     * Creates custom exercise
+     * @param  requestDto (HttpRef objects are optional)
+     * @return Created exercise Dto (201 Created)
      * @throws healthy.lifestyle.backend.exception.ApiException
-     * If the user already has the exercise with the same title, ErrorMessage.TITLE_DUPLICATE, 400 Bad Request;<br>
-     * If there are invalid ids of body parts (or, if present, http refs), ErrorMessage.INVALID_NESTED_OBJECT, 400 Bad Request<br>
-     * @see CreateExerciseRequestDto
-     * @see healthy.lifestyle.backend.workout.dto.CreateExerciseResponseDto
-     * @see healthy.lifestyle.backend.workout.service.ExerciseService
+     * ErrorMessage.TITLE_DUPLICATE (400 Bad Request) - If a user already has the exercise with a same title<br>
+     * ErrorMessage.INVALID_NESTED_OBJECT (400 Bad Request) - If there are invalid ids of bodyParts or httpRefs
      */
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<CreateExerciseResponseDto> createCustomExercise(
-            @RequestBody CreateExerciseRequestDto requestDto) {
+    public ResponseEntity<ExerciseResponseDto> createCustomExercise(@RequestBody CreateExerciseRequestDto requestDto) {
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         if (nonNull(authentication) && authentication.isAuthenticated()) {
             String usernameOrEmail = authentication.getName();
             Optional<User> userOptional = authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
+
             if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
-            CreateExerciseResponseDto responseDto = exerciseService.createExercise(
+
+            ExerciseResponseDto responseDto = exerciseService.createExercise(
                     requestDto, userOptional.get().getId());
+
             return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
         }
+
         throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
     }
 
     /**
-     * Retrieve all exercises, ROLE_USER access is required
-     * @param isCustomOnly False if omitted (default)
-     * @example ?isCustomOnly=true<br>
-     * ?isCustomOnly=false is same as no request parameter
-     * @return GetExercisesResponseDto List of default and user's custom exercises (if isCustomOnly is set to false
-     * or omitted), or user's custom exercises only (if isCustomOnly is set to true)
-     * @throws healthy.lifestyle.backend.exception.GlobalExceptionHandler If validation error occurs
-     * @see GetExercisesResponseDto
-     * @see healthy.lifestyle.backend.workout.service.ExerciseService
+     * Retrieves default exercises
+     * @return List<ExerciseResponseDto> List of default exercises only
+     */
+    @GetMapping("/default")
+    public ResponseEntity<List<ExerciseResponseDto>> getDefaultExercises() {
+        return ResponseEntity.ok(exerciseService.getDefaultExercises());
+    }
+
+    /**
+     * Retrieves custom exercises of a particular user
+     * @return List<ExerciseResponseDto> List of custom exercises
      */
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<GetExercisesResponseDto> getExercises(
-            @RequestParam(name = "isCustomOnly", required = false) Boolean isCustomOnly) {
-        if (isNull(isCustomOnly)) isCustomOnly = false;
-
+    public ResponseEntity<List<ExerciseResponseDto>> getCustomExercises() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (nonNull(authentication) && authentication.isAuthenticated()) {
@@ -83,10 +82,10 @@ public class ExerciseController {
             Optional<User> userOptional = authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
             if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
 
-            GetExercisesResponseDto responseDtoList =
-                    exerciseService.getExercises(userOptional.get().getId(), isCustomOnly);
-            return ResponseEntity.ok(responseDtoList);
+            return ResponseEntity.ok(
+                    exerciseService.getCustomExercises(userOptional.get().getId()));
         }
+
         throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
     }
 }

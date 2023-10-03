@@ -13,5 +13,5 @@ public interface HttpRefRepository extends JpaRepository<HttpRef, Long> {
     List<HttpRef> findAllDefault(Sort sort);
 
     @Query("SELECT h FROM HttpRef h JOIN h.exercises.users u WHERE u.id = :userId AND h.isCustom = true")
-    List<HttpRef> findByUserId(long userId, Sort sort);
+    List<HttpRef> findCustomByUserId(long userId, Sort sort);
 }

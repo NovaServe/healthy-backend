@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/users/auth")
+@RequestMapping("${api.basePath}/${api.version}/users/auth")
 public class AuthController {
     private final UserService userService;
 
@@ -24,14 +24,10 @@ public class AuthController {
     }
 
     /**
-     * Creates new user<br>
-     * Access: Any
-     *
+     * Creates new user
      * @throws healthy.lifestyle.backend.exception.GlobalExceptionHandler Validation error
-     *
      * @throws ApiException (ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST)<br>
      * If user already exists
-     *
      * @throws ApiException (ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)<br>
      * If ROLE_USER is not found
      */
@@ -42,9 +38,7 @@ public class AuthController {
     }
 
     /**
-     * Logins user<br>
-     * Access: Any
-     *
+     * Logins user
      * @throws healthy.lifestyle.backend.exception.GlobalExceptionHandler Validation error
      */
     @PostMapping("/login")

@@ -53,8 +53,17 @@ dependencies {
 	testImplementation "org.testcontainers:postgresql:1.18.3"
 	testImplementation "org.testcontainers:junit-jupiter:1.18.3"
 
-	// Utils
+	// Validation
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// Mapper
+	implementation group: 'org.modelmapper', name: 'modelmapper', version: '3.1.1'
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+	testCompileOnly 'org.projectlombok:lombok:1.18.30'
+	testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
 }
 
 tasks.named('test') {
@@ -76,7 +85,7 @@ spotless {
 		endWithNewline()
 	}
 	java {
-		palantirJavaFormat("2.32.0")
+		palantirJavaFormat("2.38.0")
 		importOrder()
 		removeUnusedImports()
 		trimTrailingWhitespace()

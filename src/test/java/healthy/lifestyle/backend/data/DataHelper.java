@@ -13,6 +13,8 @@ import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @TestComponent
 public class DataHelper {
@@ -31,6 +33,11 @@ public class DataHelper {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
     public void deleteAll() {
         userRepository.deleteAll();
         roleRepository.deleteAll();
@@ -39,40 +46,27 @@ public class DataHelper {
         httpRefRepository.deleteAll();
     }
 
-    public BodyPart createBodyPart(String name) {
-        BodyPart bodyPart = new BodyPart.Builder().name(name).build();
-        return bodyPartRepository.save(bodyPart);
+    public BodyPart createBodyPart(int seed) {
+        return bodyPartRepository.save(BodyPart.builder().name("Name " + seed).build());
     }
 
-    public HttpRef createHttpRef(String name, String ref, String description, boolean isCustom) {
-        HttpRef httpRef1 = new HttpRef.Builder()
-                .name(name)
-                .ref(ref)
-                .description(description)
+    public HttpRef createHttpRef(int seed, boolean isCustom) {
+        return httpRefRepository.save(HttpRef.builder()
+                .name("Name " + seed)
+                .ref("Ref " + seed)
+                .description("Desc " + seed)
                 .isCustom(isCustom)
-                .build();
-        return httpRefRepository.save(httpRef1);
+                .build());
     }
 
-    public HttpRef createHttpRef(String name, String ref, String desc) {
-        return this.createHttpRef(name, ref, desc, false);
-    }
-
-    public HttpRef createHttpRef(String name, String ref) {
-        return this.createHttpRef(name, ref, null, false);
-    }
-
-    public Exercise createExercise(
-            String title, String description, boolean isCustom, Set<BodyPart> bodyParts, Set<HttpRef> httpRefs) {
-
-        Exercise exercise = new Exercise.Builder()
-                .title(title)
-                .description(description)
+    public Exercise createExercise(int seed, boolean isCustom, Set<BodyPart> bodyParts, Set<HttpRef> httpRefs) {
+        return exerciseRepository.save(Exercise.builder()
+                .title("Title " + seed)
+                .description("Desc " + seed)
                 .isCustom(isCustom)
                 .bodyParts(bodyParts)
                 .httpRefs(httpRefs)
-                .build();
-        return exerciseRepository.save(exercise);
+                .build());
     }
 
     public Exercise exerciseAddUsers(Exercise exercise, Set<User> users) {
@@ -81,20 +75,17 @@ public class DataHelper {
     }
 
     public Role createRole(String name) {
-        Role role = new Role(name);
-        return roleRepository.save(role);
+        return roleRepository.save(new Role(name));
     }
 
-    public User createUser(
-            String fullName, String username, String email, String password, Role role, Set<Exercise> exercises) {
-        User user = new User.Builder()
-                .username(username)
-                .fullName(fullName)
-                .email(email)
-                .password(password)
+    public User createUser(String seed, Role role, Set<Exercise> exercises) {
+        return userRepository.save(new User.Builder()
+                .username("username-" + seed)
+                .fullName("Full Name " + seed)
+                .email("username-" + seed + "@email.com")
+                .password(passwordEncoder().encode("password-" + seed))
                 .role(role)
                 .exercises(exercises)
-                .build();
-        return userRepository.save(user);
+                .build());
     }
 }

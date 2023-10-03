@@ -1,11 +1,13 @@
 package healthy.lifestyle.backend.workout.service;
 
 import healthy.lifestyle.backend.workout.dto.CreateExerciseRequestDto;
-import healthy.lifestyle.backend.workout.dto.CreateExerciseResponseDto;
-import healthy.lifestyle.backend.workout.dto.GetExercisesResponseDto;
+import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
+import java.util.List;
 
 public interface ExerciseService {
-    CreateExerciseResponseDto createExercise(CreateExerciseRequestDto requestDto, long userId);
+    ExerciseResponseDto createExercise(CreateExerciseRequestDto requestDto, long userId);
 
-    GetExercisesResponseDto getExercises(long userId, boolean isCustomOnly);
+    List<ExerciseResponseDto> getCustomExercises(long userId);
+
+    List<ExerciseResponseDto> getDefaultExercises();
 }

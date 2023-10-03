@@ -1,18 +1,16 @@
 package healthy.lifestyle.backend.workout.service;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.workout.dto.*;
-import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
-import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.*;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -26,42 +24,58 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     private final HttpRefRepository httpRefRepository;
 
+    private final ModelMapper modelMapper;
+
     public ExerciseServiceImpl(
             ExerciseRepository exerciseRepository,
             BodyPartRepository bodyPartRepository,
-            HttpRefRepository httpRefRepository) {
+            HttpRefRepository httpRefRepository,
+            ModelMapper modelMapper) {
         this.exerciseRepository = exerciseRepository;
         this.bodyPartRepository = bodyPartRepository;
         this.httpRefRepository = httpRefRepository;
+        this.modelMapper = modelMapper;
     }
 
     @Override
-    public CreateExerciseResponseDto createExercise(CreateExerciseRequestDto requestDto, long userId) {
+    public ExerciseResponseDto createExercise(CreateExerciseRequestDto requestDto, long userId) {
         validateCreateExerciseRequestDto(requestDto, userId);
-        Exercise exercise = new Exercise.Builder()
+
+        Exercise exercise = Exercise.builder()
                 .title(requestDto.getTitle())
                 .isCustom(true)
+                .bodyParts(new HashSet<>())
+                .httpRefs(new HashSet<>())
                 .build();
+
         if (nonNull(requestDto.getDescription())) exercise.setDescription(requestDto.getDescription());
 
         if (nonNull(requestDto.getBodyParts())) {
-            if (isNull(exercise.getBodyParts())) exercise.setBodyParts(new HashSet<>());
-            for (BodyPartRequestDto elt : requestDto.getBodyParts()) {
-                BodyPart bodyPart = bodyPartRepository.getReferenceById(elt.getId());
-                exercise.getBodyParts().add(bodyPart);
-            }
+            requestDto.getBodyParts().forEach(elt -> exercise.getBodyParts()
+                    .add(bodyPartRepository.getReferenceById(elt.getId())));
         }
 
         if (nonNull(requestDto.getHttpRefs())) {
-            if (isNull(exercise.getHttpRefs())) exercise.setHttpRefs(new HashSet<>());
-            for (HttpRefRequestDto elt : requestDto.getHttpRefs()) {
-                HttpRef httpRef = httpRefRepository.getReferenceById(elt.getId());
-                exercise.getHttpRefs().add(httpRef);
-            }
+            requestDto.getHttpRefs().forEach(elt -> exercise.getHttpRefs()
+                    .add(httpRefRepository.getReferenceById(elt.getId())));
         }
 
         Exercise saved = exerciseRepository.save(exercise);
-        return mapExerciseToCreateResponseDto(saved);
+
+        ExerciseResponseDto exerciseResponseDto = modelMapper.map(saved, ExerciseResponseDto.class);
+
+        List<BodyPartResponseDto> bodyPartsSorted = exerciseResponseDto.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                .toList();
+
+        List<HttpRefResponseDto> httpRefsSorted = exerciseResponseDto.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                .toList();
+
+        exerciseResponseDto.setBodyParts(bodyPartsSorted);
+        exerciseResponseDto.setHttpRefs(httpRefsSorted);
+
+        return exerciseResponseDto;
     }
 
     private void validateCreateExerciseRequestDto(CreateExerciseRequestDto requestDto, long userId) {
@@ -70,7 +84,7 @@ public class ExerciseServiceImpl implements ExerciseService {
             throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
 
         // Check if body parts are present in the database
-        if (nonNull(requestDto.getBodyParts())) {
+        if (nonNull(requestDto.getBodyParts()) && requestDto.getBodyParts().size() > 0) {
             if (!bodyPartsExist(requestDto.getBodyParts()))
                 throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
         } else throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
@@ -94,13 +108,15 @@ public class ExerciseServiceImpl implements ExerciseService {
      * only one own exercise "Push-up". Another user can have they own exercise "Push-up" in the same database table.
      */
     private boolean exerciseTitleDuplicateExists(String exerciseTitle, long userId) {
-        return exerciseRepository.findByTitleAndUserId(exerciseTitle, userId).isPresent();
+        return exerciseRepository
+                .findCustomByTitleAndUserId(exerciseTitle, userId)
+                .isPresent();
     }
 
     /**
-     * Returns true if all objects exist, otherwise false
+     * Returns true if all objects exist, otherwise false.
      */
-    private boolean bodyPartsExist(Set<BodyPartRequestDto> bodyParts) {
+    private boolean bodyPartsExist(List<BodyPartRequestDto> bodyParts) {
         for (BodyPartRequestDto elt : bodyParts) {
             if (!bodyPartRepository.existsById(elt.getId())) return false;
         }
@@ -108,109 +124,57 @@ public class ExerciseServiceImpl implements ExerciseService {
     }
 
     /**
-     * Returns true if all objects exist, otherwise false
+     * Returns true if all objects exist, otherwise false.
      */
-    private boolean httpRefExists(Set<HttpRefRequestDto> httpRefs) {
+    private boolean httpRefExists(List<HttpRefRequestDto> httpRefs) {
         for (HttpRefRequestDto elt : httpRefs) {
             if (!httpRefRepository.existsById(elt.getId())) return false;
         }
         return true;
     }
 
-    private CreateExerciseResponseDto mapExerciseToCreateResponseDto(Exercise exercise) {
-        Set<BodyPartResponseDto> bodyPartsDto = null;
-        if (nonNull(exercise.getBodyParts())) {
-            bodyPartsDto = new HashSet<BodyPartResponseDto>();
-            for (BodyPart elt : exercise.getBodyParts()) {
-                BodyPartResponseDto bodyPartDto = new BodyPartResponseDto.Builder()
-                        .id(elt.getId())
-                        .name(elt.getName())
-                        .build();
-                bodyPartsDto.add(bodyPartDto);
-            }
-        }
-
-        Set<HttpRefResponseDto> httpRefsDto = null;
-        if (nonNull(exercise.getHttpRefs())) {
-            httpRefsDto = new HashSet<HttpRefResponseDto>();
-            for (HttpRef elt : exercise.getHttpRefs()) {
-                HttpRefResponseDto httpRefDto = new HttpRefResponseDto.Builder()
-                        .id(elt.getId())
-                        .name(elt.getName())
-                        .description(elt.getDescription())
-                        .ref(elt.getRef())
-                        .build();
-                httpRefsDto.add(httpRefDto);
-            }
-        }
-
-        return new CreateExerciseResponseDto.Builder()
-                .id(exercise.getId())
-                .title(exercise.getTitle())
-                .description(exercise.getDescription())
-                .bodyParts(bodyPartsDto)
-                .httpRefs(httpRefsDto)
-                .build();
-    }
-
     @Transactional
     @Override
-    public GetExercisesResponseDto getExercises(long userId, boolean isCustomOnly) {
+    public List<ExerciseResponseDto> getCustomExercises(long userId) {
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        List<Exercise> exercisesImmutableReference;
-        if (isCustomOnly) exercisesImmutableReference = exerciseRepository.findByUserId(userId, sort);
-        else {
-            exercisesImmutableReference = exerciseRepository.findAllDefault(sort);
-            List<Exercise> userExercises = exerciseRepository.findByUserId(userId, sort);
-            if (nonNull(userExercises) && userExercises.size() > 0) {
-                List<Exercise> exercisesMutableReference = new ArrayList<>(exercisesImmutableReference);
-                exercisesMutableReference.addAll(userExercises);
-                return mapExercisesToGetExercisesResponseDto(exercisesMutableReference);
-            }
-        }
-        return mapExercisesToGetExercisesResponseDto(exercisesImmutableReference);
+        List<Exercise> exercises = exerciseRepository.findCustomByUserId(userId, sort);
+
+        List<ExerciseResponseDto> exercisesResponseDto = exercises.stream()
+                .map(elt -> modelMapper.map(elt, ExerciseResponseDto.class))
+                .toList();
+
+        return exercisesResponseDto.stream()
+                .peek(elt -> {
+                    List<BodyPartResponseDto> bodyPartsSorted = elt.getBodyParts().stream()
+                            .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                            .toList();
+
+                    List<HttpRefResponseDto> httpRefsSorted = elt.getHttpRefs().stream()
+                            .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                            .toList();
+
+                    elt.setBodyParts(bodyPartsSorted);
+                    elt.setHttpRefs(httpRefsSorted);
+                })
+                .toList();
     }
 
-    private GetExercisesResponseDto mapExercisesToGetExercisesResponseDto(List<Exercise> exercises) {
-        GetExercisesResponseDto responseDto = new GetExercisesResponseDto();
+    @Override
+    public List<ExerciseResponseDto> getDefaultExercises() {
+        return exerciseRepository.findAllDefault(Sort.by(Sort.Direction.ASC, "id")).stream()
+                .map(exercise -> modelMapper.map(exercise, ExerciseResponseDto.class))
+                .peek(elt -> {
+                    List<BodyPartResponseDto> bodyPartsSorted = elt.getBodyParts().stream()
+                            .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                            .toList();
 
-        for (Exercise exercise : exercises) {
+                    List<HttpRefResponseDto> httpRefsSorted = elt.getHttpRefs().stream()
+                            .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                            .toList();
 
-            Set<BodyPartResponseDto> bodyPartsDto = null;
-            if (nonNull(exercise.getBodyParts())) {
-                bodyPartsDto = new LinkedHashSet<>();
-                for (BodyPart elt : exercise.getBodyParts()) {
-                    BodyPartResponseDto bodyPartDto = new BodyPartResponseDto.Builder()
-                            .id(elt.getId())
-                            .name(elt.getName())
-                            .build();
-                    bodyPartsDto.add(bodyPartDto);
-                }
-            }
-
-            Set<HttpRefResponseDto> httpRefsDto = null;
-            if (nonNull(exercise.getHttpRefs())) {
-                httpRefsDto = new LinkedHashSet<>();
-                for (HttpRef elt : exercise.getHttpRefs()) {
-                    HttpRefResponseDto httpRefDto = new HttpRefResponseDto.Builder()
-                            .id(elt.getId())
-                            .name(elt.getName())
-                            .description(elt.getDescription())
-                            .ref(elt.getRef())
-                            .build();
-                    httpRefsDto.add(httpRefDto);
-                }
-            }
-
-            responseDto.addExercise(new ExerciseResponseDto.Builder()
-                    .id(exercise.getId())
-                    .title(exercise.getTitle())
-                    .description(exercise.getDescription())
-                    .bodyParts(bodyPartsDto)
-                    .httpRefs(httpRefsDto)
-                    .build());
-        }
-
-        return responseDto;
+                    elt.setBodyParts(bodyPartsSorted);
+                    elt.setHttpRefs(httpRefsSorted);
+                })
+                .toList();
     }
 }
