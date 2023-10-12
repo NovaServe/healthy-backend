@@ -75,7 +75,7 @@ class ExerciseControllerTest {
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
     }
 
-    private static final String URL = "/api/v1/exercises";
+    private static final String URL = "/api/v1/workouts/exercises";
 
     @BeforeEach
     void beforeEach() {

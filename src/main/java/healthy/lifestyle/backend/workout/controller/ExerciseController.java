@@ -20,7 +20,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/api/v1/exercises")
+@RequestMapping("${api.basePath}/${api.version}/workouts/exercises")
 public class ExerciseController {
     private final ExerciseService exerciseService;
     private final AuthService authService;

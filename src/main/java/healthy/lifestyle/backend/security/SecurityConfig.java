@@ -27,10 +27,10 @@ public class SecurityConfig {
     @Value("${api.basePath}/${api.version}/users/auth/**")
     private String authUrl;
 
-    @Value("${api.basePath}/${api.version}/exercises/bodyParts")
+    @Value("${api.basePath}/${api.version}/workouts/bodyParts")
     private String bodyPartsUrl;
 
-    @Value("${api.basePath}/${api.version}/exercises/default")
+    @Value("${api.basePath}/${api.version}/workouts/exercises/default")
     private String defaultExercisesUrl;
 
     @Bean
