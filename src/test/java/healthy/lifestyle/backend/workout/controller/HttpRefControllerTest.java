@@ -74,7 +74,7 @@ class HttpRefControllerTest {
         dataHelper.deleteAll();
     }
 
-    private static final String URL = "/api/v1/exercises/httpRefs";
+    private static final String URL = "/api/v1/workouts/httpRefs";
 
     @Test
     void postgresqlContainerTest() {

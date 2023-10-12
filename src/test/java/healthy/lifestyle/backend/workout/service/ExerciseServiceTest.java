@@ -71,7 +71,7 @@ class ExerciseServiceTest {
 
         assertThat(exerciseMock)
                 .usingRecursiveComparison()
-                .ignoringFields("isCustom", "users", "bodyParts", "httpRefs")
+                .ignoringFields("users", "bodyParts", "httpRefs")
                 .isEqualTo(exerciseActual);
 
         assertThat(bodyPartsMock)
@@ -101,7 +101,7 @@ class ExerciseServiceTest {
         org.hamcrest.MatcherAssert.assertThat(exercisesDtoActual, hasSize(exercises.size()));
 
         assertThat(exercises)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("isCustom", "users", "bodyParts", "httpRefs")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("users", "bodyParts", "httpRefs")
                 .isEqualTo(exercisesDtoActual);
 
         IntStream.range(0, exercises.size()).forEach(id -> {
@@ -147,7 +147,7 @@ class ExerciseServiceTest {
         org.hamcrest.MatcherAssert.assertThat(exercisesDtoActual, hasSize(customExercises.size()));
 
         assertThat(customExercises)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("isCustom", "users", "bodyParts", "httpRefs")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("users", "bodyParts", "httpRefs")
                 .isEqualTo(exercisesDtoActual);
 
         IntStream.range(0, customExercises.size()).forEach(id -> {

@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
-@RequestMapping("${api.basePath}/${api.version}/exercises/httpRefs")
+@RequestMapping("${api.basePath}/${api.version}/workouts/httpRefs")
 public class HttpRefController {
     private final HttpRefService httpRefService;
     private final AuthService authService;

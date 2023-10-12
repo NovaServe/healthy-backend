@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("${api.basePath}/${api.version}/exercises/bodyParts")
+@RequestMapping("${api.basePath}/${api.version}/workouts/bodyParts")
 public class BodyPartController {
     private final BodyPartService bodyPartService;
 
