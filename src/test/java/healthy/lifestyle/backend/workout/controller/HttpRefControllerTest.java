@@ -20,6 +20,7 @@ import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,16 +90,16 @@ class HttpRefControllerTest {
         HttpRef httpRef1 = dataHelper.createHttpRef(1, false);
         HttpRef httpRef2 = dataHelper.createHttpRef(2, true);
 
-        Exercise exercise1 = dataHelper.createExercise(1, true, Set.of(bodyPart), Set.of(httpRef2));
+        Exercise exercise1 = dataHelper.createExercise(1, true, false, Set.of(bodyPart), Set.of(httpRef2));
 
         Role role = dataHelper.createRole("ROLE_USER");
         User user1 = dataHelper.createUser("one", role, Set.of(exercise1));
 
         HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
-        Exercise exercise2 = dataHelper.createExercise(2, true, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
+        Exercise exercise2 = dataHelper.createExercise(2, true, false, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
         User user2 = dataHelper.createUser("two", role, Set.of(exercise2));
 
-        Exercise exercise3 = dataHelper.createExercise(3, false, Set.of(bodyPart), Set.of(httpRef1));
+        Exercise exercise3 = dataHelper.createExercise(3, false, false, Set.of(bodyPart), Set.of(httpRef1));
 
         // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
@@ -131,17 +132,17 @@ class HttpRefControllerTest {
         HttpRef httpRef1 = dataHelper.createHttpRef(1, false);
         HttpRef httpRef2 = dataHelper.createHttpRef(2, false);
 
-        Exercise exercise1 = dataHelper.createExercise(1, true, Set.of(bodyPart), Set.of(httpRef2));
+        Exercise exercise1 = dataHelper.createExercise(1, true, false, Set.of(bodyPart), Set.of(httpRef2));
 
         Role role = dataHelper.createRole("ROLE_USER");
         User user1 = dataHelper.createUser("one", role, Set.of(exercise1));
 
         HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
-        Exercise exercise2 = dataHelper.createExercise(2, true, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
+        Exercise exercise2 = dataHelper.createExercise(2, true, false, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
 
         User user2 = dataHelper.createUser("two", role, Set.of(exercise2));
 
-        Exercise exercise3 = dataHelper.createExercise(3, false, Set.of(bodyPart), Set.of(httpRef1));
+        Exercise exercise3 = dataHelper.createExercise(3, false, false, Set.of(bodyPart), Set.of(httpRef1));
 
         // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
@@ -188,5 +189,30 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isUnauthorized())
                 .andDo(print());
+    }
+
+    @Test
+    void getDefaultHttpRefsTest_shouldReturnDefaultHttpRefsAnd200Ok() throws Exception {
+        // Given
+        List<HttpRef> defaultHttpRefs = IntStream.rangeClosed(1, 5)
+                .mapToObj(id -> dataHelper.createHttpRef(id, false))
+                .toList();
+
+        // When
+        String URL_POSTFIX = "/default";
+        MvcResult mvcResult = mockMvc.perform(get(URL + URL_POSTFIX).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        List<HttpRefResponseDto> responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<List<HttpRefResponseDto>>() {});
+
+        assertEquals(defaultHttpRefs.size(), responseDto.size());
+        assertThat(defaultHttpRefs)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(responseDto);
     }
 }

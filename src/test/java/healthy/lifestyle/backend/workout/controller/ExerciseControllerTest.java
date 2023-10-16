@@ -102,7 +102,8 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(1, bodyParts, httpRefs);
+        CreateExerciseRequestDto createExerciseRequestDto =
+                dataUtil.createExerciseRequestDto(1, false, bodyParts, httpRefs);
 
         // When
         MvcResult mvcResult = mockMvc.perform(post(URL)
@@ -147,7 +148,7 @@ class ExerciseControllerTest {
                 .toList();
 
         CreateExerciseRequestDto createExerciseRequestDto =
-                dataUtil.createExerciseRequestDto(1, bodyParts, Collections.emptyList());
+                dataUtil.createExerciseRequestDto(1, false, bodyParts, Collections.emptyList());
 
         // When
         MvcResult mvcResult = mockMvc.perform(post(URL)
@@ -186,7 +187,7 @@ class ExerciseControllerTest {
                 .toList();
 
         CreateExerciseRequestDto createExerciseRequestDto =
-                dataUtil.createExerciseRequestDto(1, Collections.emptyList(), httpRefs);
+                dataUtil.createExerciseRequestDto(1, false, Collections.emptyList(), httpRefs);
 
         // When
         mockMvc.perform(post(URL)
@@ -214,7 +215,8 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(1, bodyParts, httpRefs);
+        CreateExerciseRequestDto createExerciseRequestDto =
+                dataUtil.createExerciseRequestDto(1, false, bodyParts, httpRefs);
         createExerciseRequestDto.getBodyParts().get(0).setId(1000L);
         createExerciseRequestDto.getBodyParts().get(0).setId(1001L);
 
@@ -244,7 +246,8 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(1, bodyParts, httpRefs);
+        CreateExerciseRequestDto createExerciseRequestDto =
+                dataUtil.createExerciseRequestDto(1, false, bodyParts, httpRefs);
         createExerciseRequestDto.getHttpRefs().get(0).setId(1000L);
         createExerciseRequestDto.getHttpRefs().get(0).setId(1001L);
 
@@ -271,11 +274,13 @@ class ExerciseControllerTest {
                 .toList();
 
         List<Exercise> defaultExercises = IntStream.rangeClosed(1, 3)
-                .mapToObj(id -> dataHelper.createExercise(id, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, false, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
                 .toList();
 
         List<Exercise> customExercises = IntStream.rangeClosed(4, 6)
-                .mapToObj(id -> dataHelper.createExercise(id, true, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, true, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
                 .toList();
 
         List<Exercise> testUserCustomExercises = List.of(customExercises.get(0), customExercises.get(1));
@@ -341,11 +346,13 @@ class ExerciseControllerTest {
                 .toList();
 
         List<Exercise> defaultExercises = IntStream.rangeClosed(1, 3)
-                .mapToObj(id -> dataHelper.createExercise(id, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, false, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
                 .toList();
 
         List<Exercise> customExercises = IntStream.rangeClosed(4, 6)
-                .mapToObj(id -> dataHelper.createExercise(id, true, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, true, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
                 .toList();
 
         // When

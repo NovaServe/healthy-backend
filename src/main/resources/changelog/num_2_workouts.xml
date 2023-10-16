@@ -21,6 +21,9 @@
             <column name="is_custom" type="boolean">
                 <constraints nullable="false" unique="false"/>
             </column>
+            <column name="needs_equipment" type="boolean">
+                <constraints nullable="false" unique="false"/>
+            </column>
         </createTable>
 
         <createTable tableName="body_parts">
@@ -32,7 +35,7 @@
             </column>
         </createTable>
 
-        <sqlFile path="sql/body_parts_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/body_parts.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
 
         <createTable tableName="exercises_body_parts">
             <column name="id" type="bigint" autoIncrement="true">
@@ -65,6 +68,8 @@
                 <constraints nullable="false" unique="false"/>
             </column>
         </createTable>
+
+        <sqlFile path="sql/default_http_refs.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
 
         <createTable tableName="exercises_http_refs">
             <column name="id" type="bigint" autoIncrement="true">

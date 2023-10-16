@@ -48,10 +48,10 @@ class ExerciseServiceTest {
     @Test
     void createExerciseTest_shouldReturnNewExercise() {
         // Given
-        CreateExerciseRequestDto requestDto = dataUtil.createExerciseRequestDto(1, 1, 2, 1, 2);
+        CreateExerciseRequestDto requestDto = dataUtil.createExerciseRequestDto(1, false, 1, 2, 1, 2);
         List<BodyPart> bodyPartsMock = dataUtil.createBodyParts(1, 2);
         List<HttpRef> httpRefsMock = dataUtil.createHttpRefs(1, 2, false);
-        Exercise exerciseMock = dataUtil.createExercise(1, false, false, 1, 2, 1, 2);
+        Exercise exerciseMock = dataUtil.createExercise(1, false, false, false, 1, 2, 1, 2);
         long userId = 1L;
         when(bodyPartRepository.existsById(anyLong())).thenReturn(true);
         when(bodyPartRepository.getReferenceById(1L)).thenReturn(bodyPartsMock.get(0));
@@ -87,7 +87,7 @@ class ExerciseServiceTest {
     void getExercisesTest_shouldReturnDefaultExercises() {
         // Given
         List<Exercise> exercises = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> dataUtil.createExercise(id, false, true, 1, 2, 1, 2))
+                .mapToObj(id -> dataUtil.createExercise(id, false, false, true, 1, 2, 1, 2))
                 .toList();
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
         when(exerciseRepository.findAllDefault(sort)).thenReturn(exercises);
@@ -127,11 +127,11 @@ class ExerciseServiceTest {
     void getExercisesTest_shouldReturnCustomExercises() {
         // Given
         List<Exercise> defaultExercises = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> dataUtil.createExercise(id, false, false, 1, 2, 1, 2))
+                .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
                 .toList();
 
         List<Exercise> customExercises = IntStream.rangeClosed(3, 4)
-                .mapToObj(id -> dataUtil.createExercise(id, true, true, 3, 4, 3, 4))
+                .mapToObj(id -> dataUtil.createExercise(id, true, false, true, 3, 4, 3, 4))
                 .toList();
 
         long userId = 1L;
