@@ -59,11 +59,13 @@ public class DataHelper {
                 .build());
     }
 
-    public Exercise createExercise(int seed, boolean isCustom, Set<BodyPart> bodyParts, Set<HttpRef> httpRefs) {
+    public Exercise createExercise(
+            int seed, boolean isCustom, boolean needsEquipment, Set<BodyPart> bodyParts, Set<HttpRef> httpRefs) {
         return exerciseRepository.save(Exercise.builder()
                 .title("Title " + seed)
                 .description("Desc " + seed)
                 .isCustom(isCustom)
+                .needsEquipment(needsEquipment)
                 .bodyParts(bodyParts)
                 .httpRefs(httpRefs)
                 .build());

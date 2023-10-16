@@ -24,6 +24,13 @@ public class HttpRefServiceImpl implements HttpRefService {
     }
 
     @Override
+    public List<HttpRefResponseDto> getDefaultHttpRefs(Sort sort) {
+        return httpRefRepository.findAllDefault(sort).stream()
+                .map(elt -> modelMapper.map(elt, HttpRefResponseDto.class))
+                .toList();
+    }
+
+    @Override
     public List<HttpRefResponseDto> getHttpRefs(long userId, Sort sort, boolean isDefaultOnly) {
         List<HttpRef> httpRefs = new LinkedList<>();
 

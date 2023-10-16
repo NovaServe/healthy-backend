@@ -98,19 +98,19 @@ class HttpRefRepositoryTest {
                 .toList();
 
         Exercise exercise1_ofUser1 = dataHelper.createExercise(
-                1, true, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(0), httpRefsCustom.get(0)));
+                1, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(0), httpRefsCustom.get(0)));
 
         Exercise exercise2_ofUser1 = dataHelper.createExercise(
-                2, true, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(1), httpRefsCustom.get(1)));
+                2, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(1), httpRefsCustom.get(1)));
 
         Role role = dataHelper.createRole("ROLE_USER");
         User user1_test = dataHelper.createUser("one", role, Set.of(exercise1_ofUser1, exercise2_ofUser1));
 
         Exercise exercise1_ofUser2 = dataHelper.createExercise(
-                3, true, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
+                3, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
 
         Exercise exercise2_ofUser2 = dataHelper.createExercise(
-                4, true, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
+                4, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
 
         User user2 = dataHelper.createUser("two", role, Set.of(exercise1_ofUser2, exercise2_ofUser2));
 

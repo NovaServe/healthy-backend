@@ -17,6 +17,8 @@ public class ExerciseResponseDto {
 
     private boolean isCustom;
 
+    private boolean needsEquipment;
+
     private List<BodyPartResponseDto> bodyParts;
 
     private List<HttpRefResponseDto> httpRefs;

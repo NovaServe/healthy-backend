@@ -104,4 +104,24 @@ class HttpRefServiceTest {
         assertEquals(ErrorMessage.SERVER_ERROR.getName(), exception.getMessage());
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatus());
     }
+
+    @Test
+    void getDefaultHttpRefs_shouldReturnDefaultHttpRefs() {
+        // Given
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        List<HttpRef> httpRefsDefault = dataUtil.createHttpRefs(1, 2, false);
+        when(httpRefRepository.findAllDefault(sort)).thenReturn(httpRefsDefault);
+
+        // When
+        List<HttpRefResponseDto> httpRefsActual = httpRefService.getDefaultHttpRefs(sort);
+
+        // Then
+        verify(httpRefRepository, times(1)).findAllDefault(sort);
+
+        org.hamcrest.MatcherAssert.assertThat(httpRefsActual, hasSize(httpRefsDefault.size()));
+
+        Assertions.assertThat(httpRefsDefault)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(httpRefsActual);
+    }
 }
