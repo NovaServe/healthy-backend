@@ -395,21 +395,24 @@ class ExerciseControllerTest {
     @Test
     void getDefaultExerciseTest_ShouldReturnExerciseAnd200Ok() throws Exception {
         // Given
-        int seed = 1;
+        int exercise_id = 0;
 
-        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 1)
+        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
                 .toList();
 
-        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 1)
+        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        Exercise defaultExercise =
-                dataHelper.createExercise(seed, false, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs));
-        long id = defaultExercise.getId();
-        // When
+        List<Exercise> defaultExercises = IntStream.rangeClosed(1, 5)
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, false, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .toList();
 
+        long id = defaultExercises.get(exercise_id).getId();
+
+        // When
         String postfix = String.format("/default/%d", id);
         MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
                 // Then
@@ -421,19 +424,19 @@ class ExerciseControllerTest {
         ExerciseResponseDto responseDto =
                 objectMapper.readValue(responseContent, new TypeReference<ExerciseResponseDto>() {});
 
-        assertThat(defaultExercise)
+        assertThat(defaultExercises.get(exercise_id))
                 .usingRecursiveComparison()
                 .ignoringFields("isCustom", "bodyParts", "httpRefs", "users")
                 .isEqualTo(responseDto);
 
-        List<BodyPart> bodyParts_ = defaultExercise.getBodyParts().stream()
+        List<BodyPart> bodyParts_ = defaultExercises.get(exercise_id).getBodyParts().stream()
                 .sorted(Comparator.comparingLong(BodyPart::getId))
                 .toList();
         assertThat(bodyParts_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
                 .isEqualTo(responseDto.getBodyParts());
 
-        List<HttpRef> HttpRefs_ = defaultExercise.getHttpRefs().stream()
+        List<HttpRef> HttpRefs_ = defaultExercises.get(exercise_id).getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
         assertThat(HttpRefs_)

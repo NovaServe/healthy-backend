@@ -178,23 +178,27 @@ class ExerciseServiceTest {
         when(exerciseRepository.findDefaultById(exercise_id)).thenReturn(exercise);
 
         // When
-        ExerciseResponseDto exercisesDtoActual = exerciseService.getDefaultExerciseById(exercise_id);
+        ExerciseResponseDto exerciseDtoActual = exerciseService.getDefaultExerciseById(exercise_id);
 
         // Then
         verify((exerciseRepository), times(1)).findDefaultById(exercise_id);
         Assertions.assertThat(exercise)
                 .usingRecursiveComparison()
                 .ignoringFields("users", "bodyParts", "httpRefs")
-                .isEqualTo(exercisesDtoActual);
+                .isEqualTo(exerciseDtoActual);
 
-        List<BodyPart> bodyParts_ = exercise.getBodyParts().stream().toList();
+        List<BodyPart> bodyParts_ = exercise.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPart::getId))
+                .toList();
         assertThat(bodyParts_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(exercisesDtoActual.getBodyParts());
+                .isEqualTo(exerciseDtoActual.getBodyParts());
 
-        List<HttpRef> httpRefs_ = exercise.getHttpRefs().stream().toList();
+        List<HttpRef> httpRefs_ = exercise.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRef::getId))
+                .toList();
         assertThat(httpRefs_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(exercisesDtoActual.getHttpRefs());
+                .isEqualTo(exerciseDtoActual.getHttpRefs());
     }
 }

@@ -34,7 +34,7 @@ public class SecurityConfig {
     private String defaultExercisesUrl;
 
     @Value("${api.basePath}/${api.version}/workouts/exercises/default/{exercise_id}")
-    private String defaultExerciseDetails;
+    private String defaultExerciseDetailsUrl;
 
     @Value("${api.basePath}/${api.version}/workouts/httpRefs/default")
     private String defaultHttpRefsUrl;
@@ -69,7 +69,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, defaultExercisesUrl)
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, defaultExerciseDetails)
+                        .requestMatchers(HttpMethod.GET, defaultExerciseDetailsUrl)
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, defaultHttpRefsUrl)
                         .permitAll()
