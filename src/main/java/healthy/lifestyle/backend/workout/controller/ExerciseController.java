@@ -31,12 +31,8 @@ public class ExerciseController {
     }
 
     /**
-     * Creates custom exercise
-     * @param  requestDto (HttpRef objects are optional)
-     * @return Created exercise Dto (201 Created)
-     * @throws healthy.lifestyle.backend.exception.ApiException
-     * ErrorMessage.TITLE_DUPLICATE (400 Bad Request) - If a user already has the exercise with a same title<br>
-     * ErrorMessage.INVALID_NESTED_OBJECT (400 Bad Request) - If there are invalid ids of bodyParts or httpRefs
+     * ErrorMessage.TITLE_DUPLICATE (400 Bad Request). If a user already has the exercise with a same title<br>
+     * ErrorMessage.INVALID_NESTED_OBJECT (400 Bad Request). If there are invalid ids of bodyParts or httpRefs
      */
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -59,24 +55,11 @@ public class ExerciseController {
         throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
     }
 
-    /**
-     * Retrieves default exercises
-     * @return List<ExerciseResponseDto> List of default exercises only
-     */
     @GetMapping("/default")
     public ResponseEntity<List<ExerciseResponseDto>> getDefaultExercises() {
         return ResponseEntity.ok(exerciseService.getDefaultExercises());
     }
 
-    @GetMapping("/default/{exercise_id}")
-    public ResponseEntity<ExerciseResponseDto> getExerciseById(@PathVariable("exercise_id") long exercise_id) {
-        return ResponseEntity.ok(exerciseService.getDefaultExerciseById(exercise_id));
-    }
-
-    /**
-     * Retrieves custom exercises of a particular user
-     * @return List<ExerciseResponseDto> List of custom exercises
-     */
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<List<ExerciseResponseDto>> getCustomExercises() {

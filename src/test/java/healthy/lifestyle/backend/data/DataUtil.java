@@ -8,8 +8,10 @@ import healthy.lifestyle.backend.workout.dto.HttpRefRequestDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
+import healthy.lifestyle.backend.workout.model.Workout;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.modelmapper.ModelMapper;
@@ -117,6 +119,16 @@ public class DataUtil {
                 .usernameOrEmail("username-" + seed + "@email.com")
                 .password("password-" + seed)
                 .confirmPassword("password-" + seed)
+                .build();
+    }
+
+    public Workout createWorkout(long id, boolean isCustom, Set<Exercise> exercises) {
+        return Workout.builder()
+                .id(id)
+                .title("Title " + id)
+                .description("Description " + id)
+                .isCustom(isCustom)
+                .exercises(exercises)
                 .build();
     }
 }

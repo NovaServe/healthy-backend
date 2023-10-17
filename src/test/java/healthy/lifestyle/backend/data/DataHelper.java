@@ -7,9 +7,11 @@ import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
+import healthy.lifestyle.backend.workout.model.Workout;
 import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
+import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
@@ -34,6 +36,9 @@ public class DataHelper {
     UserRepository userRepository;
 
     @Autowired
+    WorkoutRepository workoutRepository;
+
+    @Autowired
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -41,6 +46,8 @@ public class DataHelper {
     public void deleteAll() {
         userRepository.deleteAll();
         roleRepository.deleteAll();
+
+        workoutRepository.deleteAll();
         exerciseRepository.deleteAll();
         bodyPartRepository.deleteAll();
         httpRefRepository.deleteAll();
@@ -89,5 +96,15 @@ public class DataHelper {
                 .role(role)
                 .exercises(exercises)
                 .build());
+    }
+
+    public Workout createWorkout(int seed, boolean isCustom, Set<Exercise> exercises) {
+        Workout workout = Workout.builder()
+                .title("Title " + seed)
+                .description("Description " + seed)
+                .isCustom(isCustom)
+                .exercises(exercises)
+                .build();
+        return workoutRepository.save(workout);
     }
 }

@@ -39,6 +39,9 @@ public class SecurityConfig {
     @Value("${api.basePath}/${api.version}/workouts/httpRefs/default")
     private String defaultHttpRefsUrl;
 
+    @Value("${api.basePath}/${api.version}/workouts/default")
+    private String defaultWorkoutsUrl;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -69,6 +72,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, defaultExerciseDetails)
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, defaultHttpRefsUrl)
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, defaultWorkoutsUrl)
                         .permitAll()
                         .anyRequest()
                         .authenticated());

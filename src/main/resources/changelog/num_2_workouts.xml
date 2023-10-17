@@ -6,7 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet id="exercises" author="Oleg Kucherenko" context="structure">
-        <comment>Create exercises, body_parts, http_refs, m2m tables</comment>
+        <comment>Create tables</comment>
 
         <createTable tableName="exercises">
             <column name="id" type="bigint" autoIncrement="true">
@@ -69,8 +69,6 @@
             </column>
         </createTable>
 
-        <sqlFile path="sql/default_http_refs.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
-
         <createTable tableName="exercises_http_refs">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -84,6 +82,10 @@
                              references="http_refs(id)"/>
             </column>
         </createTable>
+
+        <sqlFile path="sql/default_http_refs.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+
+        <sqlFile path="sql/default_exercises.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
 
         <createTable tableName="users_exercises">
             <column name="id" type="bigint" autoIncrement="true">
@@ -99,6 +101,35 @@
             </column>
         </createTable>
 
-        <sqlFile path="sql/default_exercises.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <createTable tableName="workouts">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="title" type="varchar">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="description" type="varchar">
+                <constraints nullable="true" unique="false"/>
+            </column>
+            <column name="is_custom" type="boolean">
+                <constraints nullable="false" unique="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="workouts_exercises">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="workout_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_workout_id"
+                             references="workouts(id)"/>
+            </column>
+            <column name="exercise_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_exercise_id"
+                             references="exercises(id)"/>
+            </column>
+        </createTable>
+
+        <sqlFile path="sql/default_workouts.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
     </changeSet>
 </databaseChangeLog>
