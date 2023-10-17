@@ -10,4 +10,6 @@ public interface ExerciseService {
     List<ExerciseResponseDto> getCustomExercises(long userId);
 
     List<ExerciseResponseDto> getDefaultExercises();
+
+    ExerciseResponseDto getDefaultExerciseById(long exerciseId);
 }

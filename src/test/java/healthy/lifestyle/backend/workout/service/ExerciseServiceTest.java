@@ -17,6 +17,7 @@ import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.*;
 import java.util.stream.IntStream;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -167,5 +168,33 @@ class ExerciseServiceTest {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
                     .isEqualTo(exercisesDtoActual.get(id).getHttpRefs());
         });
+    }
+
+    @Test
+    void getExerciseTest_shouldReturnDefaultExercise() {
+        // Given
+        long exercise_id = 1L;
+        Exercise exercise = dataUtil.createExercise(exercise_id, false, false, false, 1, 2, 1, 2);
+        when(exerciseRepository.findDefaultById(exercise_id)).thenReturn(exercise);
+
+        // When
+        ExerciseResponseDto exercisesDtoActual = exerciseService.getDefaultExerciseById(exercise_id);
+
+        // Then
+        verify((exerciseRepository), times(1)).findDefaultById(exercise_id);
+        Assertions.assertThat(exercise)
+                .usingRecursiveComparison()
+                .ignoringFields("users", "bodyParts", "httpRefs")
+                .isEqualTo(exercisesDtoActual);
+
+        List<BodyPart> bodyParts_ = exercise.getBodyParts().stream().toList();
+        assertThat(bodyParts_)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exercisesDtoActual.getBodyParts());
+
+        List<HttpRef> httpRefs_ = exercise.getHttpRefs().stream().toList();
+        assertThat(httpRefs_)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exercisesDtoActual.getHttpRefs());
     }
 }

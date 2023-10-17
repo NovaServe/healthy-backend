@@ -178,4 +178,10 @@ public class ExerciseServiceImpl implements ExerciseService {
                 })
                 .toList();
     }
+
+    @Override
+    @Transactional
+    public ExerciseResponseDto getDefaultExerciseById(long exerciseId) {
+        return modelMapper.map(exerciseRepository.findDefaultById(exerciseId), ExerciseResponseDto.class);
+    }
 }
