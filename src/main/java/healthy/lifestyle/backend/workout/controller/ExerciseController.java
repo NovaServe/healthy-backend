@@ -60,6 +60,11 @@ public class ExerciseController {
         return ResponseEntity.ok(exerciseService.getDefaultExercises());
     }
 
+    @GetMapping("/default/{exercise_id}")
+    public ResponseEntity<ExerciseResponseDto> getExerciseById(@PathVariable("exercise_id") long exercise_id) {
+        return ResponseEntity.ok(exerciseService.getDefaultExerciseById(exercise_id));
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<List<ExerciseResponseDto>> getCustomExercises() {
