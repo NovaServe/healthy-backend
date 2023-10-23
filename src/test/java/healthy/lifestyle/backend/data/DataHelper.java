@@ -9,9 +9,11 @@ import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
+import healthy.lifestyle.backend.workout.model.Workout;
 import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
+import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
@@ -39,6 +41,9 @@ public class DataHelper {
     CountryRepository countryRepository;
 
     @Autowired
+    WorkoutRepository workoutRepository;
+
+    @Autowired
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -46,6 +51,7 @@ public class DataHelper {
     public void deleteAll() {
         userRepository.deleteAll();
         roleRepository.deleteAll();
+        workoutRepository.deleteAll();
         exerciseRepository.deleteAll();
         bodyPartRepository.deleteAll();
         httpRefRepository.deleteAll();
@@ -65,11 +71,13 @@ public class DataHelper {
                 .build());
     }
 
-    public Exercise createExercise(int seed, boolean isCustom, Set<BodyPart> bodyParts, Set<HttpRef> httpRefs) {
+    public Exercise createExercise(
+            int seed, boolean isCustom, boolean needsEquipment, Set<BodyPart> bodyParts, Set<HttpRef> httpRefs) {
         return exerciseRepository.save(Exercise.builder()
                 .title("Title " + seed)
                 .description("Desc " + seed)
                 .isCustom(isCustom)
+                .needsEquipment(needsEquipment)
                 .bodyParts(bodyParts)
                 .httpRefs(httpRefs)
                 .build());
@@ -98,5 +106,15 @@ public class DataHelper {
 
     public Country createCountry(int seed) {
         return countryRepository.save(Country.builder().name("Country " + seed).build());
+    }
+
+    public Workout createWorkout(int seed, boolean isCustom, Set<Exercise> exercises) {
+        Workout workout = Workout.builder()
+                .title("Title " + seed)
+                .description("Description " + seed)
+                .isCustom(isCustom)
+                .exercises(exercises)
+                .build();
+        return workoutRepository.save(workout);
     }
 }

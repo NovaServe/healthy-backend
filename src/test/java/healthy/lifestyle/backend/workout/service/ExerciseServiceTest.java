@@ -17,6 +17,7 @@ import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.*;
 import java.util.stream.IntStream;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -48,10 +49,10 @@ class ExerciseServiceTest {
     @Test
     void createExerciseTest_shouldReturnNewExercise() {
         // Given
-        CreateExerciseRequestDto requestDto = dataUtil.createExerciseRequestDto(1, 1, 2, 1, 2);
+        CreateExerciseRequestDto requestDto = dataUtil.createExerciseRequestDto(1, false, 1, 2, 1, 2);
         List<BodyPart> bodyPartsMock = dataUtil.createBodyParts(1, 2);
         List<HttpRef> httpRefsMock = dataUtil.createHttpRefs(1, 2, false);
-        Exercise exerciseMock = dataUtil.createExercise(1, false, false, 1, 2, 1, 2);
+        Exercise exerciseMock = dataUtil.createExercise(1, false, false, false, 1, 2, 1, 2);
         long userId = 1L;
         when(bodyPartRepository.existsById(anyLong())).thenReturn(true);
         when(bodyPartRepository.getReferenceById(1L)).thenReturn(bodyPartsMock.get(0));
@@ -87,7 +88,7 @@ class ExerciseServiceTest {
     void getExercisesTest_shouldReturnDefaultExercises() {
         // Given
         List<Exercise> exercises = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> dataUtil.createExercise(id, false, true, 1, 2, 1, 2))
+                .mapToObj(id -> dataUtil.createExercise(id, false, false, true, 1, 2, 1, 2))
                 .toList();
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
         when(exerciseRepository.findAllDefault(sort)).thenReturn(exercises);
@@ -127,11 +128,11 @@ class ExerciseServiceTest {
     void getExercisesTest_shouldReturnCustomExercises() {
         // Given
         List<Exercise> defaultExercises = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> dataUtil.createExercise(id, false, false, 1, 2, 1, 2))
+                .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
                 .toList();
 
         List<Exercise> customExercises = IntStream.rangeClosed(3, 4)
-                .mapToObj(id -> dataUtil.createExercise(id, true, true, 3, 4, 3, 4))
+                .mapToObj(id -> dataUtil.createExercise(id, true, false, true, 3, 4, 3, 4))
                 .toList();
 
         long userId = 1L;
@@ -167,5 +168,37 @@ class ExerciseServiceTest {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
                     .isEqualTo(exercisesDtoActual.get(id).getHttpRefs());
         });
+    }
+
+    @Test
+    void getExerciseTest_shouldReturnDefaultExercise() {
+        // Given
+        long exercise_id = 1L;
+        Exercise exercise = dataUtil.createExercise(exercise_id, false, false, false, 1, 2, 1, 2);
+        when(exerciseRepository.findDefaultById(exercise_id)).thenReturn(exercise);
+
+        // When
+        ExerciseResponseDto exerciseDtoActual = exerciseService.getDefaultExerciseById(exercise_id);
+
+        // Then
+        verify((exerciseRepository), times(1)).findDefaultById(exercise_id);
+        Assertions.assertThat(exercise)
+                .usingRecursiveComparison()
+                .ignoringFields("users", "bodyParts", "httpRefs")
+                .isEqualTo(exerciseDtoActual);
+
+        List<BodyPart> bodyParts_ = exercise.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPart::getId))
+                .toList();
+        assertThat(bodyParts_)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exerciseDtoActual.getBodyParts());
+
+        List<HttpRef> httpRefs_ = exercise.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRef::getId))
+                .toList();
+        assertThat(httpRefs_)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exerciseDtoActual.getHttpRefs());
     }
 }

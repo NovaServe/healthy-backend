@@ -33,13 +33,12 @@ public class HttpRefController {
         this.authService = authService;
     }
 
-    /**
-     * Retrieve all http refs, ROLE_USER access is required
-     * @return List<HttpRefResponseDto>, 200 OK List of default and user's custom exercises
-     * @throws ApiException If default http refs not found, ErrorMessage.SERVER_ERROR 500 Internal server error
-     * @see HttpRefResponseDto
-     * @see healthy.lifestyle.backend.workout.service.HttpRefServiceImpl
-     */
+    @GetMapping("/default")
+    public ResponseEntity<List<HttpRefResponseDto>> getDefaultHttpRefs() {
+        return new ResponseEntity<>(
+                httpRefService.getDefaultHttpRefs(Sort.by(Sort.Direction.ASC, "id")), HttpStatus.OK);
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<List<HttpRefResponseDto>> getHttpRefs(

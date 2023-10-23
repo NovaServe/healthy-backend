@@ -7,4 +7,7 @@ INSERT INTO body_parts(id, name) VALUES
 (6, 'Triceps'),
 (7, 'Back'),
 (8, 'Abs'),
-(9, 'Legs');
+(9, 'Legs'),
+(10, 'Shoulder Blades'),
+(11, 'Knees'),
+(13, 'Calves');

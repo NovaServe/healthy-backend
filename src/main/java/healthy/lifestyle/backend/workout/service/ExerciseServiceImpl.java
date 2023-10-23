@@ -178,4 +178,20 @@ public class ExerciseServiceImpl implements ExerciseService {
                 })
                 .toList();
     }
+
+    @Override
+    @Transactional
+    public ExerciseResponseDto getDefaultExerciseById(long exerciseId) {
+        ExerciseResponseDto exerciseRespondDto =
+                modelMapper.map(exerciseRepository.findDefaultById(exerciseId), ExerciseResponseDto.class);
+        List<BodyPartResponseDto> bodyPartsSorted = exerciseRespondDto.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                .toList();
+        List<HttpRefResponseDto> httpRefsSorted = exerciseRespondDto.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                .toList();
+        exerciseRespondDto.setBodyParts(bodyPartsSorted);
+        exerciseRespondDto.setHttpRefs(httpRefsSorted);
+        return exerciseRespondDto;
+    }
 }

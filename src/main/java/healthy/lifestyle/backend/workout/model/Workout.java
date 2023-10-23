@@ -5,22 +5,19 @@ import java.util.Set;
 import lombok.*;
 
 @Entity
-@Table(name = "http_refs")
+@Table(name = "workouts")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-public class HttpRef {
+public class Workout {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", unique = false, nullable = false)
-    private String name;
-
-    @Column(name = "ref", unique = false, nullable = false)
-    private String ref;
+    @Column(name = "title", unique = false, nullable = false)
+    private String title;
 
     @Column(name = "description", unique = false, nullable = true)
     private String description;
@@ -28,7 +25,10 @@ public class HttpRef {
     @Column(name = "is_custom", unique = false, nullable = false)
     private boolean isCustom;
 
-    @ManyToMany(mappedBy = "httpRefs")
-    @OrderBy("id")
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "workouts_exercises",
+            joinColumns = @JoinColumn(name = "workout_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "exercise_id", referencedColumnName = "id"))
     private Set<Exercise> exercises;
 }

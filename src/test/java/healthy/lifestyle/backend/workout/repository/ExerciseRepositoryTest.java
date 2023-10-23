@@ -58,13 +58,13 @@ class ExerciseRepositoryTest {
     @Test
     void findCustomByTitleAndUserIdTest_shouldReturnCustomExercise() {
         // Given
-        Exercise exercise = dataHelper.createExercise(1, true, null, null);
+        Exercise exercise = dataHelper.createExercise(1, true, false, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, Set.of(exercise));
         dataHelper.exerciseAddUsers(exercise, Set.of(user));
 
-        Exercise otherExercise = dataHelper.createExercise(2, true, null, null);
+        Exercise otherExercise = dataHelper.createExercise(2, true, false, null, null);
         User otherUser = dataHelper.createUser("two", role, country, Set.of(otherExercise));
         dataHelper.exerciseAddUsers(otherExercise, Set.of(otherUser));
 
@@ -83,7 +83,7 @@ class ExerciseRepositoryTest {
     @Test
     void findCustomByTitleAndUserId_shouldReturnOptionalEmpty_whenWrongTitleProvided() {
         // Given
-        Exercise exercise = dataHelper.createExercise(1, true, null, null);
+        Exercise exercise = dataHelper.createExercise(1, true, false, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, Set.of(exercise));
@@ -99,7 +99,7 @@ class ExerciseRepositoryTest {
     @Test
     void findCustomByTitleAndUserId_shouldReturnOptionalEmpty_whenWrongUserIdProvided() {
         // Given
-        Exercise exercise = dataHelper.createExercise(1, true, null, null);
+        Exercise exercise = dataHelper.createExercise(1, true, false, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, Set.of(exercise));
@@ -116,7 +116,7 @@ class ExerciseRepositoryTest {
     @Test
     void findCustomByTitleAndUserId_shouldReturnOptionalEmpty_whenDefaultExerciseTitleProvided() {
         // Given
-        Exercise exercise = dataHelper.createExercise(1, false, null, null);
+        Exercise exercise = dataHelper.createExercise(1, false, false, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, Set.of(exercise));
@@ -133,11 +133,11 @@ class ExerciseRepositoryTest {
     void findAllDefault() {
         // Given
         List<Exercise> exercisesDefault = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> dataHelper.createExercise(id, false, null, null))
+                .mapToObj(id -> dataHelper.createExercise(id, false, false, null, null))
                 .toList();
 
         List<Exercise> exercisesCustom = IntStream.rangeClosed(3, 4)
-                .mapToObj(id -> dataHelper.createExercise(id, true, null, null))
+                .mapToObj(id -> dataHelper.createExercise(id, true, false, null, null))
                 .toList();
 
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
@@ -156,14 +156,14 @@ class ExerciseRepositoryTest {
     void findCustomByUserIdTest_shouldReturnCustomExercises_whenUserIdProvided() {
         // Given
         List<Exercise> customExercises = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> dataHelper.createExercise(id, true, null, null))
+                .mapToObj(id -> dataHelper.createExercise(id, true, false, null, null))
                 .toList();
 
         List<Exercise> defaultExercises = IntStream.rangeClosed(3, 4)
-                .mapToObj(id -> dataHelper.createExercise(id, false, null, null))
+                .mapToObj(id -> dataHelper.createExercise(id, false, false, null, null))
                 .toList();
 
-        Exercise otherExercise = dataHelper.createExercise(2, true, null, null);
+        Exercise otherExercise = dataHelper.createExercise(2, true, false, null, null);
 
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);

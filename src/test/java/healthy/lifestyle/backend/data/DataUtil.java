@@ -9,8 +9,10 @@ import healthy.lifestyle.backend.workout.dto.HttpRefRequestDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
+import healthy.lifestyle.backend.workout.model.Workout;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.modelmapper.ModelMapper;
@@ -38,7 +40,14 @@ public class DataUtil {
     }
 
     public Exercise createExercise(
-            long id, boolean isCustom, boolean isCustomRefs, int start1, int end1, int start2, int end2) {
+            long id,
+            boolean isCustom,
+            boolean needsEquipment,
+            boolean isCustomRefs,
+            int start1,
+            int end1,
+            int start2,
+            int end2) {
         List<HttpRef> httpRefs = createHttpRefs(start1, end1, isCustomRefs);
         List<BodyPart> bodyParts = createBodyParts(start2, end2);
         return Exercise.builder()
@@ -48,6 +57,7 @@ public class DataUtil {
                 .bodyParts(new HashSet<>(bodyParts))
                 .httpRefs(new HashSet<>(httpRefs))
                 .isCustom(isCustom)
+                .needsEquipment(needsEquipment)
                 .build();
     }
 
@@ -63,19 +73,21 @@ public class DataUtil {
                 .collect(Collectors.toList());
     }
 
-    public CreateExerciseRequestDto createExerciseRequestDto(int seed, int start1, int end1, int start2, int end2) {
+    public CreateExerciseRequestDto createExerciseRequestDto(
+            int seed, boolean needsEquipment, int start1, int end1, int start2, int end2) {
         List<HttpRefRequestDto> httpRefs = createHttpRefsRequestDto(start1, end1);
         List<BodyPartRequestDto> bodyParts = createBodyPartsRequestDto(start2, end2);
-        return new CreateExerciseRequestDto.Builder()
+        return CreateExerciseRequestDto.builder()
                 .title("Title " + seed)
                 .description("Desc " + seed)
+                .needsEquipment(needsEquipment)
                 .bodyParts(bodyParts)
                 .httpRefs(httpRefs)
                 .build();
     }
 
     public CreateExerciseRequestDto createExerciseRequestDto(
-            int seed, List<BodyPart> bodyParts, List<HttpRef> httpRefs) {
+            int seed, boolean needsEquipment, List<BodyPart> bodyParts, List<HttpRef> httpRefs) {
         List<BodyPartRequestDto> bodyPartRequestDtoList = bodyParts.stream()
                 .map(elt -> modelMapper.map(elt, BodyPartRequestDto.class))
                 .toList();
@@ -84,9 +96,10 @@ public class DataUtil {
                 .map(elt -> modelMapper.map(elt, HttpRefRequestDto.class))
                 .toList();
 
-        return new CreateExerciseRequestDto.Builder()
+        return CreateExerciseRequestDto.builder()
                 .title("Title " + seed)
                 .description("Desc " + seed)
+                .needsEquipment(needsEquipment)
                 .bodyParts(bodyPartRequestDtoList)
                 .httpRefs(httpRefRequestDtoList)
                 .build();
@@ -113,5 +126,15 @@ public class DataUtil {
 
     public Country createCountry(int seed) {
         return Country.builder().name("Country " + seed).build();
+    }
+
+    public Workout createWorkout(long id, boolean isCustom, Set<Exercise> exercises) {
+        return Workout.builder()
+                .id(id)
+                .title("Title " + id)
+                .description("Description " + id)
+                .isCustom(isCustom)
+                .exercises(exercises)
+                .build();
     }
 }

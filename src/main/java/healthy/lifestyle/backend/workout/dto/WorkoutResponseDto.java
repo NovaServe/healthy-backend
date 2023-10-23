@@ -8,7 +8,7 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class ExerciseResponseDto {
+public class WorkoutResponseDto {
     private Long id;
 
     private String title;
@@ -17,9 +17,9 @@ public class ExerciseResponseDto {
 
     private boolean isCustom;
 
-    private boolean needsEquipment;
-
     private List<BodyPartResponseDto> bodyParts;
 
-    private List<HttpRefResponseDto> httpRefs;
+    private boolean needsEquipment;
+
+    private List<ExerciseResponseDto> exercises;
 }

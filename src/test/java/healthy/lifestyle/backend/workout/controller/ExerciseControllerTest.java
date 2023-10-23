@@ -104,7 +104,8 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(1, bodyParts, httpRefs);
+        CreateExerciseRequestDto createExerciseRequestDto =
+                dataUtil.createExerciseRequestDto(1, false, bodyParts, httpRefs);
 
         // When
         MvcResult mvcResult = mockMvc.perform(post(URL)
@@ -150,7 +151,7 @@ class ExerciseControllerTest {
                 .toList();
 
         CreateExerciseRequestDto createExerciseRequestDto =
-                dataUtil.createExerciseRequestDto(1, bodyParts, Collections.emptyList());
+                dataUtil.createExerciseRequestDto(1, false, bodyParts, Collections.emptyList());
 
         // When
         MvcResult mvcResult = mockMvc.perform(post(URL)
@@ -190,7 +191,7 @@ class ExerciseControllerTest {
                 .toList();
 
         CreateExerciseRequestDto createExerciseRequestDto =
-                dataUtil.createExerciseRequestDto(1, Collections.emptyList(), httpRefs);
+                dataUtil.createExerciseRequestDto(1, false, Collections.emptyList(), httpRefs);
 
         // When
         mockMvc.perform(post(URL)
@@ -219,7 +220,8 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(1, bodyParts, httpRefs);
+        CreateExerciseRequestDto createExerciseRequestDto =
+                dataUtil.createExerciseRequestDto(1, false, bodyParts, httpRefs);
         createExerciseRequestDto.getBodyParts().get(0).setId(1000L);
         createExerciseRequestDto.getBodyParts().get(0).setId(1001L);
 
@@ -250,7 +252,8 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(1, bodyParts, httpRefs);
+        CreateExerciseRequestDto createExerciseRequestDto =
+                dataUtil.createExerciseRequestDto(1, false, bodyParts, httpRefs);
         createExerciseRequestDto.getHttpRefs().get(0).setId(1000L);
         createExerciseRequestDto.getHttpRefs().get(0).setId(1001L);
 
@@ -277,11 +280,13 @@ class ExerciseControllerTest {
                 .toList();
 
         List<Exercise> defaultExercises = IntStream.rangeClosed(1, 3)
-                .mapToObj(id -> dataHelper.createExercise(id, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, false, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
                 .toList();
 
         List<Exercise> customExercises = IntStream.rangeClosed(4, 6)
-                .mapToObj(id -> dataHelper.createExercise(id, true, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, true, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
                 .toList();
 
         List<Exercise> testUserCustomExercises = List.of(customExercises.get(0), customExercises.get(1));
@@ -350,11 +355,13 @@ class ExerciseControllerTest {
                 .toList();
 
         List<Exercise> defaultExercises = IntStream.rangeClosed(1, 3)
-                .mapToObj(id -> dataHelper.createExercise(id, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, false, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
                 .toList();
 
         List<Exercise> customExercises = IntStream.rangeClosed(4, 6)
-                .mapToObj(id -> dataHelper.createExercise(id, true, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, true, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
                 .toList();
 
         // When
@@ -392,5 +399,57 @@ class ExerciseControllerTest {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
                     .isEqualTo(responseDto.get(id).getHttpRefs());
         });
+    }
+
+    @Test
+    void getDefaultExerciseTest_ShouldReturnExerciseAnd200Ok() throws Exception {
+        // Given
+        int exercise_id = 0;
+
+        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createBodyPart(id))
+                .toList();
+
+        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createHttpRef(id, false))
+                .toList();
+
+        List<Exercise> defaultExercises = IntStream.rangeClosed(1, 5)
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, false, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .toList();
+
+        long id = defaultExercises.get(exercise_id).getId();
+
+        // When
+        String postfix = String.format("/default/%d", id);
+        MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        ExerciseResponseDto responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<ExerciseResponseDto>() {});
+
+        assertThat(defaultExercises.get(exercise_id))
+                .usingRecursiveComparison()
+                .ignoringFields("isCustom", "bodyParts", "httpRefs", "users")
+                .isEqualTo(responseDto);
+
+        List<BodyPart> bodyParts_ = defaultExercises.get(exercise_id).getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPart::getId))
+                .toList();
+        assertThat(bodyParts_)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(responseDto.getBodyParts());
+
+        List<HttpRef> HttpRefs_ = defaultExercises.get(exercise_id).getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRef::getId))
+                .toList();
+        assertThat(HttpRefs_)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(responseDto.getHttpRefs());
     }
 }
