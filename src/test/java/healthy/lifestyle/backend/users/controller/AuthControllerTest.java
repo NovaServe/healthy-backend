@@ -15,6 +15,7 @@ import healthy.lifestyle.backend.data.DataUtil;
 import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.LoginResponseDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
+import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,7 +78,8 @@ class AuthControllerTest {
     void signupTest_shouldReturn201Created() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        Country country = dataHelper.createCountry(1);
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
 
         // When
         mockMvc.perform(post(URL + "/signup")
@@ -93,8 +95,9 @@ class AuthControllerTest {
     void signupTest_shouldReturn400BadRequest_whenUserAlreadyExists() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
 
         // When
         mockMvc.perform(post(URL + "/signup")
@@ -110,8 +113,8 @@ class AuthControllerTest {
     void signupTest_shouldReturn400BadRequest_whenInvalidUsername() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        Country country = dataHelper.createCountry(1);
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
         signupRequestDto.setUsername("username 123 $");
 
         // When
@@ -128,8 +131,8 @@ class AuthControllerTest {
     void signupTest_shouldReturn400BadRequest_whenInvalidEmail() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        Country country = dataHelper.createCountry(1);
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
         signupRequestDto.setEmail("invalid-email-123-$@email.com");
 
         // When
@@ -146,8 +149,8 @@ class AuthControllerTest {
     void signupTest_shouldReturn400BadRequest_whenInvalidPassword() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        Country country = dataHelper.createCountry(1);
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
         signupRequestDto.setPassword("Invalid password with space");
         signupRequestDto.setConfirmPassword("Invalid password with space");
 
@@ -166,8 +169,8 @@ class AuthControllerTest {
     void signupTest_shouldReturn400BadRequest_whenPasswordsMismatch() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        Country country = dataHelper.createCountry(1);
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
         signupRequestDto.setConfirmPassword("Password mismatch");
 
         // When
@@ -184,8 +187,8 @@ class AuthControllerTest {
     void signupTest_shouldReturn400BadRequest_whenInvalidFullName() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        Country country = dataHelper.createCountry(1);
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
         signupRequestDto.setFullName("Invalid Full Name &");
 
         // When
@@ -202,7 +205,8 @@ class AuthControllerTest {
     void loginTest_shouldReturnTokenAnd200Ok() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
 
         LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
 
@@ -245,7 +249,8 @@ class AuthControllerTest {
     void loginTest_shouldReturn401Unauthorized_whenWrongPassword() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
 
         LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
         loginRequestDto.setPassword("Wrong-password");

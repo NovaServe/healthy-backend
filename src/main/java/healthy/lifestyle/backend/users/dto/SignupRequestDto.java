@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.users.dto;
 import healthy.lifestyle.backend.validation.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 @FieldsValueMatch.List({
@@ -35,14 +36,18 @@ public class SignupRequestDto {
     @FullnameValidation
     private String fullName;
 
+    @NotNull private Long countryId;
+
     public SignupRequestDto() {}
 
-    public SignupRequestDto(String username, String email, String password, String confirmPassword, String fullName) {
+    public SignupRequestDto(
+            String username, String email, String password, String confirmPassword, String fullName, Long countryId) {
         this.username = username;
         this.email = email;
         this.password = password;
         this.confirmPassword = confirmPassword;
         this.fullName = fullName;
+        this.countryId = countryId;
     }
 
     public SignupRequestDto(Builder builder) {
@@ -51,6 +56,7 @@ public class SignupRequestDto {
         this.password = builder.password;
         this.confirmPassword = builder.confirmPassword;
         this.fullName = builder.fullName;
+        this.countryId = builder.countryId;
     }
 
     public String getUsername() {
@@ -93,12 +99,21 @@ public class SignupRequestDto {
         this.fullName = fullName.trim();
     }
 
+    public Long getCountryId() {
+        return countryId;
+    }
+
+    public void setCountryId(Long countryId) {
+        this.countryId = countryId;
+    }
+
     public static class Builder {
         private String username;
         private String email;
         private String password;
         private String confirmPassword;
         private String fullName;
+        private Long countryId;
 
         public Builder username(String username) {
             this.username = username.trim();
@@ -122,6 +137,11 @@ public class SignupRequestDto {
 
         public Builder fullName(String fullName) {
             this.fullName = fullName.trim();
+            return this;
+        }
+
+        public Builder country(Long countryId) {
+            this.countryId = countryId;
             return this;
         }
 

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
+import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -104,7 +105,8 @@ class HttpRefRepositoryTest {
                 2, true, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(1), httpRefsCustom.get(1)));
 
         Role role = dataHelper.createRole("ROLE_USER");
-        User user1_test = dataHelper.createUser("one", role, Set.of(exercise1_ofUser1, exercise2_ofUser1));
+        Country country = dataHelper.createCountry(1);
+        User user1_test = dataHelper.createUser("one", role, country, Set.of(exercise1_ofUser1, exercise2_ofUser1));
 
         Exercise exercise1_ofUser2 = dataHelper.createExercise(
                 3, true, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
@@ -112,7 +114,7 @@ class HttpRefRepositoryTest {
         Exercise exercise2_ofUser2 = dataHelper.createExercise(
                 4, true, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
 
-        User user2 = dataHelper.createUser("two", role, Set.of(exercise1_ofUser2, exercise2_ofUser2));
+        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise1_ofUser2, exercise2_ofUser2));
 
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
 

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
+import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
@@ -92,11 +93,12 @@ class HttpRefControllerTest {
         Exercise exercise1 = dataHelper.createExercise(1, true, Set.of(bodyPart), Set.of(httpRef2));
 
         Role role = dataHelper.createRole("ROLE_USER");
-        User user1 = dataHelper.createUser("one", role, Set.of(exercise1));
+        Country country = dataHelper.createCountry(1);
+        User user1 = dataHelper.createUser("one", role, country, Set.of(exercise1));
 
         HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
         Exercise exercise2 = dataHelper.createExercise(2, true, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
-        User user2 = dataHelper.createUser("two", role, Set.of(exercise2));
+        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise2));
 
         Exercise exercise3 = dataHelper.createExercise(3, false, Set.of(bodyPart), Set.of(httpRef1));
 
@@ -134,12 +136,13 @@ class HttpRefControllerTest {
         Exercise exercise1 = dataHelper.createExercise(1, true, Set.of(bodyPart), Set.of(httpRef2));
 
         Role role = dataHelper.createRole("ROLE_USER");
-        User user1 = dataHelper.createUser("one", role, Set.of(exercise1));
+        Country country = dataHelper.createCountry(1);
+        User user1 = dataHelper.createUser("one", role, country, Set.of(exercise1));
 
         HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
         Exercise exercise2 = dataHelper.createExercise(2, true, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
 
-        User user2 = dataHelper.createUser("two", role, Set.of(exercise2));
+        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise2));
 
         Exercise exercise3 = dataHelper.createExercise(3, false, Set.of(bodyPart), Set.of(httpRef1));
 
@@ -171,7 +174,8 @@ class HttpRefControllerTest {
     void getHttpRefsTest_shouldReturnErrorMessageAnd500InternalServerError_whenNoHttpRefs() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
 
         // When
         mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))

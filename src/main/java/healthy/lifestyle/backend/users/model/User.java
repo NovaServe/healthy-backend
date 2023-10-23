@@ -27,6 +27,10 @@ public class User {
     @JoinColumn(name = "role_id") // FOREIGN KEY(role_id) REFERENCES roles(id)
     private Role role;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "country_id") // FOREIGN KEY(country_id) REFERENCES countries(id)
+    private Country country;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "users_exercises",
@@ -36,13 +40,14 @@ public class User {
 
     public User() {}
 
-    public User(Long id, String username, String email, String fullName, String password, Role role) {
+    public User(Long id, String username, String email, String fullName, String password, Role role, Country country) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.fullName = fullName;
         this.password = password;
         this.role = role;
+        this.country = country;
     }
 
     public User(Builder builder) {
@@ -52,6 +57,7 @@ public class User {
         this.fullName = builder.fullName;
         this.password = builder.password;
         this.role = builder.role;
+        this.country = builder.country;
         this.exercises = builder.exercises;
     }
 
@@ -103,6 +109,14 @@ public class User {
         this.role = role;
     }
 
+    public Country getCountry() {
+        return country;
+    }
+
+    public void setCountry(Country country) {
+        this.country = country;
+    }
+
     public Set<Exercise> getExercises() {
         return exercises;
     }
@@ -118,6 +132,7 @@ public class User {
         private String fullName;
         private String password;
         private Role role;
+        private Country country;
         private Set<Exercise> exercises;
 
         public Builder id(Long id) {
@@ -147,6 +162,11 @@ public class User {
 
         public Builder role(Role role) {
             this.role = role;
+            return this;
+        }
+
+        public Builder country(Country country) {
+            this.country = country;
             return this;
         }
 
