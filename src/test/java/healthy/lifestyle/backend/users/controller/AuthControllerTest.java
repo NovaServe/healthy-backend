@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.users.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -24,6 +25,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -306,6 +308,33 @@ class AuthControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.password,confirmPassword", is("Passwords don't match")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void validateTokenTest_shouldReturn200Ok_whenTokenIsValid() throws Exception {
+        // Given
+        String URL_POSTFIX = "/validate";
+        Role role = dataHelper.createRole("ROLE_USER");
+        User user = dataHelper.createUser("one", role, null);
+
+        // When
+        mockMvc.perform(get(URL + URL_POSTFIX).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print());
+    }
+
+    @Test
+    void validateTokenTest_shouldReturn401Unauthorized_whenUnauthorized() throws Exception {
+        // Given
+        String URL_POSTFIX = "/validate";
+
+        // When
+        mockMvc.perform(get(URL + URL_POSTFIX).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isUnauthorized())
                 .andDo(print());
     }
 }
