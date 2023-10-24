@@ -102,8 +102,10 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto =
-                dataUtil.createExerciseRequestDto(1, false, bodyParts, httpRefs);
+        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(
+                1, false, new Long[] {bodyParts.get(0).getId(), bodyParts.get(1).getId()}, new Long[] {
+                    httpRefs.get(0).getId(), httpRefs.get(1).getId()
+                });
 
         // When
         MvcResult mvcResult = mockMvc.perform(post(URL)
@@ -147,8 +149,8 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createBodyPart(id))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto =
-                dataUtil.createExerciseRequestDto(1, false, bodyParts, Collections.emptyList());
+        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(
+                1, false, new Long[] {bodyParts.get(0).getId(), bodyParts.get(1).getId()}, new Long[] {});
 
         // When
         MvcResult mvcResult = mockMvc.perform(post(URL)
@@ -187,7 +189,9 @@ class ExerciseControllerTest {
                 .toList();
 
         CreateExerciseRequestDto createExerciseRequestDto =
-                dataUtil.createExerciseRequestDto(1, false, Collections.emptyList(), httpRefs);
+                dataUtil.createExerciseRequestDto(1, false, new Long[] {}, new Long[] {
+                    httpRefs.get(0).getId(), httpRefs.get(1).getId()
+                });
 
         // When
         mockMvc.perform(post(URL)
@@ -216,9 +220,7 @@ class ExerciseControllerTest {
                 .toList();
 
         CreateExerciseRequestDto createExerciseRequestDto =
-                dataUtil.createExerciseRequestDto(1, false, bodyParts, httpRefs);
-        createExerciseRequestDto.getBodyParts().get(0).setId(1000L);
-        createExerciseRequestDto.getBodyParts().get(0).setId(1001L);
+                dataUtil.createExerciseRequestDto(1, false, new Long[] {1000L}, new Long[] {1111L});
 
         // When
         mockMvc.perform(post(URL)
@@ -247,9 +249,7 @@ class ExerciseControllerTest {
                 .toList();
 
         CreateExerciseRequestDto createExerciseRequestDto =
-                dataUtil.createExerciseRequestDto(1, false, bodyParts, httpRefs);
-        createExerciseRequestDto.getHttpRefs().get(0).setId(1000L);
-        createExerciseRequestDto.getHttpRefs().get(0).setId(1001L);
+                dataUtil.createExerciseRequestDto(1, false, new Long[] {1000L}, new Long[] {1111L});
 
         // When
         mockMvc.perform(post(URL)

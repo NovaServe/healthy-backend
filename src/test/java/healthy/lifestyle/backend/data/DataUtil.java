@@ -9,6 +9,7 @@ import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.model.Workout;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -73,34 +74,14 @@ public class DataUtil {
     }
 
     public CreateExerciseRequestDto createExerciseRequestDto(
-            int seed, boolean needsEquipment, int start1, int end1, int start2, int end2) {
-        List<HttpRefRequestDto> httpRefs = createHttpRefsRequestDto(start1, end1);
-        List<BodyPartRequestDto> bodyParts = createBodyPartsRequestDto(start2, end2);
-        return CreateExerciseRequestDto.builder()
-                .title("Title " + seed)
-                .description("Desc " + seed)
-                .needsEquipment(needsEquipment)
-                .bodyParts(bodyParts)
-                .httpRefs(httpRefs)
-                .build();
-    }
-
-    public CreateExerciseRequestDto createExerciseRequestDto(
-            int seed, boolean needsEquipment, List<BodyPart> bodyParts, List<HttpRef> httpRefs) {
-        List<BodyPartRequestDto> bodyPartRequestDtoList = bodyParts.stream()
-                .map(elt -> modelMapper.map(elt, BodyPartRequestDto.class))
-                .toList();
-
-        List<HttpRefRequestDto> httpRefRequestDtoList = httpRefs.stream()
-                .map(elt -> modelMapper.map(elt, HttpRefRequestDto.class))
-                .toList();
+            int seed, boolean needsEquipment, Long[] bodyPartIds, Long[] httpRefIds) {
 
         return CreateExerciseRequestDto.builder()
                 .title("Title " + seed)
                 .description("Desc " + seed)
                 .needsEquipment(needsEquipment)
-                .bodyParts(bodyPartRequestDtoList)
-                .httpRefs(httpRefRequestDtoList)
+                .bodyParts(Arrays.asList(bodyPartIds))
+                .httpRefs(Arrays.asList(httpRefIds))
                 .build();
     }
 

@@ -11,6 +11,7 @@ import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.repository.RoleRepository;
 import healthy.lifestyle.backend.users.repository.UserRepository;
+import healthy.lifestyle.backend.workout.model.Exercise;
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +20,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -78,5 +81,13 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
         }
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    @Override
+    public void addExercise(long userId, Exercise exercise) {
+        User user = userRepository.getReferenceById(userId);
+        user.getExercises().add(exercise);
+        userRepository.save(user);
     }
 }

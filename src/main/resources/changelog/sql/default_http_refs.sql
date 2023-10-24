@@ -33,3 +33,5 @@ INSERT INTO http_refs(id, name, ref, description, is_custom) VALUES
 (27, 'Bicycle Twists', 'https://youtu.be/8PwoytUU06g?feature=shared&t=517',  '', false),
 (28, 'Mountain Climbers', 'https://youtu.be/8PwoytUU06g?feature=shared&t=576',  '', false),
 (29, 'Plank Hold', 'https://youtu.be/8PwoytUU06g?feature=shared&t=1240',  '', false);
+
+ALTER sequence http_refs_id_seq restart with 30;

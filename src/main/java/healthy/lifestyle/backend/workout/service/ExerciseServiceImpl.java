@@ -4,6 +4,8 @@ import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.users.repository.UserRepository;
+import healthy.lifestyle.backend.users.service.UserService;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
@@ -24,19 +26,28 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     private final HttpRefRepository httpRefRepository;
 
+    private final UserService userService;
+
+    private final UserRepository userRepository;
+
     private final ModelMapper modelMapper;
 
     public ExerciseServiceImpl(
             ExerciseRepository exerciseRepository,
             BodyPartRepository bodyPartRepository,
             HttpRefRepository httpRefRepository,
+            UserService userService,
+            UserRepository userRepository,
             ModelMapper modelMapper) {
         this.exerciseRepository = exerciseRepository;
         this.bodyPartRepository = bodyPartRepository;
         this.httpRefRepository = httpRefRepository;
+        this.userService = userService;
+        this.userRepository = userRepository;
         this.modelMapper = modelMapper;
     }
 
+    @Transactional
     @Override
     public ExerciseResponseDto createExercise(CreateExerciseRequestDto requestDto, long userId) {
         validateCreateExerciseRequestDto(requestDto, userId);
@@ -44,23 +55,25 @@ public class ExerciseServiceImpl implements ExerciseService {
         Exercise exercise = Exercise.builder()
                 .title(requestDto.getTitle())
                 .isCustom(true)
+                .needsEquipment(requestDto.isNeedsEquipment())
                 .bodyParts(new HashSet<>())
                 .httpRefs(new HashSet<>())
                 .build();
 
         if (nonNull(requestDto.getDescription())) exercise.setDescription(requestDto.getDescription());
 
-        if (nonNull(requestDto.getBodyParts())) {
-            requestDto.getBodyParts().forEach(elt -> exercise.getBodyParts()
-                    .add(bodyPartRepository.getReferenceById(elt.getId())));
+        if (nonNull(requestDto.getBodyParts()) && requestDto.getBodyParts().size() > 0) {
+            requestDto.getBodyParts().forEach(id -> exercise.getBodyParts()
+                    .add(bodyPartRepository.getReferenceById(id)));
         }
 
-        if (nonNull(requestDto.getHttpRefs())) {
-            requestDto.getHttpRefs().forEach(elt -> exercise.getHttpRefs()
-                    .add(httpRefRepository.getReferenceById(elt.getId())));
+        if (nonNull(requestDto.getHttpRefs()) && requestDto.getHttpRefs().size() > 0) {
+            requestDto.getHttpRefs().forEach(id -> exercise.getHttpRefs().add(httpRefRepository.getReferenceById(id)));
         }
 
         Exercise saved = exerciseRepository.save(exercise);
+
+        userService.addExercise(userId, exercise);
 
         ExerciseResponseDto exerciseResponseDto = modelMapper.map(saved, ExerciseResponseDto.class);
 
@@ -83,13 +96,13 @@ public class ExerciseServiceImpl implements ExerciseService {
         if (exerciseTitleDuplicateExists(requestDto.getTitle(), userId))
             throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
 
-        // Check if body parts are present in the database
+        // Check if body parts exist in the database
         if (nonNull(requestDto.getBodyParts()) && requestDto.getBodyParts().size() > 0) {
             if (!bodyPartsExist(requestDto.getBodyParts()))
                 throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
         } else throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
 
-        // Check if http refs have already been created in the database
+        // Check if http refs exist in the database
         if (nonNull(requestDto.getHttpRefs())) {
             if (!httpRefExists(requestDto.getHttpRefs()))
                 throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
@@ -116,9 +129,9 @@ public class ExerciseServiceImpl implements ExerciseService {
     /**
      * Returns true if all objects exist, otherwise false.
      */
-    private boolean bodyPartsExist(List<BodyPartRequestDto> bodyParts) {
-        for (BodyPartRequestDto elt : bodyParts) {
-            if (!bodyPartRepository.existsById(elt.getId())) return false;
+    private boolean bodyPartsExist(List<Long> bodyPartIds) {
+        for (long id : bodyPartIds) {
+            if (!bodyPartRepository.existsById(id)) return false;
         }
         return true;
     }
@@ -126,9 +139,9 @@ public class ExerciseServiceImpl implements ExerciseService {
     /**
      * Returns true if all objects exist, otherwise false.
      */
-    private boolean httpRefExists(List<HttpRefRequestDto> httpRefs) {
-        for (HttpRefRequestDto elt : httpRefs) {
-            if (!httpRefRepository.existsById(elt.getId())) return false;
+    private boolean httpRefExists(List<Long> httpRefIds) {
+        for (long id : httpRefIds) {
+            if (!httpRefRepository.existsById(id)) return false;
         }
         return true;
     }
