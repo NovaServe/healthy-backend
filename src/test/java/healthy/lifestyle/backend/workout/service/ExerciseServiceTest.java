@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.users.service.UserServiceImpl;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -38,6 +39,9 @@ class ExerciseServiceTest {
     @Mock
     private HttpRefRepository httpRefRepository;
 
+    @Mock
+    private UserServiceImpl userService;
+
     @Spy
     ModelMapper modelMapper;
 
@@ -49,25 +53,40 @@ class ExerciseServiceTest {
     @Test
     void createExerciseTest_shouldReturnNewExercise() {
         // Given
-        CreateExerciseRequestDto requestDto = dataUtil.createExerciseRequestDto(1, false, 1, 2, 1, 2);
+        CreateExerciseRequestDto requestDto =
+                dataUtil.createExerciseRequestDto(1, false, new Long[] {1L, 2L}, new Long[] {1L, 2L});
+
         List<BodyPart> bodyPartsMock = dataUtil.createBodyParts(1, 2);
         List<HttpRef> httpRefsMock = dataUtil.createHttpRefs(1, 2, false);
         Exercise exerciseMock = dataUtil.createExercise(1, false, false, false, 1, 2, 1, 2);
+
         long userId = 1L;
         when(bodyPartRepository.existsById(anyLong())).thenReturn(true);
         when(bodyPartRepository.getReferenceById(1L)).thenReturn(bodyPartsMock.get(0));
         when(bodyPartRepository.getReferenceById(2L)).thenReturn(bodyPartsMock.get(1));
+
         when(httpRefRepository.existsById(anyLong())).thenReturn(true);
         when(httpRefRepository.getReferenceById(1L)).thenReturn(httpRefsMock.get(0));
         when(httpRefRepository.getReferenceById(2L)).thenReturn(httpRefsMock.get(1));
+
         when(exerciseRepository.findCustomByTitleAndUserId(requestDto.getTitle(), userId))
                 .thenReturn(Optional.empty());
         when(exerciseRepository.save(any(Exercise.class))).thenReturn(exerciseMock);
+
+        doNothing().when(userService).addExercise(any(Long.class), any(Exercise.class));
 
         // When
         ExerciseResponseDto exerciseActual = exerciseService.createExercise(requestDto, userId);
 
         // Then
+        verify(bodyPartRepository, times(2)).existsById(anyLong());
+        verify(bodyPartRepository, times(2)).getReferenceById(anyLong());
+        verify(httpRefRepository, times(2)).existsById(anyLong());
+        verify(httpRefRepository, times(2)).getReferenceById(anyLong());
+        verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(eq(requestDto.getTitle()), eq(userId));
+        verify(exerciseRepository, times(1)).save(any(Exercise.class));
+        verify(userService, times(1)).addExercise(eq(userId), any());
+
         assertEquals(exerciseMock.getId(), exerciseActual.getId());
 
         assertThat(exerciseMock)

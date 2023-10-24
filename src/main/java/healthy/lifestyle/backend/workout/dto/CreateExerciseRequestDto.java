@@ -25,9 +25,7 @@ public class CreateExerciseRequestDto {
 
     @NotNull private boolean needsEquipment;
 
-    @Size(max = 255, message = "Max size is 255 chars")
-    @NotNull private List<BodyPartRequestDto> bodyParts;
+    @NotNull private List<Long> bodyParts;
 
-    @Size(max = 2000, message = "Max size is 2000 chars")
-    private List<HttpRefRequestDto> httpRefs;
+    private List<Long> httpRefs;
 }

@@ -6,6 +6,8 @@ INSERT INTO workouts(id, title, description, is_custom) VALUES
 (5, 'Workout for Chest', '', false),
 (6, 'Workout for Abs', '', false);
 
+ALTER sequence workouts_id_seq restart with 30;
+
 INSERT INTO workouts_exercises(workout_id, exercise_id) VALUES
 (1, 4),
 (1, 5),

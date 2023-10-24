@@ -32,6 +32,8 @@ INSERT INTO exercises(id, title, description, is_custom, needs_equipment) VALUES
 (26, 'Mountain Climbers', '', false, false),
 (27, 'Plank Hold', '', false, false);
 
+ALTER sequence exercises_id_seq restart with 28;
+
 INSERT INTO exercises_body_parts(exercise_id, body_part_id) VALUES
 (1, 7),
 (2, 7),
