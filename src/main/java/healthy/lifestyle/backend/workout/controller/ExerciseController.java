@@ -1,7 +1,9 @@
 package healthy.lifestyle.backend.workout.controller;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import healthy.lifestyle.backend.common.AuthUtil;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
@@ -24,35 +26,30 @@ import org.springframework.web.bind.annotation.*;
 public class ExerciseController {
     private final ExerciseService exerciseService;
     private final AuthService authService;
+    private final AuthUtil authUtil;
 
-    public ExerciseController(ExerciseService exerciseService, AuthService authService) {
+    public ExerciseController(ExerciseService exerciseService, AuthService authService, AuthUtil authUtil) {
         this.exerciseService = exerciseService;
         this.authService = authService;
+        this.authUtil = authUtil;
     }
 
     /**
-     * ErrorMessage.TITLE_DUPLICATE (400 Bad Request). If a user already has the exercise with a same title<br>
+     * ErrorMessage.TITLE_DUPLICATE (400 Bad Request). If a user already has an exercise with the same title<br>
      * ErrorMessage.INVALID_NESTED_OBJECT (400 Bad Request). If there are invalid ids of bodyParts or httpRefs
      */
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<ExerciseResponseDto> createCustomExercise(@RequestBody CreateExerciseRequestDto requestDto) {
+    public ResponseEntity<ExerciseResponseDto> createExercise(@RequestBody CreateExerciseRequestDto requestDto) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
 
-        if (nonNull(authentication) && authentication.isAuthenticated()) {
-            String usernameOrEmail = authentication.getName();
-            Optional<User> userOptional = authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
+        if (isNull(userId)) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
 
-            if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
+        ExerciseResponseDto exerciseResponseDto = exerciseService.createExercise(requestDto, userId);
 
-            ExerciseResponseDto responseDto = exerciseService.createExercise(
-                    requestDto, userOptional.get().getId());
-
-            return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
-        }
-
-        throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(exerciseResponseDto, HttpStatus.CREATED);
     }
 
     @GetMapping("/default")
