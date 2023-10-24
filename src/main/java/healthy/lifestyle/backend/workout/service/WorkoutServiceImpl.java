@@ -58,4 +58,34 @@ public class WorkoutServiceImpl implements WorkoutService {
                 })
                 .toList();
     }
+
+    @Transactional
+    @Override
+    public WorkoutResponseDto getWorkoutById(long id) {
+        WorkoutResponseDto workoutDto = modelMapper.map(workoutRepository.findById(id), WorkoutResponseDto.class);
+
+        List<ExerciseResponseDto> exercisesSorted = workoutDto.getExercises().stream()
+                .sorted(Comparator.comparingLong(ExerciseResponseDto::getId))
+                .toList();
+
+        workoutDto.setExercises(exercisesSorted);
+
+        Set<BodyPartResponseDto> bodyParts = new HashSet<>();
+        boolean needsEquipment = false;
+
+        for (ExerciseResponseDto exercise : exercisesSorted) {
+            for (BodyPartResponseDto bodyPart : exercise.getBodyParts()) {
+                if (!bodyParts.contains(bodyPart)) bodyParts.add(bodyPart);
+                if (exercise.isNeedsEquipment()) needsEquipment = true;
+            }
+        }
+
+        workoutDto.setBodyParts(bodyParts.stream()
+                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                .toList());
+
+        workoutDto.setNeedsEquipment(needsEquipment);
+
+        return workoutDto;
+    }
 }

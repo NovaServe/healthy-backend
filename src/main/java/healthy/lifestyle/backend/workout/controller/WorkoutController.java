@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -25,5 +26,10 @@ public class WorkoutController {
             @RequestParam(value = "sortFieldName", required = false) String sortFieldName) {
         if (isNull(sortFieldName)) sortFieldName = "id";
         return ResponseEntity.ok(workoutService.getDefaultWorkouts(sortFieldName));
+    }
+
+    @GetMapping("/{workout_id}")
+    public ResponseEntity<WorkoutResponseDto> getWorkoutDetails(@PathVariable("workout_id") long workoutId) {
+        return ResponseEntity.ok(workoutService.getWorkoutById(workoutId));
     }
 }

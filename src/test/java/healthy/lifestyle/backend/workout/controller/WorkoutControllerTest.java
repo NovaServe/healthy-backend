@@ -203,4 +203,54 @@ class WorkoutControllerTest {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("bodyParts", "httpRefs", "users")
                 .isEqualTo(responseDto.get(0).getExercises());
     }
+
+    @Test
+    void getWorkoutByIdTest_shouldReturnWorkoutAnd200Ok() throws Exception {
+        // Given
+        BodyPart bodyPart1 = dataHelper.createBodyPart(1);
+        Exercise exercise1 = dataHelper.createExercise(1, false, false, Set.of(bodyPart1), null);
+        Exercise exercise2 = dataHelper.createExercise(2, false, false, Set.of(bodyPart1), null);
+        Workout workout1 = dataHelper.createWorkout(1, false, Set.of(exercise1, exercise2));
+
+        BodyPart bodyPart2 = dataHelper.createBodyPart(2);
+        BodyPart bodyPart3 = dataHelper.createBodyPart(3);
+        Exercise exercise3 = dataHelper.createExercise(3, false, false, Set.of(bodyPart2), null);
+        Exercise exercise4 = dataHelper.createExercise(4, false, true, Set.of(bodyPart3), null);
+        Workout workout2 = dataHelper.createWorkout(2, false, Set.of(exercise3, exercise4));
+
+        List<Workout> Workouts = List.of(workout1, workout2);
+
+        // When
+        int index = 0;
+        long id = Workouts.get(index).getId();
+        String postfix = String.format("/%d", id);
+        MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        WorkoutResponseDto responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<WorkoutResponseDto>() {});
+
+        assertThat(Workouts.get(index))
+                .usingRecursiveComparison()
+                .ignoringFields("exercises", "bodyParts", "needsEquipment")
+                .isEqualTo(responseDto);
+
+        assertFalse(responseDto.isNeedsEquipment());
+
+        List<BodyPart> workout1_bodyParts = List.of(bodyPart1);
+        assertThat(workout1_bodyParts)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(responseDto.getBodyParts());
+
+        List<Exercise> workout1_sortedExercises = workout1.getExercises().stream()
+                .sorted(Comparator.comparingLong(Exercise::getId))
+                .toList();
+        assertThat(workout1_sortedExercises)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("bodyParts", "httpRefs", "users")
+                .isEqualTo(responseDto.getExercises());
+    }
 }

@@ -59,4 +59,29 @@ class WorkoutServiceImplTest {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "bodyParts")
                 .isEqualTo(responseWorkouts);
     }
+
+    @Test
+    void getWorkoutByIdTest_shouldReturnWorkout() {
+        // Given
+        int workoutId = 3;
+        List<Exercise> exercises = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
+                .toList();
+
+        List<Workout> workouts = IntStream.rangeClosed(1, 4)
+                .mapToObj(id -> dataUtil.createWorkout(1L, false, Set.of(exercises.get(0), exercises.get(1))))
+                .toList();
+
+        when(workoutRepository.findById(workoutId)).thenReturn(workouts.get(workoutId));
+
+        // When
+        WorkoutResponseDto responseWorkout = workoutService.getWorkoutById(workoutId);
+
+        // Then
+        verify(workoutRepository, times(1)).findById(workoutId);
+        assertThat(workouts.get(workoutId))
+                .usingRecursiveComparison()
+                .ignoringFields("exercises", "bodyParts")
+                .isEqualTo(responseWorkout);
+    }
 }
