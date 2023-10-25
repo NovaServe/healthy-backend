@@ -93,7 +93,7 @@ public class DataHelper {
     }
 
     public User createUser(String seed, Role role, Country country, Set<Exercise> exercises) {
-        return userRepository.save(new User.Builder()
+        return userRepository.save(User.builder()
                 .username("username-" + seed)
                 .fullName("Full Name " + seed)
                 .email("username-" + seed + "@email.com")
@@ -102,6 +102,10 @@ public class DataHelper {
                 .exercises(exercises)
                 .country(country)
                 .build());
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.getReferenceById(id);
     }
 
     public Country createCountry(int seed) {

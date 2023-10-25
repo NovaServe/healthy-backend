@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserService {
         }
 
         Role role = roleOpt.get();
-        User user = new User.Builder()
+        User user = User.builder()
                 .username(requestDto.getUsername())
                 .email(requestDto.getEmail())
                 .password(passwordEncoder.encode(requestDto.getPassword()))

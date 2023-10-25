@@ -16,6 +16,7 @@ import healthy.lifestyle.backend.data.DataUtil;
 import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.LoginResponseDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
+import healthy.lifestyle.backend.users.dto.SignupResponseDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -84,13 +85,20 @@ class AuthControllerTest {
         SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
 
         // When
-        mockMvc.perform(post(URL + "/signup")
+        MvcResult result = mockMvc.perform(post(URL + "/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signupRequestDto)))
                 // Then
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(notNullValue())))
-                .andDo(print());
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+        SignupResponseDto signupResponseDto = objectMapper.readValue(responseContent, SignupResponseDto.class);
+        User user = dataHelper.getUserById(signupResponseDto.getId());
+
+        assertThat(user.getCountry().getId()).isEqualTo(country.getId());
     }
 
     @Test
@@ -322,7 +330,8 @@ class AuthControllerTest {
         // Given
         String URL_POSTFIX = "/validate";
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
 
         // When
         mockMvc.perform(get(URL + URL_POSTFIX).contentType(MediaType.APPLICATION_JSON))

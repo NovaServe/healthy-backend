@@ -83,9 +83,11 @@
             </column>
         </createTable>
 
-        <sqlFile path="sql/default_http_refs.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/default_http_refs.sql" relativeToChangelogFile="true" endDelimiter=";"
+                 splitStatements="true"/>
 
-        <sqlFile path="sql/default_exercises.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/default_exercises.sql" relativeToChangelogFile="true" endDelimiter=";"
+                 splitStatements="true"/>
 
         <createTable tableName="users_exercises">
             <column name="id" type="bigint" autoIncrement="true">
@@ -130,6 +132,30 @@
             </column>
         </createTable>
 
-        <sqlFile path="sql/default_workouts.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/default_workouts.sql" relativeToChangelogFile="true" endDelimiter=";"
+                 splitStatements="true"/>
+    </changeSet>
+
+    <changeSet id="country_init" author="Anastasiia Shevchuk" context="structure">
+        <comment>Create country table</comment>
+        <createTable tableName="countries">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+        <sqlFile path="sql/countries_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+    </changeSet>
+
+    <changeSet id="users_add_country" author="Anastasiia Shevchuk" context="structure">
+        <comment>Add country column to user table</comment>
+        <addColumn tableName="users">
+            <column name="country_id"
+                    type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_country_id" references="countries(id)"/>
+            </column>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

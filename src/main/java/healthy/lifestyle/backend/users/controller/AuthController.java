@@ -23,11 +23,12 @@ public class AuthController {
 
     /**
      * Creates new user
+     *
      * @throws healthy.lifestyle.backend.exception.GlobalExceptionHandler Validation error
-     * @throws ApiException (ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST)<br>
-     * If user already exists
-     * @throws ApiException (ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)<br>
-     * If ROLE_USER is not found
+     * @throws ApiException                                               (ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST)<br>
+     *                                                                    If user already exists
+     * @throws ApiException                                               (ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)<br>
+     *                                                                    If ROLE_USER is not found
      */
     @PostMapping("/signup")
     public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto requestDto) {
@@ -37,6 +38,7 @@ public class AuthController {
 
     /**
      * Logins user
+     *
      * @throws healthy.lifestyle.backend.exception.GlobalExceptionHandler Validation error
      */
     @PostMapping("/login")

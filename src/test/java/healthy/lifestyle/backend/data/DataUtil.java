@@ -86,14 +86,14 @@ public class DataUtil {
                 .build();
     }
 
-    public SignupRequestDto createSignupRequestDto(String seed, Long countryId) {
-        return new SignupRequestDto.Builder()
+    public SignupRequestDto createSignupRequestDto(String seed, Long id) {
+        return SignupRequestDto.builder()
                 .username("username-" + seed)
                 .email("username-" + seed + "@email.com")
                 .password("password-" + seed)
                 .confirmPassword("password-" + seed)
                 .fullName("Full Name " + seed)
-                .country(countryId)
+                .countryId(id)
                 .build();
     }
 
