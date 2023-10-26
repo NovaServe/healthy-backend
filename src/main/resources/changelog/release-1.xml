@@ -5,8 +5,44 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
+    <changeSet id="users_init" author="Oleg Kucherenko" context="structure">
+        <comment>Create roles and users tables</comment>
+
+        <createTable tableName="roles">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="users">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="username" type="varchar">
+                <constraints nullable="true" unique="true"/>
+            </column>
+            <column name="email" type="varchar">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="full_name" type="varchar">
+                <constraints nullable="true" unique="false"/>
+            </column>
+            <column name="password" type="varchar">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="role_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_role_id" references="roles(id)"/>
+            </column>
+        </createTable>
+
+        <sqlFile path="sql/roles_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+    </changeSet>
+
     <changeSet id="exercises" author="Oleg Kucherenko" context="structure">
-        <comment>Create tables</comment>
+        <comment>Create exercise tables</comment>
 
         <createTable tableName="exercises">
             <column name="id" type="bigint" autoIncrement="true">
@@ -83,9 +119,11 @@
             </column>
         </createTable>
 
-        <sqlFile path="sql/default_http_refs.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/default_http_refs.sql" relativeToChangelogFile="true" endDelimiter=";"
+                 splitStatements="true"/>
 
-        <sqlFile path="sql/default_exercises.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/default_exercises.sql" relativeToChangelogFile="true" endDelimiter=";"
+                 splitStatements="true"/>
 
         <createTable tableName="users_exercises">
             <column name="id" type="bigint" autoIncrement="true">
@@ -100,6 +138,10 @@
                              references="exercises(id)"/>
             </column>
         </createTable>
+    </changeSet>
+
+    <changeSet id="workouts" author="Oleg Kucherenko" context="structure">
+        <comment>Create workout tables</comment>
 
         <createTable tableName="workouts">
             <column name="id" type="bigint" autoIncrement="true">
@@ -130,6 +172,30 @@
             </column>
         </createTable>
 
-        <sqlFile path="sql/default_workouts.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/default_workouts.sql" relativeToChangelogFile="true" endDelimiter=";"
+                 splitStatements="true"/>
+    </changeSet>
+
+    <changeSet id="country_init" author="Anastasiia Shevchuk" context="structure">
+        <comment>Create country table</comment>
+        <createTable tableName="countries">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="name" type="varchar">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+        <sqlFile path="sql/countries_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+    </changeSet>
+
+    <changeSet id="users_add_country" author="Anastasiia Shevchuk" context="structure">
+        <comment>Add country column to user table</comment>
+        <addColumn tableName="users">
+            <column name="country_id"
+                    type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_country_id" references="countries(id)"/>
+            </column>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

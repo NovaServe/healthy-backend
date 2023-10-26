@@ -1,7 +1,9 @@
 package healthy.lifestyle.backend.data;
 
+import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.users.repository.CountryRepository;
 import healthy.lifestyle.backend.users.repository.RoleRepository;
 import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -36,6 +38,9 @@ public class DataHelper {
     UserRepository userRepository;
 
     @Autowired
+    CountryRepository countryRepository;
+
+    @Autowired
     WorkoutRepository workoutRepository;
 
     @Autowired
@@ -46,11 +51,11 @@ public class DataHelper {
     public void deleteAll() {
         userRepository.deleteAll();
         roleRepository.deleteAll();
-
         workoutRepository.deleteAll();
         exerciseRepository.deleteAll();
         bodyPartRepository.deleteAll();
         httpRefRepository.deleteAll();
+        countryRepository.deleteAll();
     }
 
     public BodyPart createBodyPart(int seed) {
@@ -87,15 +92,24 @@ public class DataHelper {
         return roleRepository.save(new Role(name));
     }
 
-    public User createUser(String seed, Role role, Set<Exercise> exercises) {
-        return userRepository.save(new User.Builder()
+    public User createUser(String seed, Role role, Country country, Set<Exercise> exercises) {
+        return userRepository.save(User.builder()
                 .username("username-" + seed)
                 .fullName("Full Name " + seed)
                 .email("username-" + seed + "@email.com")
                 .password(passwordEncoder().encode("password-" + seed))
                 .role(role)
                 .exercises(exercises)
+                .country(country)
                 .build());
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.getReferenceById(id);
+    }
+
+    public Country createCountry(int seed) {
+        return countryRepository.save(Country.builder().name("Country " + seed).build());
     }
 
     public Workout createWorkout(int seed, boolean isCustom, Set<Exercise> exercises) {

@@ -5,6 +5,5 @@
                                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
     <property name="clob.type" value="clob" dbms="postgresql" />
-    <include file="changelog/num_1_users.xml"/>
-    <include file="changelog/num_2_workouts.xml"/>
+    <include file="changelog/release-1.xml"/>
 </databaseChangeLog>
