@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.users.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
 
@@ -37,11 +38,17 @@ public class CountryServiceTest {
                 .mapToObj(id -> dataUtil.createCountry(id))
                 .toList();
         when(countryRepository.findAll()).thenReturn(countries);
+
         // When
         List<CountryResponseDto> countryResponseDto = countryService.getAllCountries();
 
         // Then
         verify(countryRepository, times(1)).findAll();
+
         org.hamcrest.MatcherAssert.assertThat(countryResponseDto, hasSize(countries.size()));
+
+        assertThat(countries)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("users")
+                .isEqualTo(countryResponseDto);
     }
 }

@@ -18,7 +18,7 @@ public class UserController {
     }
 
     @GetMapping("/countries")
-    public ResponseEntity<List<CountryResponseDto>> countries() {
+    public ResponseEntity<List<CountryResponseDto>> getCountries() {
         return ResponseEntity.ok(countryService.getAllCountries());
     }
 }
