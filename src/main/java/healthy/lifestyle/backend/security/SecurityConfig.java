@@ -45,8 +45,8 @@ public class SecurityConfig {
     @Value("${api.basePath}/${api.version}/workouts/default")
     private String defaultWorkoutsUrl;
 
-    @Value("${api.basePath}/${api.version}/workouts/{workout_id}")
-    private String workoutDetailsUrl;
+    @Value("${api.basePath}/${api.version}/workouts/default/{workout_id}")
+    private String defaultWorkoutDetailsUrl;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -83,7 +83,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, defaultWorkoutsUrl)
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, workoutDetailsUrl)
+                        .requestMatchers(HttpMethod.GET, defaultWorkoutDetailsUrl)
                         .permitAll()
                         .anyRequest()
                         .authenticated());

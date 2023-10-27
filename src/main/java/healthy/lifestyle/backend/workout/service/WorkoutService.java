@@ -6,5 +6,5 @@ import java.util.List;
 public interface WorkoutService {
     List<WorkoutResponseDto> getDefaultWorkouts(String sortFieldName);
 
-    WorkoutResponseDto getWorkoutById(long workoutId);
+    WorkoutResponseDto getDefaultWorkoutById(long workoutId);
 }

@@ -6,6 +6,7 @@ import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
 import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -61,8 +62,11 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Transactional
     @Override
-    public WorkoutResponseDto getWorkoutById(long id) {
+    public WorkoutResponseDto getDefaultWorkoutById(long id) {
         WorkoutResponseDto workoutDto = modelMapper.map(workoutRepository.findById(id), WorkoutResponseDto.class);
+
+        if (workoutDto == null) throw new EntityNotFoundException("Workout not found");
+        if (workoutDto.isCustom()) throw new RuntimeException("Access to custom workout is unauthorized");
 
         List<ExerciseResponseDto> exercisesSorted = workoutDto.getExercises().stream()
                 .sorted(Comparator.comparingLong(ExerciseResponseDto::getId))
@@ -85,7 +89,6 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .toList());
 
         workoutDto.setNeedsEquipment(needsEquipment);
-
         return workoutDto;
     }
 }

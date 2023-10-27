@@ -9,7 +9,10 @@ import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.Workout;
 import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
+import jakarta.persistence.EntityNotFoundException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
@@ -61,27 +64,79 @@ class WorkoutServiceImplTest {
     }
 
     @Test
-    void getWorkoutByIdTest_shouldReturnWorkout() {
+    void getDefaultWorkoutByIdTest_shouldReturnDefaultWorkout() {
         // Given
-        int workoutId = 3;
+        long workoutId = 3;
         List<Exercise> exercises = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
                 .toList();
 
         List<Workout> workouts = IntStream.rangeClosed(1, 4)
-                .mapToObj(id -> dataUtil.createWorkout(1L, false, Set.of(exercises.get(0), exercises.get(1))))
+                .mapToObj(id -> dataUtil.createWorkout(id, false, Set.of(exercises.get(0), exercises.get(1))))
                 .toList();
 
-        when(workoutRepository.findById(workoutId)).thenReturn(workouts.get(workoutId));
+        int workoutIdAsInt = (int) workoutId;
+        when(workoutRepository.findById(workoutId)).thenReturn(Optional.of(workouts.get(workoutIdAsInt)));
 
         // When
-        WorkoutResponseDto responseWorkout = workoutService.getWorkoutById(workoutId);
+        WorkoutResponseDto responseWorkout = workoutService.getDefaultWorkoutById(workoutId);
 
         // Then
         verify(workoutRepository, times(1)).findById(workoutId);
-        assertThat(workouts.get(workoutId))
+        assertThat(workouts.get(workoutIdAsInt))
                 .usingRecursiveComparison()
                 .ignoringFields("exercises", "bodyParts")
                 .isEqualTo(responseWorkout);
+    }
+
+    @Test
+    void getDefaultWorkoutByIdTest_shouldThrowException_whenIdNotFound() {
+        // Given
+        int workoutsNum = 6;
+        long workoutId = 100;
+        List<Exercise> exercises = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
+                .toList();
+
+        List<Workout> workouts = IntStream.rangeClosed(1, workoutsNum)
+                .mapToObj(id -> dataUtil.createWorkout(id, false, Set.of(exercises.get(0), exercises.get(1))))
+                .toList();
+
+        List<Long> workoutsId = new ArrayList<>();
+        for (Workout workout : workouts) {
+            workoutsId.add(workout.getId());
+        }
+
+        assertThat(workoutsId).doesNotContain(workoutId);
+
+        when(workoutRepository.findById(workoutId)).thenReturn(Optional.empty());
+
+        // When
+        assertThrows(EntityNotFoundException.class, () -> {
+            workoutService.getDefaultWorkoutById(workoutId);
+        });
+
+        // Then
+        verify(workoutRepository, times(1)).findById(workoutId);
+    }
+
+    @Test
+    void getDefaultWorkoutByIdTest_shouldThrowException_whenWorkoutIsCustom() {
+        // Given
+        long workoutId = 1;
+        List<Exercise> exercises = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataUtil.createExercise(id, true, false, false, 1, 2, 1, 2))
+                .toList();
+        Workout customWorkout = dataUtil.createWorkout(workoutId, true, Set.of(exercises.get(0), exercises.get(1)));
+
+        when(workoutRepository.findById(workoutId)).thenReturn(Optional.of(customWorkout));
+
+        // When
+        assertThrows(RuntimeException.class, () -> {
+            workoutService.getDefaultWorkoutById(workoutId);
+        });
+
+        // Then
+        verify(workoutRepository, times(1)).findById(workoutId);
     }
 }

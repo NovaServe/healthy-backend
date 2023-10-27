@@ -4,7 +4,9 @@ import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
 import healthy.lifestyle.backend.workout.service.WorkoutService;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,8 +30,15 @@ public class WorkoutController {
         return ResponseEntity.ok(workoutService.getDefaultWorkouts(sortFieldName));
     }
 
-    @GetMapping("/{workout_id}")
-    public ResponseEntity<WorkoutResponseDto> getWorkoutDetails(@PathVariable("workout_id") long workoutId) {
-        return ResponseEntity.ok(workoutService.getWorkoutById(workoutId));
+    @GetMapping("/default/{workout_id}")
+    public ResponseEntity<WorkoutResponseDto> getDefaultWorkoutDetails(@PathVariable("workout_id") long workoutId) {
+        try {
+            WorkoutResponseDto defaultWorkout = workoutService.getDefaultWorkoutById(workoutId);
+            return ResponseEntity.ok(defaultWorkout);
+        } catch (EntityNotFoundException ex) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        } catch (RuntimeException ex) {
+            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+        }
     }
 }
