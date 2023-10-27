@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.*;
@@ -92,7 +93,8 @@ class ExerciseControllerTest {
     void createCustomExerciseTest_shouldReturnExerciseDtoAnd201Created() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -143,7 +145,8 @@ class ExerciseControllerTest {
     void createCustomExerciseTest_shouldReturnExerciseDtoAnd201Created_whenNoHttpRefsProvided() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -182,7 +185,8 @@ class ExerciseControllerTest {
     void createCustomExerciseTest_shouldReturnErrorMessageAnd400BadRequest_whenNoBodyPartsProvided() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
 
         List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
@@ -209,7 +213,8 @@ class ExerciseControllerTest {
             throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -238,7 +243,8 @@ class ExerciseControllerTest {
             throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, null);
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -286,17 +292,20 @@ class ExerciseControllerTest {
         List<Exercise> testUserCustomExercises = List.of(customExercises.get(0), customExercises.get(1));
 
         Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
         // Test user with 2 default and 2 custom exercises
         User testUser = dataHelper.createUser(
                 "one",
                 role,
+                country,
                 Set.of(
                         defaultExercises.get(0),
                         defaultExercises.get(1),
                         testUserCustomExercises.get(0),
                         testUserCustomExercises.get(1)));
 
-        User otherUser = dataHelper.createUser("two", role, Set.of(defaultExercises.get(2), customExercises.get(2)));
+        User otherUser =
+                dataHelper.createUser("two", role, country, Set.of(defaultExercises.get(2), customExercises.get(2)));
 
         // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))

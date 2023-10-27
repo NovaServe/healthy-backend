@@ -80,7 +80,7 @@ class JwtTokenProviderTest {
         String usernameOrEmail = "test@email.com";
         String password = "test-password";
         Role role = new Role.Builder().id(1L).name("ROLE_USER").build();
-        User user = new User.Builder()
+        User user = User.builder()
                 .id(1L)
                 .username(usernameOrEmail)
                 .email(usernameOrEmail)

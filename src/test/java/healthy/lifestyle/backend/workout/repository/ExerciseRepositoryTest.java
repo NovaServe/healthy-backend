@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
+import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -59,11 +60,12 @@ class ExerciseRepositoryTest {
         // Given
         Exercise exercise = dataHelper.createExercise(1, true, false, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, Set.of(exercise));
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, Set.of(exercise));
         dataHelper.exerciseAddUsers(exercise, Set.of(user));
 
         Exercise otherExercise = dataHelper.createExercise(2, true, false, null, null);
-        User otherUser = dataHelper.createUser("two", role, Set.of(otherExercise));
+        User otherUser = dataHelper.createUser("two", role, country, Set.of(otherExercise));
         dataHelper.exerciseAddUsers(otherExercise, Set.of(otherUser));
 
         // When
@@ -83,7 +85,8 @@ class ExerciseRepositoryTest {
         // Given
         Exercise exercise = dataHelper.createExercise(1, true, false, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, Set.of(exercise));
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, Set.of(exercise));
         dataHelper.exerciseAddUsers(exercise, Set.of(user));
 
         // When
@@ -98,7 +101,8 @@ class ExerciseRepositoryTest {
         // Given
         Exercise exercise = dataHelper.createExercise(1, true, false, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, Set.of(exercise));
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, Set.of(exercise));
         dataHelper.exerciseAddUsers(exercise, Set.of(user));
         long wrongUserId = 9999L;
 
@@ -114,7 +118,8 @@ class ExerciseRepositoryTest {
         // Given
         Exercise exercise = dataHelper.createExercise(1, false, false, null, null);
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, Set.of(exercise));
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, Set.of(exercise));
         dataHelper.exerciseAddUsers(exercise, Set.of(user));
 
         // When
@@ -161,8 +166,9 @@ class ExerciseRepositoryTest {
         Exercise otherExercise = dataHelper.createExercise(2, true, false, null, null);
 
         Role role = dataHelper.createRole("ROLE_USER");
-        User user = dataHelper.createUser("one", role, new HashSet<>(customExercises));
-        User otherUser = dataHelper.createUser("two", role, Set.of(otherExercise));
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, new HashSet<>(customExercises));
+        User otherUser = dataHelper.createUser("two", role, country, Set.of(otherExercise));
 
         dataHelper.exerciseAddUsers(customExercises.get(0), Set.of(user));
         dataHelper.exerciseAddUsers(customExercises.get(1), Set.of(user));

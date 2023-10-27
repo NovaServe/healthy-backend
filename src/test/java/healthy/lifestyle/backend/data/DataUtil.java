@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.data;
 
 import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
+import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.workout.dto.BodyPartRequestDto;
 import healthy.lifestyle.backend.workout.dto.CreateExerciseRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefRequestDto;
@@ -85,13 +86,14 @@ public class DataUtil {
                 .build();
     }
 
-    public SignupRequestDto createSignupRequestDto(String seed) {
-        return new SignupRequestDto.Builder()
+    public SignupRequestDto createSignupRequestDto(String seed, Long id) {
+        return SignupRequestDto.builder()
                 .username("username-" + seed)
                 .email("username-" + seed + "@email.com")
                 .password("password-" + seed)
                 .confirmPassword("password-" + seed)
                 .fullName("Full Name " + seed)
+                .countryId(id)
                 .build();
     }
 
@@ -101,6 +103,10 @@ public class DataUtil {
                 .password("password-" + seed)
                 .confirmPassword("password-" + seed)
                 .build();
+    }
+
+    public Country createCountry(int seed) {
+        return Country.builder().name("Country " + seed).build();
     }
 
     public Workout createWorkout(long id, boolean isCustom, Set<Exercise> exercises) {

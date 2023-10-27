@@ -8,8 +8,10 @@ import static org.mockito.Mockito.when;
 import healthy.lifestyle.backend.data.DataUtil;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupResponseDto;
+import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.users.repository.CountryRepository;
 import healthy.lifestyle.backend.users.repository.RoleRepository;
 import healthy.lifestyle.backend.users.repository.UserRepository;
 import java.util.Optional;
@@ -32,6 +34,9 @@ class UserServiceTest {
     @Mock
     private RoleRepository roleRepository;
 
+    @Mock
+    private CountryRepository countryRepository;
+
     @Spy
     private PasswordEncoder passwordEncoder;
 
@@ -41,12 +46,14 @@ class UserServiceTest {
     @Test
     void createUserTest_shouldReturnUserDto() {
         // Given
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one");
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", 1L);
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
 
         Role role = new Role.Builder().id(1L).name("ROLE_USER").build();
         when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.ofNullable(role));
+        Country country = Country.builder().id(1L).name("Country").build();
+        when(countryRepository.getReferenceById(1L)).thenReturn(country);
 
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             Object[] args = invocation.getArguments();
