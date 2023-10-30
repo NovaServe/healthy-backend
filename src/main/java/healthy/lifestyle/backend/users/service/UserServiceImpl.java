@@ -78,6 +78,7 @@ public class UserServiceImpl implements UserService {
                 .fullName(requestDto.getFullName())
                 .role(role)
                 .country(country)
+                .age(requestDto.getAge())
                 .build();
 
         User saved = userRepository.save(user);

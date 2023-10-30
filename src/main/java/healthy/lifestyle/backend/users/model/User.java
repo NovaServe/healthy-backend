@@ -37,6 +37,9 @@ public class User {
     @JoinColumn(name = "country_id") // FOREIGN KEY(country_id) REFERENCES countries(id)
     private Country country;
 
+    @Column(name = "age", nullable = true, unique = false)
+    private Integer age;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "users_exercises",

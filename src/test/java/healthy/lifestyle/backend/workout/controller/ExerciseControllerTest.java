@@ -94,7 +94,8 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -146,7 +147,8 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -186,7 +188,8 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
 
         List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
@@ -214,7 +217,8 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -244,7 +248,8 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -293,6 +298,7 @@ class ExerciseControllerTest {
 
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
+        Integer age = 20;
         // Test user with 2 default and 2 custom exercises
         User testUser = dataHelper.createUser(
                 "one",
@@ -302,10 +308,11 @@ class ExerciseControllerTest {
                         defaultExercises.get(0),
                         defaultExercises.get(1),
                         testUserCustomExercises.get(0),
-                        testUserCustomExercises.get(1)));
+                        testUserCustomExercises.get(1)),
+                age);
 
-        User otherUser =
-                dataHelper.createUser("two", role, country, Set.of(defaultExercises.get(2), customExercises.get(2)));
+        User otherUser = dataHelper.createUser(
+                "two", role, country, Set.of(defaultExercises.get(2), customExercises.get(2)), age);
 
         // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))

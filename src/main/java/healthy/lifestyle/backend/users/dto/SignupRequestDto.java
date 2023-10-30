@@ -43,4 +43,7 @@ public class SignupRequestDto {
     private String fullName;
 
     @NotNull private Long countryId;
+
+    @AgeValidation
+    private Integer age;
 }

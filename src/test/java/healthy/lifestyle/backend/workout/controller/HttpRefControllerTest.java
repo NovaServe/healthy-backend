@@ -95,11 +95,12 @@ class HttpRefControllerTest {
 
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user1 = dataHelper.createUser("one", role, country, Set.of(exercise1));
+        Integer age = 20;
+        User user1 = dataHelper.createUser("one", role, country, Set.of(exercise1), age);
 
         HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
         Exercise exercise2 = dataHelper.createExercise(2, true, false, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
-        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise2));
+        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise2), age);
 
         Exercise exercise3 = dataHelper.createExercise(3, false, false, Set.of(bodyPart), Set.of(httpRef1));
 
@@ -138,12 +139,13 @@ class HttpRefControllerTest {
 
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user1 = dataHelper.createUser("one", role, country, Set.of(exercise1));
+        Integer age = 20;
+        User user1 = dataHelper.createUser("one", role, country, Set.of(exercise1), age);
 
         HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
         Exercise exercise2 = dataHelper.createExercise(2, true, false, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
 
-        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise2));
+        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise2), age);
 
         Exercise exercise3 = dataHelper.createExercise(3, false, false, Set.of(bodyPart), Set.of(httpRef1));
 
@@ -176,7 +178,8 @@ class HttpRefControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
 
         // When
         mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))

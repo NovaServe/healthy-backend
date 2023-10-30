@@ -106,7 +106,9 @@ class HttpRefRepositoryTest {
 
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user1_test = dataHelper.createUser("one", role, country, Set.of(exercise1_ofUser1, exercise2_ofUser1));
+        Integer age = 20;
+        User user1_test =
+                dataHelper.createUser("one", role, country, Set.of(exercise1_ofUser1, exercise2_ofUser1), age);
 
         Exercise exercise1_ofUser2 = dataHelper.createExercise(
                 3, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
@@ -114,7 +116,7 @@ class HttpRefRepositoryTest {
         Exercise exercise2_ofUser2 = dataHelper.createExercise(
                 4, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
 
-        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise1_ofUser2, exercise2_ofUser2));
+        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise1_ofUser2, exercise2_ofUser2), age);
 
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
 
