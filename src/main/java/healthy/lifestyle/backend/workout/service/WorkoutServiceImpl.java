@@ -2,16 +2,17 @@ package healthy.lifestyle.backend.workout.service;
 
 import static java.util.Objects.isNull;
 
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
+import healthy.lifestyle.backend.workout.model.Workout;
 import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,5 +58,42 @@ public class WorkoutServiceImpl implements WorkoutService {
                     elt.setNeedsEquipment(needsEquipment);
                 })
                 .toList();
+    }
+
+    @Transactional
+    @Override
+    public WorkoutResponseDto getDefaultWorkoutById(long id) {
+        Optional<Workout> workoutOptional = workoutRepository.findById(id);
+
+        if (workoutOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND);
+
+        if (workoutOptional.isPresent() && workoutOptional.get().isCustom())
+            throw new ApiException(ErrorMessage.UNAUTHORIZED_FOR_THIS_RESOURCE, HttpStatus.UNAUTHORIZED);
+
+        WorkoutResponseDto workoutDto = modelMapper.map(workoutOptional.get(), WorkoutResponseDto.class);
+
+        List<ExerciseResponseDto> exercisesSorted = workoutDto.getExercises().stream()
+                .sorted(Comparator.comparingLong(ExerciseResponseDto::getId))
+                .toList();
+
+        workoutDto.setExercises(exercisesSorted);
+
+        Set<BodyPartResponseDto> workoutBodyParts = new HashSet<>();
+        boolean workoutNeedsEquipment = false;
+
+        for (ExerciseResponseDto exercise : exercisesSorted) {
+            for (BodyPartResponseDto bodyPart : exercise.getBodyParts()) {
+                if (!workoutBodyParts.contains(bodyPart)) workoutBodyParts.add(bodyPart);
+                if (exercise.isNeedsEquipment()) workoutNeedsEquipment = true;
+            }
+        }
+
+        workoutDto.setBodyParts(workoutBodyParts.stream()
+                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                .toList());
+
+        workoutDto.setNeedsEquipment(workoutNeedsEquipment);
+
+        return workoutDto;
     }
 }
