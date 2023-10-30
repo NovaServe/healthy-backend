@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ExceptionDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -25,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -205,25 +208,23 @@ class WorkoutControllerTest {
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnDefaultWorkoutAnd200Ok() throws Exception {
+    void getDefaultWorkoutByIdTest_shouldReturnDefaultWorkoutAnd200Ok_whenIdIsValid() throws Exception {
         // Given
         BodyPart bodyPart1 = dataHelper.createBodyPart(1);
-        Exercise exercise1 = dataHelper.createExercise(1, false, false, Set.of(bodyPart1), null);
-        Exercise exercise2 = dataHelper.createExercise(2, false, false, Set.of(bodyPart1), null);
-        Workout workout1 = dataHelper.createWorkout(1, false, Set.of(exercise1, exercise2));
-
         BodyPart bodyPart2 = dataHelper.createBodyPart(2);
         BodyPart bodyPart3 = dataHelper.createBodyPart(3);
-        Exercise exercise3 = dataHelper.createExercise(3, false, false, Set.of(bodyPart2), null);
-        Exercise exercise4 = dataHelper.createExercise(4, false, true, Set.of(bodyPart3), null);
+        Exercise exercise1 = dataHelper.createExercise(1, false, false, Set.of(bodyPart1, bodyPart2), null);
+        Exercise exercise2 = dataHelper.createExercise(2, false, false, Set.of(bodyPart1, bodyPart3), null);
+        Workout workout1 = dataHelper.createWorkout(1, false, Set.of(exercise1, exercise2));
+
+        BodyPart bodyPart4 = dataHelper.createBodyPart(4);
+        Exercise exercise3 = dataHelper.createExercise(3, false, false, Set.of(bodyPart4), null);
+        Exercise exercise4 = dataHelper.createExercise(4, false, true, Set.of(bodyPart4), null);
         Workout workout2 = dataHelper.createWorkout(2, false, Set.of(exercise3, exercise4));
 
-        List<Workout> Workouts = List.of(workout1, workout2);
+        String postfix = String.format("/default/%d", workout1.getId());
 
         // When
-        int index = 0;
-        long id = Workouts.get(index).getId();
-        String postfix = String.format("/default/%d", id);
         MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isOk())
@@ -234,39 +235,31 @@ class WorkoutControllerTest {
         WorkoutResponseDto responseDto =
                 objectMapper.readValue(responseContent, new TypeReference<WorkoutResponseDto>() {});
 
-        assertThat(Workouts.get(index))
+        assertThat(workout1)
                 .usingRecursiveComparison()
                 .ignoringFields("exercises", "bodyParts")
                 .isEqualTo(responseDto);
 
-        List<BodyPart> workout1_bodyParts = List.of(bodyPart1);
-        assertThat(workout1_bodyParts)
+        List<BodyPart> workoutSortedBodyParts = List.of(bodyPart1, bodyPart2, bodyPart3);
+        assertThat(workoutSortedBodyParts)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
                 .isEqualTo(responseDto.getBodyParts());
 
-        List<Exercise> workout1_sortedExercises = workout1.getExercises().stream()
+        List<Exercise> workoutSortedExercises = workout1.getExercises().stream()
                 .sorted(Comparator.comparingLong(Exercise::getId))
                 .toList();
-        assertThat(workout1_sortedExercises)
+        assertThat(workoutSortedExercises)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("bodyParts", "httpRefs", "users")
                 .isEqualTo(responseDto.getExercises());
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnNullAnd404() throws Exception {
+    void getDefaultWorkoutByIdTest_shouldReturnNotFoundAnd404_whenWorkoutDoesNotExist() throws Exception {
         // Given
-        BodyPart bodyPart1 = dataHelper.createBodyPart(1);
-        Exercise exercise1 = dataHelper.createExercise(1, false, false, Set.of(bodyPart1), null);
-        Exercise exercise2 = dataHelper.createExercise(2, false, false, Set.of(bodyPart1), null);
-        Workout workout = dataHelper.createWorkout(1, false, Set.of(exercise1, exercise2));
-
-        long workoutId = workout.getId();
-        long id = 100;
-
-        assertThat(workoutId).isNotEqualTo(id);
+        long wrongId = 1000;
+        String postfix = String.format("/default/%d", wrongId);
 
         // When
-        String postfix = String.format("/default/%d", id);
         MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isNotFound())
@@ -274,19 +267,23 @@ class WorkoutControllerTest {
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        assertThat(responseContent.isEmpty());
+        ExceptionDto responseDto = objectMapper.readValue(responseContent, new TypeReference<ExceptionDto>() {});
+
+        assertEquals(ErrorMessage.NOT_FOUND.getName(), responseDto.getMessage());
+        assertEquals(Integer.valueOf(HttpStatus.NOT_FOUND.value()), responseDto.getCode());
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnNullAnd401() throws Exception {
+    void getDefaultWorkoutByIdTest_shouldReturnUnauthorizedForThisResourceAnd401() throws Exception {
         // Given
         BodyPart bodyPart1 = dataHelper.createBodyPart(1);
         Exercise exercise1 = dataHelper.createExercise(1, true, false, Set.of(bodyPart1), null);
         Exercise exercise2 = dataHelper.createExercise(2, true, false, Set.of(bodyPart1), null);
         Workout workout = dataHelper.createWorkout(1, true, Set.of(exercise1, exercise2));
 
-        long id = workout.getId();
-        String postfix = String.format("/default/%d", id);
+        String postfix = String.format("/default/%d", workout.getId());
+
+        // When
         MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isUnauthorized())
@@ -294,6 +291,9 @@ class WorkoutControllerTest {
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        assertThat(responseContent.isEmpty());
+        ExceptionDto responseDto = objectMapper.readValue(responseContent, new TypeReference<ExceptionDto>() {});
+
+        assertEquals(ErrorMessage.UNAUTHORIZED_FOR_THIS_RESOURCE.getName(), responseDto.getMessage());
+        assertEquals(Integer.valueOf(HttpStatus.UNAUTHORIZED.value()), responseDto.getCode());
     }
 }

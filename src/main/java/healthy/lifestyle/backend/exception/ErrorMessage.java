@@ -9,7 +9,8 @@ public enum ErrorMessage {
     INVALID_TOKEN("Invalid token"),
     AUTHENTICATION_ERROR("Authentication error"),
     USER_NOT_FOUND("User not found"),
-    NOT_FOUND("Not found");
+    NOT_FOUND("Not found"),
+    UNAUTHORIZED_FOR_THIS_RESOURCE("Unauthorized for this resource");
 
     private final String name;
 

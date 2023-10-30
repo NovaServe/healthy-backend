@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.Workout;
 import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
-import jakarta.persistence.EntityNotFoundException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,9 +23,10 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
-class WorkoutServiceImplTest {
+class WorkoutServiceTest {
     @InjectMocks
     WorkoutServiceImpl workoutService;
 
@@ -38,7 +39,7 @@ class WorkoutServiceImplTest {
     DataUtil dataUtil = new DataUtil();
 
     @Test
-    void getDefaultWorkoutsTest_shouldReturnDefaultExercises() {
+    void getDefaultWorkoutsTest_shouldReturnDefaultWorkouts() {
         // Given
         List<Exercise> exercises = IntStream.rangeClosed(1, 4)
                 .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
@@ -75,53 +76,38 @@ class WorkoutServiceImplTest {
                 .mapToObj(id -> dataUtil.createWorkout(id, false, Set.of(exercises.get(0), exercises.get(1))))
                 .toList();
 
-        int workoutIdAsInt = (int) workoutId;
-        when(workoutRepository.findById(workoutId)).thenReturn(Optional.of(workouts.get(workoutIdAsInt)));
+        when(workoutRepository.findById(workoutId)).thenReturn(Optional.of(workouts.get((int) workoutId)));
 
         // When
         WorkoutResponseDto responseWorkout = workoutService.getDefaultWorkoutById(workoutId);
 
         // Then
         verify(workoutRepository, times(1)).findById(workoutId);
-        assertThat(workouts.get(workoutIdAsInt))
+        assertThat(workouts.get((int) workoutId))
                 .usingRecursiveComparison()
                 .ignoringFields("exercises", "bodyParts")
                 .isEqualTo(responseWorkout);
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldThrowException_whenIdNotFound() {
+    void getDefaultWorkoutByIdTest_shouldThrowNotFound_whenIdNotFound() {
         // Given
-        int workoutsNum = 6;
-        long workoutId = 100;
-        List<Exercise> exercises = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
-                .toList();
-
-        List<Workout> workouts = IntStream.rangeClosed(1, workoutsNum)
-                .mapToObj(id -> dataUtil.createWorkout(id, false, Set.of(exercises.get(0), exercises.get(1))))
-                .toList();
-
-        List<Long> workoutsId = new ArrayList<>();
-        for (Workout workout : workouts) {
-            workoutsId.add(workout.getId());
-        }
-
-        assertThat(workoutsId).doesNotContain(workoutId);
-
-        when(workoutRepository.findById(workoutId)).thenReturn(Optional.empty());
+        long wrongWorkoutId = 100;
+        when(workoutRepository.findById(wrongWorkoutId)).thenReturn(Optional.empty());
 
         // When
-        assertThrows(EntityNotFoundException.class, () -> {
-            workoutService.getDefaultWorkoutById(workoutId);
+        ApiException exception = assertThrows(ApiException.class, () -> {
+            workoutService.getDefaultWorkoutById(wrongWorkoutId);
         });
 
         // Then
-        verify(workoutRepository, times(1)).findById(workoutId);
+        verify(workoutRepository, times(1)).findById(wrongWorkoutId);
+        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldThrowException_whenWorkoutIsCustom() {
+    void getDefaultWorkoutByIdTest_shouldThrowUnauthorizedForThisResource_whenWorkoutIsCustom() {
         // Given
         long workoutId = 1;
         List<Exercise> exercises = IntStream.rangeClosed(1, 2)
@@ -132,11 +118,13 @@ class WorkoutServiceImplTest {
         when(workoutRepository.findById(workoutId)).thenReturn(Optional.of(customWorkout));
 
         // When
-        assertThrows(RuntimeException.class, () -> {
+        ApiException exception = assertThrows(ApiException.class, () -> {
             workoutService.getDefaultWorkoutById(workoutId);
         });
 
         // Then
         verify(workoutRepository, times(1)).findById(workoutId);
+        assertEquals(ErrorMessage.UNAUTHORIZED_FOR_THIS_RESOURCE.getName(), exception.getMessage());
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getHttpStatus());
     }
 }
