@@ -86,7 +86,7 @@ public class DataUtil {
                 .build();
     }
 
-    public SignupRequestDto createSignupRequestDto(String seed, Long id) {
+    public SignupRequestDto createSignupRequestDto(String seed, Long id, Integer age) {
         return SignupRequestDto.builder()
                 .username("username-" + seed)
                 .email("username-" + seed + "@email.com")
@@ -94,6 +94,7 @@ public class DataUtil {
                 .confirmPassword("password-" + seed)
                 .fullName("Full Name " + seed)
                 .countryId(id)
+                .age(age)
                 .build();
     }
 

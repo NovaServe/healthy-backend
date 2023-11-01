@@ -82,7 +82,8 @@ class AuthControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
+        Integer age = 20;
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
 
         // When
         MvcResult result = mockMvc.perform(post(URL + "/signup")
@@ -99,6 +100,7 @@ class AuthControllerTest {
         User user = dataHelper.getUserById(signupResponseDto.getId());
 
         assertThat(user.getCountry().getId()).isEqualTo(country.getId());
+        assertThat(user.getAge()).isEqualTo(age);
     }
 
     @Test
@@ -106,8 +108,9 @@ class AuthControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
 
         // When
         mockMvc.perform(post(URL + "/signup")
@@ -124,7 +127,8 @@ class AuthControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
+        Integer age = 20;
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
         signupRequestDto.setUsername("username 123 $");
 
         // When
@@ -142,7 +146,8 @@ class AuthControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
+        Integer age = 20;
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
         signupRequestDto.setEmail("invalid-email-123-$@email.com");
 
         // When
@@ -160,7 +165,8 @@ class AuthControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
+        Integer age = 20;
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
         signupRequestDto.setPassword("Invalid password with space");
         signupRequestDto.setConfirmPassword("Invalid password with space");
 
@@ -180,7 +186,8 @@ class AuthControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
+        Integer age = 20;
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
         signupRequestDto.setConfirmPassword("Password mismatch");
 
         // When
@@ -198,7 +205,8 @@ class AuthControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId());
+        Integer age = 20;
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
         signupRequestDto.setFullName("Invalid Full Name &");
 
         // When
@@ -212,11 +220,30 @@ class AuthControllerTest {
     }
 
     @Test
+    void signupTest_shouldReturn400BadRequest_whenInvalidAge() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 3;
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
+
+        // When
+        mockMvc.perform(post(URL + "/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.age", is(equalTo("Not allowed age, should be in 5-200"))))
+                .andDo(print());
+    }
+
+    @Test
     void loginTest_shouldReturnTokenAnd200Ok() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
 
         LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
 
@@ -260,7 +287,8 @@ class AuthControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
 
         LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
         loginRequestDto.setPassword("Wrong-password");
@@ -331,7 +359,8 @@ class AuthControllerTest {
         String URL_POSTFIX = "/validate";
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null);
+        Integer age = 20;
+        User user = dataHelper.createUser("one", role, country, null, age);
 
         // When
         mockMvc.perform(get(URL + URL_POSTFIX).contentType(MediaType.APPLICATION_JSON))

@@ -92,7 +92,7 @@ public class DataHelper {
         return roleRepository.save(new Role(name));
     }
 
-    public User createUser(String seed, Role role, Country country, Set<Exercise> exercises) {
+    public User createUser(String seed, Role role, Country country, Set<Exercise> exercises, Integer age) {
         return userRepository.save(User.builder()
                 .username("username-" + seed)
                 .fullName("Full Name " + seed)
@@ -101,6 +101,7 @@ public class DataHelper {
                 .role(role)
                 .exercises(exercises)
                 .country(country)
+                .age(age)
                 .build());
     }
 

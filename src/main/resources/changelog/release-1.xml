@@ -198,4 +198,13 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet id="users_add_age" author="Anastasiia Shevchuk" context="structure">
+        <comment>Add age column to user table</comment>
+        <addColumn tableName="users">
+            <column name="age"
+                    type="bigint">
+                <constraints nullable="true" unique="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

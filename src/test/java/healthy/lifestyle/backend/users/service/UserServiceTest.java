@@ -46,7 +46,8 @@ class UserServiceTest {
     @Test
     void createUserTest_shouldReturnUserDto() {
         // Given
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", 1L);
+        Integer age = 20;
+        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", 1L, age);
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
 
@@ -67,5 +68,6 @@ class UserServiceTest {
 
         // Then
         assertEquals(1L, responseDto.getId());
+        assertEquals(age, signupRequestDto.getAge());
     }
 }
