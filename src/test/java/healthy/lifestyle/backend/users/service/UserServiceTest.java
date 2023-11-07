@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 import healthy.lifestyle.backend.data.DataUtil;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupResponseDto;
+import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
+import healthy.lifestyle.backend.users.dto.UserResponseDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -21,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +45,9 @@ class UserServiceTest {
 
     @Spy
     private DataUtil dataUtil;
+
+    @Spy
+    ModelMapper modelMapper;
 
     @Test
     void createUserTest_shouldReturnUserDto() {
@@ -69,5 +75,34 @@ class UserServiceTest {
         // Then
         assertEquals(1L, responseDto.getId());
         assertEquals(age, signupRequestDto.getAge());
+    }
+
+    @Test
+    void updateUserTest_shouldReturnUserDto() {
+        UpdateUserRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one", 1L, 25);
+        Long userId = 1L;
+        Country country = Country.builder().id(1L).name("Country").build();
+        User existingUser = User.builder()
+                .username("oldUsername")
+                .email("oldEmail")
+                .fullName("oldFullName")
+                .age(35)
+                .country(country)
+                .build();
+
+        // When
+        when(userRepository.getReferenceById(userId)).thenReturn(existingUser);
+        when(countryRepository.getReferenceById(updateUserRequestDto.getUpdatedCountryId()))
+                .thenReturn(country);
+        when(userRepository.save(existingUser)).thenReturn(existingUser);
+
+        UserResponseDto updatedUserResponse = userService.updateUser(userId, updateUserRequestDto);
+
+        // Then
+        assertEquals("username-one", updatedUserResponse.getUsername());
+        assertEquals("username-one@email.com", updatedUserResponse.getEmail());
+        assertEquals("Full Name one", updatedUserResponse.getFullName());
+        assertEquals(25, updatedUserResponse.getAge());
+        assertEquals(1L, updatedUserResponse.getCountryId());
     }
 }

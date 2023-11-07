@@ -3,10 +3,7 @@ package healthy.lifestyle.backend.users.service;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.security.JwtTokenProvider;
-import healthy.lifestyle.backend.users.dto.LoginRequestDto;
-import healthy.lifestyle.backend.users.dto.LoginResponseDto;
-import healthy.lifestyle.backend.users.dto.SignupRequestDto;
-import healthy.lifestyle.backend.users.dto.SignupResponseDto;
+import healthy.lifestyle.backend.users.dto.*;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -16,6 +13,7 @@ import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Optional;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,6 +32,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ModelMapper modelMapper;
 
     public UserServiceImpl(
             UserRepository userRepository,
@@ -41,13 +40,15 @@ public class UserServiceImpl implements UserService {
             CountryRepository countryRepository,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
-            JwtTokenProvider jwtTokenProvider) {
+            JwtTokenProvider jwtTokenProvider,
+            ModelMapper modelMapper) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.countryRepository = countryRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -104,5 +105,40 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.getReferenceById(userId);
         user.getExercises().add(exercise);
         userRepository.save(user);
+    }
+
+    @Override
+    public UserResponseDto updateUser(Long userId, UpdateUserRequestDto requestDto) {
+        User user;
+        try {
+            user = userRepository.getReferenceById(userId);
+            if (requestDto.getUpdatedCountryId() != null) {
+                Country country = countryRepository.getReferenceById(requestDto.getUpdatedCountryId());
+                user.setCountry(country);
+            }
+        } catch (EntityNotFoundException e) {
+            throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        if (requestDto.getUpdatedUsername() != null
+                && !requestDto.getUpdatedUsername().isEmpty()) {
+            user.setUsername(requestDto.getUpdatedUsername());
+        }
+
+        if (requestDto.getUpdatedEmail() != null
+                && !requestDto.getUpdatedUsername().isEmpty()) {
+            user.setEmail(requestDto.getUpdatedEmail());
+        }
+
+        if (requestDto.getUpdatedFullName() != null
+                && !requestDto.getUpdatedFullName().isEmpty()) {
+            user.setFullName(requestDto.getUpdatedFullName());
+        }
+
+        if (requestDto.getUpdatedAge() != null) {
+            user.setAge(requestDto.getUpdatedAge());
+        }
+
+        return modelMapper.map(userRepository.save(user), UserResponseDto.class);
     }
 }
