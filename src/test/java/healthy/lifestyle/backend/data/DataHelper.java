@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.data;
 
+import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -121,5 +122,15 @@ public class DataHelper {
                 .exercises(exercises)
                 .build();
         return workoutRepository.save(workout);
+    }
+
+    public UpdateUserRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
+        return UpdateUserRequestDto.builder()
+                .updatedUsername("username-" + seed)
+                .updatedEmail("username-" + seed + "@email.com")
+                .updatedFullName("Full Name " + seed)
+                .updatedCountryId(countryId)
+                .updatedAge(age)
+                .build();
     }
 }
