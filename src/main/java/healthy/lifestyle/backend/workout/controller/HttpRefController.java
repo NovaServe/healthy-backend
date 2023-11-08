@@ -3,12 +3,15 @@ package healthy.lifestyle.backend.workout.controller;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+import healthy.lifestyle.backend.common.AuthUtil;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.AuthService;
+import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.workout.service.HttpRefService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Sort;
@@ -18,9 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("${api.basePath}/${api.version}/workouts/httpRefs")
@@ -28,9 +29,12 @@ public class HttpRefController {
     private final HttpRefService httpRefService;
     private final AuthService authService;
 
-    public HttpRefController(HttpRefService httpRefService, AuthService authService) {
+    private final AuthUtil authUtil;
+
+    public HttpRefController(HttpRefService httpRefService, AuthService authService, AuthUtil authUtil) {
         this.httpRefService = httpRefService;
         this.authService = authService;
+        this.authUtil = authUtil;
     }
 
     @GetMapping("/default")
@@ -60,5 +64,17 @@ public class HttpRefController {
         }
 
         throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<HttpRefResponseDto> createCustomHttpRef(@RequestBody @Valid CreateHttpRequestDto requestDto) {
+
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+
+        if (isNull(userId)) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
+
+        return new ResponseEntity<>(httpRefService.createCustomHttpRef(userId, requestDto), HttpStatus.CREATED);
     }
 }

@@ -105,4 +105,10 @@ public class UserServiceImpl implements UserService {
         user.getExercises().add(exercise);
         userRepository.save(user);
     }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    @Override
+    public User getUserById(long userId) {
+        return userRepository.getReferenceById(userId);
+    }
 }
