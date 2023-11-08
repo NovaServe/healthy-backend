@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.users.model;
 
 import healthy.lifestyle.backend.workout.model.Exercise;
+import healthy.lifestyle.backend.workout.model.HttpRef;
 import jakarta.persistence.*;
 import java.util.Set;
 import lombok.*;
@@ -46,4 +47,7 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "exercise_id", referencedColumnName = "id"))
     private Set<Exercise> exercises;
+
+    @OneToMany(mappedBy = "user")
+    private Set<HttpRef> httpRefs;
 }

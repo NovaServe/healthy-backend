@@ -4,8 +4,10 @@ import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
 import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
+import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.BodyPartRequestDto;
 import healthy.lifestyle.backend.workout.dto.CreateExerciseRequestDto;
+import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefRequestDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -27,6 +29,16 @@ public class DataUtil {
                 .mapToObj(
                         id -> BodyPart.builder().id(id).name("Body part " + id).build())
                 .collect(Collectors.toList());
+    }
+
+    public HttpRef createHttpRef(int seed, boolean isCustom) {
+        return HttpRef.builder()
+                .id((long) seed)
+                .name("Name " + seed)
+                .ref("https://ref " + seed)
+                .description("Description " + seed)
+                .isCustom(isCustom)
+                .build();
     }
 
     public List<HttpRef> createHttpRefs(int start, int endInclusive, boolean isCustom) {
@@ -118,6 +130,23 @@ public class DataUtil {
                 .description("Description " + id)
                 .isCustom(isCustom)
                 .exercises(exercises)
+                .build();
+    }
+
+    public CreateHttpRequestDto createHttpRequestDto(int seed) {
+        return CreateHttpRequestDto.builder()
+                .name("Name " + seed)
+                .description("Description " + seed)
+                .ref("http://ref-" + seed)
+                .build();
+    }
+
+    public User createUserEntity(long userId) {
+        return User.builder()
+                .id(userId)
+                .username("username-" + userId)
+                .fullName("Full Name " + userId)
+                .email("username-" + userId + "@email.com")
                 .build();
     }
 

@@ -137,7 +137,7 @@ class ExerciseControllerTest {
                 .isEqualTo(exerciseResponseDto.getBodyParts());
 
         assertThat(httpRefs)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                 .isEqualTo(exerciseResponseDto.getHttpRefs());
     }
 
@@ -345,7 +345,7 @@ class ExerciseControllerTest {
                     .toList();
 
             assertThat(httpRefs_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                     .isEqualTo(responseDto.get(id).getHttpRefs());
         });
     }
@@ -403,7 +403,7 @@ class ExerciseControllerTest {
                     .toList();
 
             assertThat(httpRefs_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                     .isEqualTo(responseDto.get(id).getHttpRefs());
         });
     }
@@ -456,7 +456,7 @@ class ExerciseControllerTest {
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
         assertThat(HttpRefs_)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                 .isEqualTo(responseDto.getHttpRefs());
     }
 }

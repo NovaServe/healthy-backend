@@ -107,6 +107,12 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    @Override
+    public User getUserById(long userId) {
+        return userRepository.getReferenceById(userId);
+    }
+
     @Override
     public UserResponseDto updateUser(Long userId, UpdateUserRequestDto requestDto) {
         User user;
