@@ -14,11 +14,14 @@ import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 
 @TestComponent
 public class DataHelper {
@@ -48,14 +51,69 @@ public class DataHelper {
         return new BCryptPasswordEncoder();
     }
 
+    //    @Autowired
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Transactional
     public void deleteAll() {
-        userRepository.deleteAll();
-        roleRepository.deleteAll();
-        workoutRepository.deleteAll();
-        exerciseRepository.deleteAll();
-        bodyPartRepository.deleteAll();
-        httpRefRepository.deleteAll();
-        countryRepository.deleteAll();
+        String deleteUsersExercises = "DELETE FROM users_exercises";
+        entityManager.createNativeQuery(deleteUsersExercises).executeUpdate();
+
+        String deleteWorkoutsExercises = "DELETE FROM workouts_exercises;";
+        entityManager.createNativeQuery(deleteWorkoutsExercises).executeUpdate();
+
+        String deleteWorkouts = "DELETE FROM workouts;";
+        entityManager.createNativeQuery(deleteWorkouts).executeUpdate();
+
+        String deleteExercisesBodyParts = "DELETE FROM exercises_body_parts;";
+        entityManager.createNativeQuery(deleteExercisesBodyParts).executeUpdate();
+
+        String deleteExercisesHttpRefs = "DELETE FROM exercises_http_refs;";
+        entityManager.createNativeQuery(deleteExercisesHttpRefs).executeUpdate();
+
+        String deleteExercises = "DELETE FROM exercises;";
+        entityManager.createNativeQuery(deleteExercises).executeUpdate();
+
+        String deleteBodyParts = "DELETE FROM body_parts;";
+        entityManager.createNativeQuery(deleteBodyParts).executeUpdate();
+
+        String deleteHttpRefs = "DELETE FROM http_refs;";
+        entityManager.createNativeQuery(deleteHttpRefs).executeUpdate();
+
+        String deleteUsers = "DELETE FROM users;";
+        entityManager.createNativeQuery(deleteUsers).executeUpdate();
+
+        String deleteRoles = "DELETE FROM roles;";
+        entityManager.createNativeQuery(deleteRoles).executeUpdate();
+
+        String deleteCountries = "DELETE FROM countries;";
+        entityManager.createNativeQuery(deleteCountries).executeUpdate();
+
+        // workouts
+        // workouts_exercises (fk workout_id -> workouts(id), fk exercise_id -> exercises(id))
+        // workoutRepository.deleteAll();
+
+        // exercises,
+        // exercises_body_parts (fk exercise_id -> exercises(id), fk body_part_id -> body_parts(id)),
+        // exercises_http_refs (fk exercise_id -> exercises(id), fk http_ref_id -> http_refs(id))
+        // exerciseRepository.deleteAll();
+
+        // body_parts
+        // bodyPartRepository.deleteAll();
+
+        // http_refs (fk user_id -> users(id))
+        // httpRefRepository.deleteAll();
+
+        // users (fk country_id -> countries(id), fk role_id -> roles(id)),
+        // users_exercises (fk user_id -> users(id), fk exercise_id -> exercises(id)
+        // userRepository.deleteAll();
+
+        // roles
+        // roleRepository.deleteAll();
+
+        // countries
+        // countryRepository.deleteAll();
     }
 
     public BodyPart createBodyPart(int seed) {
@@ -69,6 +127,11 @@ public class DataHelper {
                 .description("Desc " + seed)
                 .isCustom(isCustom)
                 .build());
+    }
+
+    public HttpRef httpRefAddUser(HttpRef httpRef, User user) {
+        httpRef.setUser(user);
+        return httpRefRepository.save(httpRef);
     }
 
     public Exercise createExercise(

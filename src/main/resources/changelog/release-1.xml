@@ -198,12 +198,24 @@
             </column>
         </addColumn>
     </changeSet>
+
     <changeSet id="users_add_age" author="Anastasiia Shevchuk" context="structure">
         <comment>Add age column to user table</comment>
         <addColumn tableName="users">
             <column name="age"
                     type="bigint">
                 <constraints nullable="true" unique="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="http_refs_add_user_fk" author="Oleg Kucherenko">
+        <comment>Add users column to http_refs table</comment>
+
+        <addColumn tableName="http_refs">
+            <column name="user_id"
+                    type="bigint">
+                <constraints nullable="true" foreignKeyName="fk_user_id" references="users(id)"/>
             </column>
         </addColumn>
     </changeSet>

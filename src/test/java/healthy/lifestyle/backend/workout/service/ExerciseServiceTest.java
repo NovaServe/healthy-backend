@@ -99,7 +99,7 @@ class ExerciseServiceTest {
                 .isEqualTo(exerciseActual.getBodyParts());
 
         assertThat(httpRefsMock)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                 .isEqualTo(exerciseActual.getHttpRefs());
     }
 
@@ -138,7 +138,7 @@ class ExerciseServiceTest {
                     .toList();
 
             assertThat(httpRefs_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                     .isEqualTo(exercisesDtoActual.get(id).getHttpRefs());
         });
     }
@@ -184,7 +184,7 @@ class ExerciseServiceTest {
                     .toList();
 
             assertThat(httpRefs_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                     .isEqualTo(exercisesDtoActual.get(id).getHttpRefs());
         });
     }
@@ -217,7 +217,7 @@ class ExerciseServiceTest {
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
         assertThat(httpRefs_)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                 .isEqualTo(exerciseDtoActual.getHttpRefs());
     }
 }

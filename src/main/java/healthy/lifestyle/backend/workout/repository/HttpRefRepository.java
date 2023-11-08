@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.workout.repository;
 
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,4 +15,7 @@ public interface HttpRefRepository extends JpaRepository<HttpRef, Long> {
 
     @Query("SELECT h FROM HttpRef h JOIN h.exercises.users u WHERE u.id = :userId AND h.isCustom = true")
     List<HttpRef> findCustomByUserId(long userId, Sort sort);
+
+    @Query("SELECT h FROM HttpRef h WHERE h.user.id = :userId AND h.name = :name AND h.isCustom = true")
+    Optional<HttpRef> findCustomByNameAndUserId(String name, Long userId);
 }
