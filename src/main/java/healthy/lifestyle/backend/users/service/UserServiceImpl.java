@@ -121,21 +121,31 @@ public class UserServiceImpl implements UserService {
         }
 
         if (requestDto.getUpdatedUsername() != null
-                && !requestDto.getUpdatedUsername().isEmpty()) {
+                && !requestDto.getUpdatedUsername().isEmpty()
+                && !requestDto.getUpdatedUsername().equals(user.getUsername())) {
             user.setUsername(requestDto.getUpdatedUsername());
         }
 
         if (requestDto.getUpdatedEmail() != null
-                && !requestDto.getUpdatedUsername().isEmpty()) {
+                && !requestDto.getUpdatedEmail().isEmpty()
+                && !requestDto.getUpdatedEmail().equals(user.getEmail())) {
             user.setEmail(requestDto.getUpdatedEmail());
         }
 
+        if (requestDto.getUpdatedPassword() != null
+                && !requestDto.getUpdatedPassword().isEmpty()
+                && !requestDto.getUpdatedPassword().equals(user.getPassword())
+                && requestDto.getUpdatedPassword().equals(requestDto.getUpdatedConfirmPassword())) {
+            user.setPassword(passwordEncoder.encode(requestDto.getUpdatedPassword()));
+        }
+
         if (requestDto.getUpdatedFullName() != null
-                && !requestDto.getUpdatedFullName().isEmpty()) {
+                && !requestDto.getUpdatedFullName().isEmpty()
+                && !requestDto.getUpdatedFullName().equals(user.getFullName())) {
             user.setFullName(requestDto.getUpdatedFullName());
         }
 
-        if (requestDto.getUpdatedAge() != null) {
+        if (requestDto.getUpdatedAge() != null && !requestDto.getUpdatedAge().equals(user.getAge())) {
             user.setAge(requestDto.getUpdatedAge());
         }
 

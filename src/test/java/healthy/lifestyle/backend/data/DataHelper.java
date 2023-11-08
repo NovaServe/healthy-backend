@@ -128,6 +128,8 @@ public class DataHelper {
         return UpdateUserRequestDto.builder()
                 .updatedUsername("username-" + seed)
                 .updatedEmail("username-" + seed + "@email.com")
+                .updatedPassword("password-" + seed)
+                .updatedConfirmPassword("password-" + seed)
                 .updatedFullName("Full Name " + seed)
                 .updatedCountryId(countryId)
                 .updatedAge(age)

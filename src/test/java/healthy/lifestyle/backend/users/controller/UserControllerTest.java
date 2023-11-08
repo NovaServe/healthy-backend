@@ -122,11 +122,13 @@ public class UserControllerTest {
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
 
+        // When
         mockMvc.perform(patch(UPDATE_USER_URL, user.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 // Then
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(user.getId().intValue())))
                 .andExpect(jsonPath("$.username", is(requestDto.getUpdatedUsername())))
                 .andExpect(jsonPath("$.email", is(requestDto.getUpdatedEmail())))
                 .andExpect(jsonPath("$.fullName", is(requestDto.getUpdatedFullName())))
@@ -151,6 +153,7 @@ public class UserControllerTest {
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
 
+        // When
         mockMvc.perform(patch(UPDATE_USER_URL, user2.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))

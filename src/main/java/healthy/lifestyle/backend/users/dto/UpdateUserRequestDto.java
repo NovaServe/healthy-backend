@@ -21,6 +21,14 @@ public class UpdateUserRequestDto {
     @EmailValidation
     private String updatedEmail;
 
+    @Size(min = 10, max = 64)
+    @PasswordValidation
+    private String updatedPassword;
+
+    @Size(min = 10, max = 64)
+    @PasswordValidation
+    private String updatedConfirmPassword;
+
     @Size(min = 4, max = 64)
     @FullnameValidation
     private String updatedFullName;

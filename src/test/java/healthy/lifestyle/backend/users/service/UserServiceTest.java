@@ -79,23 +79,25 @@ class UserServiceTest {
 
     @Test
     void updateUserTest_shouldReturnUserDto() {
+        // Given
         UpdateUserRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one", 1L, 25);
         Long userId = 1L;
         Country country = Country.builder().id(1L).name("Country").build();
         User existingUser = User.builder()
                 .username("oldUsername")
                 .email("oldEmail")
+                .password("oldPassword")
                 .fullName("oldFullName")
                 .age(35)
                 .country(country)
                 .build();
 
-        // When
         when(userRepository.getReferenceById(userId)).thenReturn(existingUser);
         when(countryRepository.getReferenceById(updateUserRequestDto.getUpdatedCountryId()))
                 .thenReturn(country);
         when(userRepository.save(existingUser)).thenReturn(existingUser);
 
+        // When
         UserResponseDto updatedUserResponse = userService.updateUser(userId, updateUserRequestDto);
 
         // Then
