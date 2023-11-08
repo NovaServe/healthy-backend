@@ -8,7 +8,7 @@ import org.springframework.data.domain.Sort;
 public interface HttpRefService {
     List<HttpRefResponseDto> getDefaultHttpRefs(Sort sort);
 
-    List<HttpRefResponseDto> getHttpRefs(long userId, Sort sort, boolean isCustomOnly);
+    List<HttpRefResponseDto> getCustomHttpRefs(long userId, String sortBy);
 
     HttpRefResponseDto createCustomHttpRef(long userId, CreateHttpRequestDto createHttpRequestDto);
 }

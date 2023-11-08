@@ -21,11 +21,8 @@ import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
-import healthy.lifestyle.backend.workout.model.BodyPart;
-import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -94,24 +91,26 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
-    void getHttpRefsTest_shouldReturnDefaultAndCustomHttpRefsAnd200Ok_whenUserAuthorized() throws Exception {
+    void getCustomHttpRefsTest_shouldReturnCustomHttpRefsAnd200_whenUserAuthorized() throws Exception {
         // Given
-        BodyPart bodyPart = dataHelper.createBodyPart(1);
-        HttpRef httpRef1 = dataHelper.createHttpRef(1, false);
+        Role role = dataHelper.createRole("ROLE_USER");
+
+        Country country1 = dataHelper.createCountry(1);
+        User user1 = dataHelper.createUser("one", role, country1, null, 20);
+        HttpRef httpRef1 = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef1, user1);
         HttpRef httpRef2 = dataHelper.createHttpRef(2, true);
+        dataHelper.httpRefAddUser(httpRef2, user1);
 
-        Exercise exercise1 = dataHelper.createExercise(1, true, false, Set.of(bodyPart), Set.of(httpRef2));
-
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user1 = dataHelper.createUser("one", role, country, Set.of(exercise1), age);
-
+        Country country2 = dataHelper.createCountry(2);
+        User user2 = dataHelper.createUser("two", role, country2, null, 20);
         HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
-        Exercise exercise2 = dataHelper.createExercise(2, true, false, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
-        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise2), age);
+        dataHelper.httpRefAddUser(httpRef3, user2);
+        HttpRef httpRef4 = dataHelper.createHttpRef(4, true);
+        dataHelper.httpRefAddUser(httpRef4, user2);
 
-        Exercise exercise3 = dataHelper.createExercise(3, false, false, Set.of(bodyPart), Set.of(httpRef1));
+        HttpRef defaultHttpRef1 = dataHelper.createHttpRef(5, false);
+        HttpRef defaultHttpRef2 = dataHelper.createHttpRef(6, false);
 
         // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
@@ -125,38 +124,30 @@ class HttpRefControllerTest {
                 objectMapper.readValue(responseContent, new TypeReference<List<HttpRefResponseDto>>() {});
 
         assertEquals(2, responseDto.size());
-        assertEquals(httpRef1.getId(), responseDto.get(0).getId());
-        assertEquals(httpRef1.getName(), responseDto.get(0).getName());
-        assertEquals(httpRef1.getRef(), responseDto.get(0).getRef());
-        assertEquals(httpRef1.getDescription(), responseDto.get(0).getDescription());
 
-        assertEquals(httpRef2.getId(), responseDto.get(1).getId());
-        assertEquals(httpRef2.getName(), responseDto.get(1).getName());
-        assertEquals(httpRef2.getRef(), responseDto.get(1).getRef());
-        assertEquals(httpRef2.getDescription(), responseDto.get(1).getDescription());
+        assertThat(List.of(httpRef1, httpRef2))
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(responseDto);
     }
 
     @Test
     @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
-    void getHttpRefsTest_shouldReturnDefaultHttpRefsAnd200Ok_whenUserNotAuthorized() throws Exception {
+    void getCustomHttpRefsTest_shouldReturnEmptyListAnd200_whenNoHttpRefsFound() throws Exception {
         // Given
-        BodyPart bodyPart = dataHelper.createBodyPart(1);
-        HttpRef httpRef1 = dataHelper.createHttpRef(1, false);
-        HttpRef httpRef2 = dataHelper.createHttpRef(2, false);
-
-        Exercise exercise1 = dataHelper.createExercise(1, true, false, Set.of(bodyPart), Set.of(httpRef2));
-
         Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user1 = dataHelper.createUser("one", role, country, Set.of(exercise1), age);
 
+        Country country1 = dataHelper.createCountry(1);
+        User user1 = dataHelper.createUser("one", role, country1, null, 20);
+
+        Country country2 = dataHelper.createCountry(2);
+        User user2 = dataHelper.createUser("two", role, country2, null, 20);
         HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
-        Exercise exercise2 = dataHelper.createExercise(2, true, false, Set.of(bodyPart), Set.of(httpRef1, httpRef3));
+        dataHelper.httpRefAddUser(httpRef3, user2);
+        HttpRef httpRef4 = dataHelper.createHttpRef(4, true);
+        dataHelper.httpRefAddUser(httpRef4, user2);
 
-        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise2), age);
-
-        Exercise exercise3 = dataHelper.createExercise(3, false, false, Set.of(bodyPart), Set.of(httpRef1));
+        HttpRef defaultHttpRef1 = dataHelper.createHttpRef(5, false);
+        HttpRef defaultHttpRef2 = dataHelper.createHttpRef(6, false);
 
         // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
@@ -169,37 +160,11 @@ class HttpRefControllerTest {
         List<HttpRefResponseDto> responseDto =
                 objectMapper.readValue(responseContent, new TypeReference<List<HttpRefResponseDto>>() {});
 
-        assertEquals(2, responseDto.size());
-        assertEquals(httpRef1.getId(), responseDto.get(0).getId());
-        assertEquals(httpRef1.getName(), responseDto.get(0).getName());
-        assertEquals(httpRef1.getRef(), responseDto.get(0).getRef());
-        assertEquals(httpRef1.getDescription(), responseDto.get(0).getDescription());
-
-        assertEquals(httpRef2.getId(), responseDto.get(1).getId());
-        assertEquals(httpRef2.getName(), responseDto.get(1).getName());
-        assertEquals(httpRef2.getRef(), responseDto.get(1).getRef());
-        assertEquals(httpRef2.getDescription(), responseDto.get(1).getDescription());
+        assertEquals(0, responseDto.size());
     }
 
     @Test
-    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
-    void getHttpRefsTest_shouldReturnErrorMessageAnd500InternalServerError_whenNoHttpRefs() throws Exception {
-        // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
-
-        // When
-        mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
-                // Then
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message", is("Server error")))
-                .andDo(print());
-    }
-
-    @Test
-    void getHttpRefsTest_shouldReturn401Unauthorized_whenUserNotAuthorized() throws Exception {
+    void getCustomHttpRefsTest_shouldReturn401_whenUserNotAuthorized() throws Exception {
         // When
         mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
                 // Then
@@ -234,7 +199,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
-    void createCustomHttpRefTest_shouldReturnHttpRefResponseDtoAnd201Created() throws Exception {
+    void createCustomHttpRefTest_shouldReturnHttpRefResponseDtoAnd201Created_whenValidDtoProvided() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);

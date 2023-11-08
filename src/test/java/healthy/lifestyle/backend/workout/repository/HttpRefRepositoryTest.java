@@ -8,12 +8,8 @@ import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.workout.model.BodyPart;
-import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,58 +80,64 @@ class HttpRefRepositoryTest {
     }
 
     @Test
-    void findCustomByUserIdTest_shouldReturnUserCustomHttpRefs_whenUserIdIsProvided() {
+    void findCustomByUserIdTest_shouldReturnUserCustomHttpRefs_whenValidUserIdProvided() {
         // Given
-        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> dataHelper.createBodyPart(id))
-                .toList();
-
-        List<HttpRef> httpRefsDefault = IntStream.rangeClosed(1, 4)
-                .mapToObj(id -> dataHelper.createHttpRef(id, false))
-                .toList();
-
-        List<HttpRef> httpRefsCustom = IntStream.rangeClosed(5, 8)
-                .mapToObj(id -> dataHelper.createHttpRef(id, true))
-                .toList();
-
-        Exercise exercise1_ofUser1 = dataHelper.createExercise(
-                1, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(0), httpRefsCustom.get(0)));
-
-        Exercise exercise2_ofUser1 = dataHelper.createExercise(
-                2, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(1), httpRefsCustom.get(1)));
-
         Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user1_test =
-                dataHelper.createUser("one", role, country, Set.of(exercise1_ofUser1, exercise2_ofUser1), age);
 
-        Exercise exercise1_ofUser2 = dataHelper.createExercise(
-                3, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
+        Country country1 = dataHelper.createCountry(1);
+        User user1 = dataHelper.createUser("one", role, country1, null, 20);
+        HttpRef httpRef1 = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef1, user1);
+        HttpRef httpRef2 = dataHelper.createHttpRef(2, true);
+        dataHelper.httpRefAddUser(httpRef2, user1);
 
-        Exercise exercise2_ofUser2 = dataHelper.createExercise(
-                4, true, false, new HashSet<>(bodyParts), Set.of(httpRefsDefault.get(2), httpRefsCustom.get(2)));
+        Country country2 = dataHelper.createCountry(2);
+        User user2 = dataHelper.createUser("two", role, country2, null, 20);
+        HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
+        dataHelper.httpRefAddUser(httpRef3, user2);
+        HttpRef httpRef4 = dataHelper.createHttpRef(4, true);
+        dataHelper.httpRefAddUser(httpRef4, user2);
 
-        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise1_ofUser2, exercise2_ofUser2), age);
+        HttpRef defaultHttpRef1 = dataHelper.createHttpRef(5, false);
+        HttpRef defaultHttpRef2 = dataHelper.createHttpRef(6, false);
 
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
 
         // When
-        List<HttpRef> httpRefsActual = httpRefRepository.findCustomByUserId(user1_test.getId(), sort);
+        List<HttpRef> httpRefsActual = httpRefRepository.findCustomByUserId(user1.getId(), sort);
 
         // Then
         assertEquals(2, httpRefsActual.size());
 
-        assertEquals(httpRefsCustom.get(0).getId(), httpRefsActual.get(0).getId());
-        assertEquals(httpRefsCustom.get(0).getName(), httpRefsActual.get(0).getName());
-        assertEquals(httpRefsCustom.get(0).getRef(), httpRefsActual.get(0).getRef());
-        assertEquals(
-                httpRefsCustom.get(0).getDescription(), httpRefsActual.get(0).getDescription());
+        assertThat(List.of(httpRef1, httpRef2))
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(httpRefsActual);
+    }
 
-        assertEquals(httpRefsCustom.get(1).getId(), httpRefsActual.get(1).getId());
-        assertEquals(httpRefsCustom.get(1).getName(), httpRefsActual.get(1).getName());
-        assertEquals(httpRefsCustom.get(1).getRef(), httpRefsActual.get(1).getRef());
-        assertEquals(
-                httpRefsCustom.get(1).getDescription(), httpRefsActual.get(1).getDescription());
+    @Test
+    void findCustomByUserIdTest_shouldReturnEmptyList_whenNoHttpRefsFound() {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+
+        Country country1 = dataHelper.createCountry(1);
+        User user1 = dataHelper.createUser("one", role, country1, null, 20);
+
+        Country country2 = dataHelper.createCountry(2);
+        User user2 = dataHelper.createUser("two", role, country2, null, 20);
+        HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
+        dataHelper.httpRefAddUser(httpRef3, user2);
+        HttpRef httpRef4 = dataHelper.createHttpRef(4, true);
+        dataHelper.httpRefAddUser(httpRef4, user2);
+
+        HttpRef defaultHttpRef1 = dataHelper.createHttpRef(5, false);
+        HttpRef defaultHttpRef2 = dataHelper.createHttpRef(6, false);
+
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+
+        // When
+        List<HttpRef> httpRefsActual = httpRefRepository.findCustomByUserId(user1.getId(), sort);
+
+        // Then
+        assertEquals(0, httpRefsActual.size());
     }
 }
