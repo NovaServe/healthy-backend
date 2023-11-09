@@ -155,4 +155,10 @@ public class UserServiceImpl implements UserService {
 
         return modelMapper.map(userRepository.save(user), UserResponseDto.class);
     }
+
+    @Override
+    public void deleteUser(Long userId) {
+
+        userRepository.deleteById(userId);
+    }
 }

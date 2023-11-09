@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.users.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
 import healthy.lifestyle.backend.data.DataUtil;
@@ -106,5 +107,17 @@ class UserServiceTest {
         assertEquals("Full Name one", updatedUserResponse.getFullName());
         assertEquals(25, updatedUserResponse.getAge());
         assertEquals(1L, updatedUserResponse.getCountryId());
+    }
+
+    @Test
+    void testDeleteUser() {
+        // Given
+        Long userId = 1L;
+
+        // When
+        userService.deleteUser(userId);
+
+        // Then
+        verify(userRepository, times(1)).deleteById(userId);
     }
 }
