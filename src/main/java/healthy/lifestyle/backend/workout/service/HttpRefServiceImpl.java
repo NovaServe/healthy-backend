@@ -103,4 +103,22 @@ public class HttpRefServiceImpl implements HttpRefService {
         HttpRef updated = httpRefRepository.save(httpRef);
         return modelMapper.map(updated, HttpRefResponseDto.class);
     }
+
+    @Override
+    public long deleteCustomHttpRef(long userId, long httpRefId) {
+        Optional<HttpRef> httpRefOptional = httpRefRepository.findById(httpRefId);
+        if (httpRefOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.BAD_REQUEST);
+
+        HttpRef httpRef = httpRefOptional.get();
+
+        if (!httpRef.isCustom())
+            throw new ApiException(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY, HttpStatus.BAD_REQUEST);
+
+        if (httpRef.getUser().getId() != userId)
+            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+
+        httpRefRepository.delete(httpRef);
+
+        return httpRefId;
+    }
 }

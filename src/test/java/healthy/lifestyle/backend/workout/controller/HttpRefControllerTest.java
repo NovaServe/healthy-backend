@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -502,6 +503,95 @@ class HttpRefControllerTest {
         mockMvc.perform(patch(REQUEST_URL, httpRef.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomHttpRefTest_shouldReturnDeletedHttpRefIdAnd204() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, httpRef.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$", is(httpRef.getId().intValue())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomHttpRefTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        long wrongHttpRefId = httpRef.getId() + 1;
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, wrongHttpRefId).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefDeleteRequested() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, false);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, httpRef.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+        User userMismatch = dataHelper.createUser("two", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, userMismatch);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, httpRef.getId()).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
