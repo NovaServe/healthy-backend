@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.data;
 
 import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
+import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.BodyPartRequestDto;
@@ -146,6 +147,18 @@ public class DataUtil {
                 .username("username-" + userId)
                 .fullName("Full Name " + userId)
                 .email("username-" + userId + "@email.com")
+                .build();
+    }
+
+    public UpdateUserRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
+        return UpdateUserRequestDto.builder()
+                .updatedUsername("username-" + seed)
+                .updatedEmail("username-" + seed + "@email.com")
+                .updatedPassword("password-" + seed)
+                .updatedConfirmPassword("password-" + seed)
+                .updatedFullName("Full Name " + seed)
+                .updatedCountryId(countryId)
+                .updatedAge(age)
                 .build();
     }
 }
