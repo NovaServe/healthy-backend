@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.workout.service;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
@@ -8,6 +9,7 @@ import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
 import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
+import healthy.lifestyle.backend.workout.dto.UpdateHttpRefRequestDto;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.List;
@@ -70,5 +72,53 @@ public class HttpRefServiceImpl implements HttpRefService {
         HttpRef httpRefSaved = httpRefRepository.save(httpRef);
 
         return modelMapper.map(httpRefSaved, HttpRefResponseDto.class);
+    }
+
+    @Override
+    public HttpRefResponseDto updateCustomHttpRef(long userId, long httpRefId, UpdateHttpRefRequestDto requestDto) {
+        Optional<HttpRef> httpRefOptional = httpRefRepository.findById(httpRefId);
+        if (httpRefOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.BAD_REQUEST);
+
+        HttpRef httpRef = httpRefOptional.get();
+
+        if (!httpRef.isCustom())
+            throw new ApiException(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY, HttpStatus.BAD_REQUEST);
+
+        if (httpRef.getUser().getId() != userId)
+            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+
+        if (nonNull(requestDto.getUpdatedName()) && !requestDto.getUpdatedName().equals(httpRef.getName())) {
+            httpRef.setName(requestDto.getUpdatedName());
+        }
+
+        if (nonNull(requestDto.getUpdatedDescription())
+                && !requestDto.getUpdatedDescription().equals(httpRef.getDescription())) {
+            httpRef.setDescription(requestDto.getUpdatedDescription());
+        }
+
+        if (nonNull(requestDto.getUpdatedRef()) && !requestDto.getUpdatedRef().equals(httpRef.getRef())) {
+            httpRef.setRef(requestDto.getUpdatedRef());
+        }
+
+        HttpRef updated = httpRefRepository.save(httpRef);
+        return modelMapper.map(updated, HttpRefResponseDto.class);
+    }
+
+    @Override
+    public long deleteCustomHttpRef(long userId, long httpRefId) {
+        Optional<HttpRef> httpRefOptional = httpRefRepository.findById(httpRefId);
+        if (httpRefOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.BAD_REQUEST);
+
+        HttpRef httpRef = httpRefOptional.get();
+
+        if (!httpRef.isCustom())
+            throw new ApiException(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY, HttpStatus.BAD_REQUEST);
+
+        if (httpRef.getUser().getId() != userId)
+            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+
+        httpRefRepository.delete(httpRef);
+
+        return httpRefId;
     }
 }

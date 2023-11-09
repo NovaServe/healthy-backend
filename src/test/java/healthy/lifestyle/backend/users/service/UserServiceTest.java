@@ -81,32 +81,27 @@ class UserServiceTest {
     @Test
     void updateUserTest_shouldReturnUserDto() {
         // Given
-        UpdateUserRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one", 1L, 25);
-        Long userId = 1L;
         Country country = Country.builder().id(1L).name("Country").build();
-        User existingUser = User.builder()
-                .username("oldUsername")
-                .email("oldEmail")
-                .password("oldPassword")
-                .fullName("oldFullName")
-                .age(35)
-                .country(country)
-                .build();
+        User user = dataUtil.createUserEntity(1);
+        user.setCountry(country);
 
-        when(userRepository.getReferenceById(userId)).thenReturn(existingUser);
-        when(countryRepository.getReferenceById(updateUserRequestDto.getUpdatedCountryId()))
-                .thenReturn(country);
-        when(userRepository.save(existingUser)).thenReturn(existingUser);
+        UpdateUserRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one", 1L, 25);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(countryRepository.findById(updateUserRequestDto.getUpdatedCountryId()))
+                .thenReturn(Optional.of(country));
+        when(userRepository.save(user)).thenReturn(user);
 
         // When
-        UserResponseDto updatedUserResponse = userService.updateUser(userId, updateUserRequestDto);
+        UserResponseDto updatedUserResponse = userService.updateUser(user.getId(), updateUserRequestDto);
 
         // Then
-        assertEquals("username-one", updatedUserResponse.getUsername());
-        assertEquals("username-one@email.com", updatedUserResponse.getEmail());
-        assertEquals("Full Name one", updatedUserResponse.getFullName());
+        assertEquals(updatedUserResponse.getUsername(), updateUserRequestDto.getUpdatedUsername());
+        assertEquals(updatedUserResponse.getEmail(), updateUserRequestDto.getUpdatedEmail());
+        assertEquals(updatedUserResponse.getFullName(), updateUserRequestDto.getUpdatedFullName());
         assertEquals(25, updatedUserResponse.getAge());
         assertEquals(1L, updatedUserResponse.getCountryId());
+        assertEquals(user.getId(), updatedUserResponse.getId());
     }
 
     @Test

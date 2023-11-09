@@ -1,5 +1,7 @@
 package healthy.lifestyle.backend.users.service;
 
+import static java.util.Objects.nonNull;
+
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.security.JwtTokenProvider;
@@ -115,41 +117,41 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDto updateUser(Long userId, UpdateUserRequestDto requestDto) {
-        User user;
-        try {
-            user = userRepository.getReferenceById(userId);
-            if (requestDto.getUpdatedCountryId() != null) {
-                Country country = countryRepository.getReferenceById(requestDto.getUpdatedCountryId());
-                user.setCountry(country);
-            }
-        } catch (EntityNotFoundException e) {
-            throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        User user = userOptional.get();
+
+        if (nonNull(requestDto.getUpdatedCountryId())) {
+            Optional<Country> countryOptional = countryRepository.findById(requestDto.getUpdatedCountryId());
+            if (countryOptional.isEmpty())
+                throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+            user.setCountry(countryOptional.get());
         }
 
-        if (requestDto.getUpdatedUsername() != null
+        if (nonNull(requestDto.getUpdatedUsername())
                 && !requestDto.getUpdatedUsername().isEmpty()
                 && !requestDto.getUpdatedUsername().equals(user.getUsername())) {
             user.setUsername(requestDto.getUpdatedUsername());
         }
 
-        if (requestDto.getUpdatedEmail() != null
+        if (nonNull(requestDto.getUpdatedEmail())
                 && !requestDto.getUpdatedEmail().isEmpty()
                 && !requestDto.getUpdatedEmail().equals(user.getEmail())) {
             user.setEmail(requestDto.getUpdatedEmail());
         }
 
-        if (requestDto.getUpdatedPassword() != null
+        if (nonNull(requestDto.getUpdatedPassword())
                 && !requestDto.getUpdatedPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(requestDto.getUpdatedPassword()));
         }
 
-        if (requestDto.getUpdatedFullName() != null
+        if (nonNull(requestDto.getUpdatedFullName())
                 && !requestDto.getUpdatedFullName().isEmpty()
                 && !requestDto.getUpdatedFullName().equals(user.getFullName())) {
             user.setFullName(requestDto.getUpdatedFullName());
         }
 
-        if (requestDto.getUpdatedAge() != null && !requestDto.getUpdatedAge().equals(user.getAge())) {
+        if (nonNull(requestDto.getUpdatedAge()) && !requestDto.getUpdatedAge().equals(user.getAge())) {
             user.setAge(requestDto.getUpdatedAge());
         }
 

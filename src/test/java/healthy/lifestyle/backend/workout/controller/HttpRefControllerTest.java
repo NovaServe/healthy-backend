@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,6 +23,7 @@ import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
+import healthy.lifestyle.backend.workout.dto.UpdateHttpRefRequestDto;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -222,26 +225,6 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
-    void createCustomHttpRefTest_shouldReturnUserNotFoundAnd400BadRequest_whenInvalidUserIdProvided() throws Exception {
-        // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("two", role, country, null, 20);
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
-
-        // When
-        mockMvc.perform(post(URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createHttpRequestDto)))
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
-                .andDo(print());
-    }
-
-    @Test
-    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
     void createCustomHttpRefTest_shouldReturnAlreadyExistsAnd400BadRequest_whenDuplicatedNameProvided()
             throws Exception {
         // Given
@@ -353,6 +336,266 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ref", is("Invalid format, should start with http")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomHttpRefTest_shouldReturnHttpRefResponseDtoAnd200_whenValidUpdateDtoProvided() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, httpRef.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(httpRef.getId().intValue())))
+                .andExpect(jsonPath("$.name", is(requestDto.getUpdatedName())))
+                .andExpect(jsonPath("$.description", is(requestDto.getUpdatedDescription())))
+                .andExpect(jsonPath("$.ref", is(requestDto.getUpdatedRef())))
+                .andExpect(jsonPath("$.custom", is(true)))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomHttpRefTest_shouldReturnHttpRefResponseDtoAnd200_whenUpdateNameDtoProvided() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        requestDto.setUpdatedDescription(null);
+        requestDto.setUpdatedRef(null);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, httpRef.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(httpRef.getId().intValue())))
+                .andExpect(jsonPath("$.name", is(requestDto.getUpdatedName())))
+                .andExpect(jsonPath("$.description", is(httpRef.getDescription())))
+                .andExpect(jsonPath("$.ref", is(httpRef.getRef())))
+                .andExpect(jsonPath("$.custom", is(true)))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomHttpRefTest_shouldReturnHttpRefResponseDtoAnd200_whenUpdateDescAndRefDtoProvided()
+            throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        requestDto.setUpdatedName(null);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, httpRef.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(httpRef.getId().intValue())))
+                .andExpect(jsonPath("$.name", is(httpRef.getName())))
+                .andExpect(jsonPath("$.description", is(requestDto.getUpdatedDescription())))
+                .andExpect(jsonPath("$.ref", is(requestDto.getUpdatedRef())))
+                .andExpect(jsonPath("$.custom", is(true)))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomHttpRefTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+
+        long wrongHttpRefId = httpRef.getId() + 1;
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, wrongHttpRefId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefUpdateRequested() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, false);
+
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, httpRef.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+        User userMismatch = dataHelper.createUser("two", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, userMismatch);
+
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, httpRef.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomHttpRefTest_shouldReturnDeletedHttpRefIdAnd204() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, httpRef.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$", is(httpRef.getId().intValue())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomHttpRefTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        long wrongHttpRefId = httpRef.getId() + 1;
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, wrongHttpRefId).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefDeleteRequested() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, false);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, httpRef.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+        User userMismatch = dataHelper.createUser("two", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, userMismatch);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, httpRef.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
 }

@@ -44,7 +44,7 @@ public class UserController {
                 SecurityContextHolder.getContext().getAuthentication());
 
         if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
-            throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.BAD_REQUEST);
+            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
 
         return ResponseEntity.ok(userService.updateUser(userId, requestDto));
     }

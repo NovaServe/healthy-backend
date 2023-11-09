@@ -10,7 +10,9 @@ public enum ErrorMessage {
     AUTHENTICATION_ERROR("Authentication error"),
     USER_NOT_FOUND("User not found"),
     NOT_FOUND("Not found"),
-    UNAUTHORIZED_FOR_THIS_RESOURCE("Unauthorized for this resource");
+    UNAUTHORIZED_FOR_THIS_RESOURCE("Unauthorized for this resource"),
+    DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY("Default media is not allowed to modify"),
+    USER_RESOURCE_MISMATCH("User-resource mismatch");
 
     private final String name;
 
