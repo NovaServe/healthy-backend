@@ -12,6 +12,7 @@ import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
 import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
+import healthy.lifestyle.backend.workout.dto.UpdateHttpRefRequestDto;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -147,7 +149,7 @@ class HttpRefServiceTest {
         User user = dataUtil.createUserEntity(userId);
         when(userService.getUserById(user.getId())).thenReturn(user);
 
-        HttpRef httpRef = dataUtil.createHttpRef(1, true);
+        HttpRef httpRef = dataUtil.createHttpRef(1, true, null);
         when(httpRefRepository.findCustomByNameAndUserId(createHttpRequestDto.getName(), userId))
                 .thenReturn(Optional.of(httpRef));
 
@@ -161,6 +163,88 @@ class HttpRefServiceTest {
         verify(httpRefRepository, times(0)).save(org.mockito.ArgumentMatchers.any(HttpRef.class));
 
         assertEquals(ErrorMessage.ALREADY_EXISTS.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+    }
+
+    @Test
+    void updateCustomHttpRefTest_shouldReturnHttpRefResponseDto_whenValidUpdateDtoProvided() {
+        // Given
+        User user = dataUtil.createUserEntity(1);
+        HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
+        when(httpRefRepository.save(httpRef)).thenReturn(httpRef);
+
+        // When
+        HttpRefResponseDto responseDto = httpRefService.updateCustomHttpRef(user.getId(), httpRef.getId(), requestDto);
+
+        // Then
+        verify(httpRefRepository, times(1)).findById(httpRef.getId());
+        verify(httpRefRepository, times(1)).save(httpRef);
+
+        assertEquals(requestDto.getUpdatedName(), responseDto.getName());
+        assertEquals(requestDto.getUpdatedDescription(), responseDto.getDescription());
+        assertEquals(requestDto.getUpdatedRef(), responseDto.getRef());
+        assertEquals(httpRef.getId(), responseDto.getId());
+    }
+
+    @Test
+    void updateCustomHttpRefTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() {
+        // Given
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        when(httpRefRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // When
+        ApiException exception =
+                assertThrows(ApiException.class, () -> httpRefService.updateCustomHttpRef(1L, 2L, requestDto));
+
+        // Then
+        verify(httpRefRepository, times(1)).findById(anyLong());
+        verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
+
+        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+    }
+
+    @Test
+    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultMediaIsRequestedToUpdate() {
+        // Given
+        User user = dataUtil.createUserEntity(1);
+        HttpRef httpRef = dataUtil.createHttpRef(1, false, user);
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
+
+        // When
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> httpRefService.updateCustomHttpRef(user.getId(), httpRef.getId(), requestDto));
+
+        // Then
+        verify(httpRefRepository, times(1)).findById(httpRef.getId());
+        verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
+
+        assertEquals(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+    }
+
+    @Test
+    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() {
+        // Given
+        User user = dataUtil.createUserEntity(1);
+        HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
+        long wrongUserId = user.getId() + 1;
+
+        // When
+        ApiException exception = assertThrows(
+                ApiException.class, () -> httpRefService.updateCustomHttpRef(wrongUserId, httpRef.getId(), requestDto));
+
+        // Then
+        verify(httpRefRepository, times(1)).findById(httpRef.getId());
+        verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
+
+        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 }

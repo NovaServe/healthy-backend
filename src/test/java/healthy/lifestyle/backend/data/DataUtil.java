@@ -5,10 +5,7 @@ import healthy.lifestyle.backend.users.dto.SignupRequestDto;
 import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.workout.dto.BodyPartRequestDto;
-import healthy.lifestyle.backend.workout.dto.CreateExerciseRequestDto;
-import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
-import healthy.lifestyle.backend.workout.dto.HttpRefRequestDto;
+import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
@@ -31,13 +28,22 @@ public class DataUtil {
                 .collect(Collectors.toList());
     }
 
-    public HttpRef createHttpRef(int seed, boolean isCustom) {
+    public HttpRef createHttpRef(int seed, boolean isCustom, User user) {
         return HttpRef.builder()
                 .id((long) seed)
                 .name("Name " + seed)
                 .ref("https://ref " + seed)
                 .description("Description " + seed)
                 .isCustom(isCustom)
+                .user(user)
+                .build();
+    }
+
+    public UpdateHttpRefRequestDto createUpdateHttpRefRequestDto(int seed) {
+        return UpdateHttpRefRequestDto.builder()
+                .updatedName("Update Name " + seed)
+                .updatedRef("https://ref-updated-" + seed)
+                .updatedDescription("Updated Description " + seed)
                 .build();
     }
 

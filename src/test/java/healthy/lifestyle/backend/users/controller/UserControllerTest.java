@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -143,7 +144,7 @@ public class UserControllerTest {
             username = "username-one",
             password = "password-one",
             authorities = {"ROLE_USER"})
-    void updateUserTest_shouldReturn400_whenAuthenticationError() throws Exception {
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
@@ -159,8 +160,8 @@ public class UserControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.AUTHENTICATION_ERROR.getName())))
-                .andDo(print())
-                .andReturn();
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
     }
 }

@@ -3,10 +3,9 @@ package healthy.lifestyle.backend.workout.controller;
 import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.common.AuthUtil;
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
+import healthy.lifestyle.backend.workout.dto.UpdateHttpRefRequestDto;
 import healthy.lifestyle.backend.workout.service.HttpRefService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -55,8 +54,17 @@ public class HttpRefController {
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
 
-        if (isNull(userId)) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
-
         return new ResponseEntity<>(httpRefService.createCustomHttpRef(userId, requestDto), HttpStatus.CREATED);
+    }
+
+    @PatchMapping("/{httpRefId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<HttpRefResponseDto> updateCustomHttpRef(
+            @PathVariable Long httpRefId, @RequestBody @Valid UpdateHttpRefRequestDto requestDto) {
+
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+
+        return new ResponseEntity<>(httpRefService.updateCustomHttpRef(userId, httpRefId, requestDto), HttpStatus.OK);
     }
 }
