@@ -139,9 +139,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (requestDto.getUpdatedPassword() != null
-                && !requestDto.getUpdatedPassword().isEmpty()
-                && !requestDto.getUpdatedPassword().equals(user.getPassword())
-                && requestDto.getUpdatedPassword().equals(requestDto.getUpdatedConfirmPassword())) {
+                && !requestDto.getUpdatedPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(requestDto.getUpdatedPassword()));
         }
 
