@@ -76,4 +76,13 @@ public class HttpRefController {
 
         return new ResponseEntity<>(httpRefService.deleteCustomHttpRef(userId, httpRefId), HttpStatus.NO_CONTENT);
     }
+
+    @GetMapping("/{httpRefId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<HttpRefResponseDto> getCustomHttpRefById(@PathVariable Long httpRefId) {
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+
+        return new ResponseEntity<>(httpRefService.getCustomHttpRefById(userId, httpRefId), HttpStatus.OK);
+    }
 }
