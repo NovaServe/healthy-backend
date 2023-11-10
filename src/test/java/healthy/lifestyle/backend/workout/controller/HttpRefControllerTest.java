@@ -512,6 +512,36 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenEmptyRequestDtoProvided() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+        User userMismatch = dataHelper.createUser("two", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, userMismatch);
+
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        requestDto.setUpdatedName(null);
+        requestDto.setUpdatedDescription(null);
+        requestDto.setUpdatedRef(null);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, httpRef.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.EMPTY_REQUEST.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
     void deleteCustomHttpRefTest_shouldReturnDeletedHttpRefIdAnd204() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
