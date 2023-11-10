@@ -48,4 +48,16 @@ public class UserController {
 
         return ResponseEntity.ok(userService.updateUser(userId, requestDto));
     }
+
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<Long> deleteUser(@PathVariable("userId") Long userId) {
+        Long authenticatedUserId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+
+        if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
+            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+
+        return new ResponseEntity<>(userService.deleteUser(userId), HttpStatus.NO_CONTENT);
+    }
 }

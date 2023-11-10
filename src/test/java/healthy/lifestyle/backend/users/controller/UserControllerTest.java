@@ -62,8 +62,7 @@ public class UserControllerTest {
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
     }
 
-    private static final String COUNTRY_URL = "/api/v1/users/countries";
-    private static final String UPDATE_USER_URL = "/api/v1/users/{userId}";
+    private static final String URL = "/api/v1/users";
 
     @BeforeEach
     void beforeEach() {
@@ -81,8 +80,10 @@ public class UserControllerTest {
         Country country1 = dataHelper.createCountry(1);
         Country country2 = dataHelper.createCountry(2);
 
+        String REQUEST_URL = URL + "/countries";
+
         // When
-        MvcResult mvcResult = mockMvc.perform(get(COUNTRY_URL).contentType(MediaType.APPLICATION_JSON))
+        MvcResult mvcResult = mockMvc.perform(get(REQUEST_URL).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isOk())
                 .andDo(print())
@@ -101,8 +102,10 @@ public class UserControllerTest {
 
     @Test
     void getCountriesTest_shouldReturnErrorMessageAndStatusInternalServerError_whenNoCountries() throws Exception {
+        String REQUEST_URL = URL + "/countries";
+
         // When
-        mockMvc.perform(get(COUNTRY_URL).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get(REQUEST_URL).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message", is("Server error")))
@@ -123,8 +126,9 @@ public class UserControllerTest {
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
 
+        String REQUEST_URL = URL + "/{userId}";
         // When
-        mockMvc.perform(patch(UPDATE_USER_URL, user.getId())
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 // Then
@@ -154,10 +158,56 @@ public class UserControllerTest {
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
 
+        String REQUEST_URL = URL + "/{userId}";
+
         // When
-        mockMvc.perform(patch(UPDATE_USER_URL, user2.getId())
+        mockMvc.perform(patch(REQUEST_URL, user2.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteUserTest_shouldReturnDeletedUserIdAnd204() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, user.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$", is(user.getId().intValue())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void deleteUserTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        long wrongUserId = user.getId() + 1;
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, wrongUserId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user.getId())))
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
