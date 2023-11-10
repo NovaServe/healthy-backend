@@ -105,14 +105,17 @@ class UserServiceTest {
     }
 
     @Test
-    void testDeleteUser() {
+    void deleteUserTest_shouldReturnDeletedUserId() {
         // Given
-        Long userId = 1L;
+        User user = dataUtil.createUserEntity(1);
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
         // When
-        userService.deleteUser(userId);
+        long deletedId = userService.deleteUser(user.getId());
 
         // Then
-        verify(userRepository, times(1)).deleteById(userId);
+        verify(userRepository, times(1)).findById(user.getId());
+
+        assertEquals(user.getId(), deletedId);
     }
 }

@@ -159,8 +159,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(Long userId) {
+    public long deleteUser(Long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
 
-        userRepository.deleteById(userId);
+        User user = userOptional.get();
+
+        userRepository.delete(user);
+
+        return userId;
     }
 }
