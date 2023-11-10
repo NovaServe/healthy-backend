@@ -76,6 +76,11 @@ public class HttpRefServiceImpl implements HttpRefService {
 
     @Override
     public HttpRefResponseDto updateCustomHttpRef(long userId, long httpRefId, UpdateHttpRefRequestDto requestDto) {
+        if (isNull(requestDto.getUpdatedName())
+                && isNull(requestDto.getUpdatedDescription())
+                && isNull(requestDto.getUpdatedRef()))
+            throw new ApiException(ErrorMessage.EMPTY_REQUEST, HttpStatus.BAD_REQUEST);
+
         Optional<HttpRef> httpRefOptional = httpRefRepository.findById(httpRefId);
         if (httpRefOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.BAD_REQUEST);
 

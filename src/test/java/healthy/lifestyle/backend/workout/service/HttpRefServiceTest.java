@@ -249,6 +249,26 @@ class HttpRefServiceTest {
     }
 
     @Test
+    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenEmptyDtoProvided() {
+        // Given
+        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        requestDto.setUpdatedName(null);
+        requestDto.setUpdatedDescription(null);
+        requestDto.setUpdatedRef(null);
+
+        // When
+        ApiException exception =
+                assertThrows(ApiException.class, () -> httpRefService.updateCustomHttpRef(1L, 2L, requestDto));
+
+        // Then
+        verify(httpRefRepository, times(0)).findById(anyLong());
+        verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
+
+        assertEquals(ErrorMessage.EMPTY_REQUEST.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+    }
+
+    @Test
     void deleteCustomHttpRefTest_shouldReturnDeletedHttpRefId() {
         // Given
         User user = dataUtil.createUserEntity(1);
