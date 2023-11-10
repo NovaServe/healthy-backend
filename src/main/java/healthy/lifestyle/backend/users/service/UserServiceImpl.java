@@ -161,7 +161,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public long deleteUser(Long userId) {
         Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
 
         User user = userOptional.get();
 
