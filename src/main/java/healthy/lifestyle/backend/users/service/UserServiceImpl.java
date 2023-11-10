@@ -157,4 +157,16 @@ public class UserServiceImpl implements UserService {
 
         return modelMapper.map(userRepository.save(user), UserResponseDto.class);
     }
+
+    @Override
+    public long deleteUser(Long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+
+        User user = userOptional.get();
+
+        userRepository.delete(user);
+
+        return userId;
+    }
 }

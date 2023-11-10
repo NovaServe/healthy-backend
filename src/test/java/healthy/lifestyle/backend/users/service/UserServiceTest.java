@@ -3,9 +3,12 @@ package healthy.lifestyle.backend.users.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
 import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupResponseDto;
 import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
@@ -24,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -101,5 +105,35 @@ class UserServiceTest {
         assertEquals(25, updatedUserResponse.getAge());
         assertEquals(1L, updatedUserResponse.getCountryId());
         assertEquals(user.getId(), updatedUserResponse.getId());
+    }
+
+    @Test
+    void deleteUserTest_shouldReturnDeletedUserId() {
+        // Given
+        User user = dataUtil.createUserEntity(1);
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+        // When
+        long deletedId = userService.deleteUser(user.getId());
+
+        // Then
+        verify(userRepository, times(1)).findById(user.getId());
+
+        assertEquals(user.getId(), deletedId);
+    }
+
+    @Test
+    void deleteUserTest_shouldReturnNotFoundAnd400_whenUserNotFound() {
+        // Given
+        when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // When
+        ApiException exception = assertThrows(ApiException.class, () -> userService.deleteUser(1L));
+
+        // Then
+        verify(userRepository, times(1)).findById(anyLong());
+
+        assertEquals(ErrorMessage.USER_NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
     }
 }
