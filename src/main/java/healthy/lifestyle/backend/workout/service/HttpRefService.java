@@ -17,4 +17,6 @@ public interface HttpRefService {
             long userId, long httpRefId, UpdateHttpRefRequestDto updateHttpRefRequestDto);
 
     long deleteCustomHttpRef(long userId, long httpRefId);
+
+    HttpRefResponseDto getCustomHttpRefById(long userId, long httpRefId);
 }

@@ -598,4 +598,96 @@ class HttpRefControllerTest {
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getCustomHttpRefByIdTest_shouldReturnHttpRefResponseDtoAnd200() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(get(REQUEST_URL, httpRef.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(httpRef.getId().intValue())))
+                .andExpect(jsonPath("$.name", is(httpRef.getName())))
+                .andExpect(jsonPath("$.description", is(httpRef.getDescription())))
+                .andExpect(jsonPath("$.ref", is(httpRef.getRef())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getCustomHttpRefByIdTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, user);
+
+        long wrongHttpRefId = httpRef.getId() + 1;
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(get(REQUEST_URL, wrongHttpRefId).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefRequested() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, false);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(get(REQUEST_URL, httpRef.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_REQUESTED.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+        User userMismatch = dataHelper.createUser("two", role, country, null, 20);
+
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        dataHelper.httpRefAddUser(httpRef, userMismatch);
+
+        String REQUEST_URL = URL + "/{httpRefId}";
+
+        // When
+        mockMvc.perform(get(REQUEST_URL, httpRef.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
 }

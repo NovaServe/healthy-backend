@@ -121,4 +121,19 @@ public class HttpRefServiceImpl implements HttpRefService {
 
         return httpRefId;
     }
+
+    @Override
+    public HttpRefResponseDto getCustomHttpRefById(long userId, long httpRefId) {
+        Optional<HttpRef> httpRefOptional = httpRefRepository.findById(httpRefId);
+        if (httpRefOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.BAD_REQUEST);
+
+        HttpRef httpRef = httpRefOptional.get();
+
+        if (!httpRef.isCustom()) throw new ApiException(ErrorMessage.DEFAULT_MEDIA_REQUESTED, HttpStatus.BAD_REQUEST);
+
+        if (httpRef.getUser().getId() != userId)
+            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+
+        return modelMapper.map(httpRef, HttpRefResponseDto.class);
+    }
 }
