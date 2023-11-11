@@ -42,10 +42,8 @@ public class UserController {
             @PathVariable("userId") Long userId, @Valid @RequestBody UpdateUserRequestDto requestDto) {
         Long authenticatedUserId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-
         if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
             throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
-
         return ResponseEntity.ok(userService.updateUser(userId, requestDto));
     }
 
@@ -54,10 +52,8 @@ public class UserController {
     public ResponseEntity<Long> deleteUser(@PathVariable("userId") Long userId) {
         Long authenticatedUserId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-
         if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
             throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
-
         return new ResponseEntity<>(userService.deleteUser(userId), HttpStatus.NO_CONTENT);
     }
 }
