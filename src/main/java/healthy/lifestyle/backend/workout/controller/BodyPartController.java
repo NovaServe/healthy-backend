@@ -17,14 +17,6 @@ public class BodyPartController {
         this.bodyPartService = bodyPartService;
     }
 
-    /**
-     * Retrieve all body parts, ROLE_USER access is required
-     * @return List<BodyPartResponseDto>, 200 Ok
-     * @throws healthy.lifestyle.backend.exception.ApiException
-     * If body parts not found, ErrorMessage.SERVER_ERROR, 500 Internal server error
-     * @see BodyPartResponseDto
-     * @see healthy.lifestyle.backend.workout.service.BodyPartServiceImpl
-     */
     @GetMapping
     public ResponseEntity<List<BodyPartResponseDto>> getBodyParts() {
         List<BodyPartResponseDto> responseDto = bodyPartService.getBodyParts();
