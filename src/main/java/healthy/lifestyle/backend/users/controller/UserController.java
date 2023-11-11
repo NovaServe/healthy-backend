@@ -2,12 +2,12 @@ package healthy.lifestyle.backend.users.controller;
 
 import static java.util.Objects.isNull;
 
-import healthy.lifestyle.backend.common.AuthUtil;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
 import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
 import healthy.lifestyle.backend.users.dto.UserResponseDto;
+import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.users.service.CountryService;
 import healthy.lifestyle.backend.users.service.UserService;
 import jakarta.validation.Valid;
@@ -22,13 +22,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("${api.basePath}/${api.version}/users")
 public class UserController {
     private final CountryService countryService;
-    private final AuthUtil authUtil;
+
     private final UserService userService;
 
-    public UserController(CountryService countryService, AuthUtil authUtil, UserService userService) {
+    private final AuthService authService;
+
+    public UserController(CountryService countryService, UserService userService, AuthService authService) {
         this.countryService = countryService;
-        this.authUtil = authUtil;
         this.userService = userService;
+        this.authService = authService;
     }
 
     @GetMapping("/countries")
@@ -40,7 +42,7 @@ public class UserController {
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<UserResponseDto> updateUser(
             @PathVariable("userId") Long userId, @Valid @RequestBody UpdateUserRequestDto requestDto) {
-        Long authenticatedUserId = authUtil.getUserIdFromAuthentication(
+        Long authenticatedUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
             throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
@@ -50,7 +52,7 @@ public class UserController {
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Long> deleteUser(@PathVariable("userId") Long userId) {
-        Long authenticatedUserId = authUtil.getUserIdFromAuthentication(
+        Long authenticatedUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
             throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);

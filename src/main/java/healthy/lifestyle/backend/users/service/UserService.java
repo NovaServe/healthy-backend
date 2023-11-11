@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.users.service;
 import healthy.lifestyle.backend.users.dto.*;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.model.Exercise;
+import healthy.lifestyle.backend.workout.model.Workout;
 
 public interface UserService {
     SignupResponseDto createUser(SignupRequestDto requestDto);
@@ -10,6 +11,8 @@ public interface UserService {
     LoginResponseDto login(LoginRequestDto requestDto);
 
     void addExercise(long userId, Exercise exercise);
+
+    void addWorkout(long userId, Workout workout);
 
     User getUserById(long userId);
 

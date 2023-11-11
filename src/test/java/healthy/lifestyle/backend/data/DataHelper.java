@@ -64,6 +64,9 @@ public class DataHelper {
         String deleteWorkoutsExercises = "DELETE FROM workouts_exercises;";
         entityManager.createNativeQuery(deleteWorkoutsExercises).executeUpdate();
 
+        String deleteUsersWorkouts = "DELETE FROM users_workouts;";
+        entityManager.createNativeQuery(deleteUsersWorkouts).executeUpdate();
+
         String deleteWorkouts = "DELETE FROM workouts;";
         entityManager.createNativeQuery(deleteWorkouts).executeUpdate();
 
@@ -108,6 +111,7 @@ public class DataHelper {
 
         // users (fk country_id -> countries(id), fk role_id -> roles(id)),
         // users_exercises (fk user_id -> users(id), fk exercise_id -> exercises(id)
+        // users_workouts (fk user_id -> users(id), fk workout_id -> workouts(id)
         // userRepository.deleteAll();
 
         // roles
@@ -185,6 +189,11 @@ public class DataHelper {
                 .exercises(exercises)
                 .build();
         return workoutRepository.save(workout);
+    }
+
+    public void userAddWorkout(User user, Set<Workout> workouts) {
+        user.setWorkouts(workouts);
+        userRepository.save(user);
     }
 
     public UpdateUserRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {

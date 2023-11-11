@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.workout.model;
 
+import healthy.lifestyle.backend.users.model.User;
 import jakarta.persistence.*;
 import java.util.Set;
 import lombok.*;
@@ -31,4 +32,7 @@ public class Workout {
             joinColumns = @JoinColumn(name = "workout_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "exercise_id", referencedColumnName = "id"))
     private Set<Exercise> exercises;
+
+    @ManyToMany(mappedBy = "workouts")
+    private Set<User> users;
 }

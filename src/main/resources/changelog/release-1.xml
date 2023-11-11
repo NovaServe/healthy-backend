@@ -219,4 +219,22 @@
             </column>
         </addColumn>
     </changeSet>
+
+    <changeSet id="users_workouts" author="Oleg Kucherenko">
+        <comment>users_workouts</comment>
+
+        <createTable tableName="users_workouts">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_user_id"
+                             references="users(id)"/>
+            </column>
+            <column name="workout_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_workout_id"
+                             references="workouts(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
 </databaseChangeLog>

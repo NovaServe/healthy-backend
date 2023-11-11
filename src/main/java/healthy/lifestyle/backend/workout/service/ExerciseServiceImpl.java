@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.users.service.UserService;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -28,8 +27,6 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     private final UserService userService;
 
-    private final UserRepository userRepository;
-
     private final ModelMapper modelMapper;
 
     public ExerciseServiceImpl(
@@ -37,13 +34,11 @@ public class ExerciseServiceImpl implements ExerciseService {
             BodyPartRepository bodyPartRepository,
             HttpRefRepository httpRefRepository,
             UserService userService,
-            UserRepository userRepository,
             ModelMapper modelMapper) {
         this.exerciseRepository = exerciseRepository;
         this.bodyPartRepository = bodyPartRepository;
         this.httpRefRepository = httpRefRepository;
         this.userService = userService;
-        this.userRepository = userRepository;
         this.modelMapper = modelMapper;
     }
 

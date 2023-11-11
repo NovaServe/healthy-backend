@@ -4,10 +4,13 @@ import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
-import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
-import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
+import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.users.service.UserService;
+import healthy.lifestyle.backend.workout.dto.*;
+import healthy.lifestyle.backend.workout.model.BodyPart;
+import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.Workout;
+import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
 import java.util.*;
 import org.modelmapper.ModelMapper;
@@ -20,10 +23,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class WorkoutServiceImpl implements WorkoutService {
     private final WorkoutRepository workoutRepository;
 
+    private final ExerciseRepository exerciseRepository;
+
+    private final UserService userService;
+
     private final ModelMapper modelMapper;
 
-    public WorkoutServiceImpl(WorkoutRepository workoutRepository, ModelMapper modelMapper) {
+    public WorkoutServiceImpl(
+            WorkoutRepository workoutRepository,
+            ExerciseRepository exerciseRepository,
+            UserService userService,
+            ModelMapper modelMapper) {
         this.workoutRepository = workoutRepository;
+        this.exerciseRepository = exerciseRepository;
+        this.userService = userService;
         this.modelMapper = modelMapper;
     }
 
@@ -95,5 +108,69 @@ public class WorkoutServiceImpl implements WorkoutService {
         workoutDto.setNeedsEquipment(workoutNeedsEquipment);
 
         return workoutDto;
+    }
+
+    @Override
+    @Transactional
+    public WorkoutResponseDto createCustomWorkout(long userId, CreateWorkoutRequestDto requestDto) {
+        List<Workout> workouts = workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), userId);
+        if (workouts.size() > 0) throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
+
+        User user = userService.getUserById(userId);
+        Set<Exercise> exerciseSet = new HashSet<>();
+        Set<BodyPart> bodyParts = new HashSet<>();
+        boolean needsEquipment = false;
+
+        for (long exerciseId : requestDto.getExerciseIds()) {
+            Optional<Exercise> exerciseOptional = exerciseRepository.findById(exerciseId);
+            if (exerciseOptional.isEmpty())
+                throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
+
+            Exercise exercise = exerciseOptional.get();
+            if (exercise.isCustom() && !exercise.getUsers().contains(user))
+                throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+
+            exerciseSet.add(exercise);
+            bodyParts.addAll(exercise.getBodyParts());
+            if (exercise.isNeedsEquipment()) needsEquipment = true;
+        }
+
+        Workout workout = Workout.builder()
+                .title(requestDto.getTitle())
+                .description(requestDto.getDescription())
+                .isCustom(true)
+                .exercises(exerciseSet)
+                .build();
+
+        Workout saved = workoutRepository.save(workout);
+        userService.addWorkout(userId, workout);
+
+        WorkoutResponseDto workoutResponseDto = modelMapper.map(saved, WorkoutResponseDto.class);
+        List<BodyPartResponseDto> bodyPartRequestDtoList = bodyParts.stream()
+                .sorted(Comparator.comparingLong(BodyPart::getId))
+                .map(bodyPart -> modelMapper.map(bodyPart, BodyPartResponseDto.class))
+                .toList();
+        workoutResponseDto.setBodyParts(bodyPartRequestDtoList);
+        workoutResponseDto.setNeedsEquipment(needsEquipment);
+
+        List<ExerciseResponseDto> exerciseResponseDtoList = saved.getExercises().stream()
+                .map(exercise -> modelMapper.map(exercise, ExerciseResponseDto.class))
+                .peek(elt -> {
+                    List<BodyPartResponseDto> bodyPartsSorted = elt.getBodyParts().stream()
+                            .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                            .toList();
+
+                    List<HttpRefResponseDto> httpRefsSorted = elt.getHttpRefs().stream()
+                            .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                            .toList();
+
+                    elt.setBodyParts(bodyPartsSorted);
+                    elt.setHttpRefs(httpRefsSorted);
+                })
+                .sorted(Comparator.comparingLong(ExerciseResponseDto::getId))
+                .toList();
+
+        workoutResponseDto.setExercises(exerciseResponseDtoList);
+        return workoutResponseDto;
     }
 }

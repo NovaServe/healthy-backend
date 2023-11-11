@@ -113,7 +113,8 @@ class WorkoutControllerTest {
 
         assertEquals(2, responseDto.size());
         assertThat(List.of(workout1, workout2))
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "bodyParts", "needsEquipment")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "exercises", "bodyParts", "needsEquipment", "users")
                 .isEqualTo(responseDto);
 
         assertFalse(responseDto.get(0).isNeedsEquipment());
@@ -176,7 +177,8 @@ class WorkoutControllerTest {
 
         assertEquals(2, responseDto.size());
         assertThat(workoutsSortedByTitle)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "bodyParts", "needsEquipment")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "exercises", "bodyParts", "needsEquipment", "users")
                 .isEqualTo(responseDto);
 
         assertTrue(responseDto.get(0).isNeedsEquipment());
@@ -237,7 +239,7 @@ class WorkoutControllerTest {
 
         assertThat(workout1)
                 .usingRecursiveComparison()
-                .ignoringFields("exercises", "bodyParts")
+                .ignoringFields("exercises", "bodyParts", "users")
                 .isEqualTo(responseDto);
 
         List<BodyPart> workoutSortedBodyParts = List.of(bodyPart1, bodyPart2, bodyPart3);
