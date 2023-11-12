@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.users.model;
 
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
+import healthy.lifestyle.backend.workout.model.Workout;
 import jakarta.persistence.*;
 import java.util.Set;
 import lombok.*;
@@ -47,6 +48,13 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "exercise_id", referencedColumnName = "id"))
     private Set<Exercise> exercises;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "users_workouts",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "workout_id", referencedColumnName = "id"))
+    private Set<Workout> workouts;
 
     @OneToMany(mappedBy = "user")
     private Set<HttpRef> httpRefs;

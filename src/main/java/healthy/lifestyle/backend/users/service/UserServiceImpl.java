@@ -13,6 +13,7 @@ import healthy.lifestyle.backend.users.repository.CountryRepository;
 import healthy.lifestyle.backend.users.repository.RoleRepository;
 import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.workout.model.Exercise;
+import healthy.lifestyle.backend.workout.model.Workout;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Optional;
 import org.modelmapper.ModelMapper;
@@ -101,18 +102,26 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    @Transactional(propagation = Propagation.MANDATORY)
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
     public void addExercise(long userId, Exercise exercise) {
         User user = userRepository.getReferenceById(userId);
         user.getExercises().add(exercise);
         userRepository.save(user);
     }
 
-    @Transactional(propagation = Propagation.MANDATORY)
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void addWorkout(User user, Workout workout) {
+        user.getWorkouts().add(workout);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
     public User getUserById(long userId) {
-        return userRepository.getReferenceById(userId);
+        Optional<User> userOptional = userRepository.findById(userId);
+        return userOptional.orElse(null);
     }
 
     @Override

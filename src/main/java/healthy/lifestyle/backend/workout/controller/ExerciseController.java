@@ -1,6 +1,5 @@
 package healthy.lifestyle.backend.workout.controller;
 
-import healthy.lifestyle.backend.common.AuthUtil;
 import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.workout.dto.CreateExerciseRequestDto;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
@@ -17,19 +16,18 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("${api.basePath}/${api.version}/workouts/exercises")
 public class ExerciseController {
     private final ExerciseService exerciseService;
-    private final AuthService authService;
-    private final AuthUtil authUtil;
 
-    public ExerciseController(ExerciseService exerciseService, AuthService authService, AuthUtil authUtil) {
+    private final AuthService authService;
+
+    public ExerciseController(ExerciseService exerciseService, AuthService authService) {
         this.exerciseService = exerciseService;
         this.authService = authService;
-        this.authUtil = authUtil;
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<ExerciseResponseDto> createExercise(@RequestBody CreateExerciseRequestDto requestDto) {
-        Long userId = authUtil.getUserIdFromAuthentication(
+        Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         return new ResponseEntity<>(exerciseService.createExercise(requestDto, userId), HttpStatus.CREATED);
     }
@@ -47,7 +45,7 @@ public class ExerciseController {
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<List<ExerciseResponseDto>> getCustomExercises() {
-        Long userId = authUtil.getUserIdFromAuthentication(
+        Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         return ResponseEntity.ok(exerciseService.getCustomExercises(userId));
     }

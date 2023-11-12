@@ -167,4 +167,12 @@ public class DataUtil {
                 .updatedAge(age)
                 .build();
     }
+
+    public CreateWorkoutRequestDto createWorkoutRequestDto(int seed, List<Long> exerciseIds) {
+        return CreateWorkoutRequestDto.builder()
+                .title("Title-" + seed)
+                .description("Description-" + seed)
+                .exerciseIds(exerciseIds)
+                .build();
+    }
 }

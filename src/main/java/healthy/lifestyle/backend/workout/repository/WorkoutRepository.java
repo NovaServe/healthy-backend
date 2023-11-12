@@ -9,4 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 public interface WorkoutRepository extends JpaRepository<Workout, Long> {
     @Query("SELECT w FROM Workout w WHERE w.isCustom = false")
     List<Workout> findAllDefault(Sort sort);
+
+    @Query("SELECT w FROM Workout w JOIN w.users u WHERE u.id = :userId AND w.title = :title AND w.isCustom = true")
+    List<Workout> findCustomByTitleAndUserId(String title, Long userId);
 }

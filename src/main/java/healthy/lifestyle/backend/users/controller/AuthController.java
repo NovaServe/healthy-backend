@@ -1,6 +1,5 @@
 package healthy.lifestyle.backend.users.controller;
 
-import healthy.lifestyle.backend.common.AuthUtil;
 import healthy.lifestyle.backend.users.dto.*;
 import healthy.lifestyle.backend.users.service.UserService;
 import jakarta.validation.Valid;
@@ -13,11 +12,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("${api.basePath}/${api.version}/users/auth")
 public class AuthController {
     private final UserService userService;
-    private final AuthUtil authUtil;
 
-    public AuthController(UserService userService, AuthUtil authUtil) {
+    public AuthController(UserService userService) {
         this.userService = userService;
-        this.authUtil = authUtil;
     }
 
     @PostMapping("/signup")

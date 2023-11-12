@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.workout.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.*;
 
@@ -15,6 +16,7 @@ public class ExerciseResponseDto {
 
     private String description;
 
+    @JsonProperty(value = "isCustom")
     private boolean isCustom;
 
     private boolean needsEquipment;
