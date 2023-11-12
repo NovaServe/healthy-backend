@@ -219,7 +219,7 @@ class HttpRefControllerTest {
                 .andExpect(jsonPath("$.name", is(createHttpRequestDto.getName())))
                 .andExpect(jsonPath("$.description", is(createHttpRequestDto.getDescription())))
                 .andExpect(jsonPath("$.ref", is(createHttpRequestDto.getRef())))
-                .andExpect(jsonPath("$.custom", is(true)))
+                .andExpect(jsonPath("$.isCustom", is(true)))
                 .andDo(print());
     }
 
@@ -364,7 +364,7 @@ class HttpRefControllerTest {
                 .andExpect(jsonPath("$.name", is(requestDto.getUpdatedName())))
                 .andExpect(jsonPath("$.description", is(requestDto.getUpdatedDescription())))
                 .andExpect(jsonPath("$.ref", is(requestDto.getUpdatedRef())))
-                .andExpect(jsonPath("$.custom", is(true)))
+                .andExpect(jsonPath("$.isCustom", is(true)))
                 .andDo(print());
     }
 
@@ -395,7 +395,7 @@ class HttpRefControllerTest {
                 .andExpect(jsonPath("$.name", is(requestDto.getUpdatedName())))
                 .andExpect(jsonPath("$.description", is(httpRef.getDescription())))
                 .andExpect(jsonPath("$.ref", is(httpRef.getRef())))
-                .andExpect(jsonPath("$.custom", is(true)))
+                .andExpect(jsonPath("$.isCustom", is(true)))
                 .andDo(print());
     }
 
@@ -426,7 +426,7 @@ class HttpRefControllerTest {
                 .andExpect(jsonPath("$.name", is(httpRef.getName())))
                 .andExpect(jsonPath("$.description", is(requestDto.getUpdatedDescription())))
                 .andExpect(jsonPath("$.ref", is(requestDto.getUpdatedRef())))
-                .andExpect(jsonPath("$.custom", is(true)))
+                .andExpect(jsonPath("$.isCustom", is(true)))
                 .andDo(print());
     }
 
@@ -650,6 +650,7 @@ class HttpRefControllerTest {
                 .andExpect(jsonPath("$.name", is(httpRef.getName())))
                 .andExpect(jsonPath("$.description", is(httpRef.getDescription())))
                 .andExpect(jsonPath("$.ref", is(httpRef.getRef())))
+                .andExpect(jsonPath("$.isCustom", is(true)))
                 .andDo(print());
     }
 

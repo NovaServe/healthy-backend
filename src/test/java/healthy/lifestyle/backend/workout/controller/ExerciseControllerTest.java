@@ -119,6 +119,7 @@ class ExerciseControllerTest {
                 .andExpect(jsonPath("$.id", is(notNullValue())))
                 .andExpect(jsonPath("$.title", is(createExerciseRequestDto.getTitle())))
                 .andExpect(jsonPath("$.description", is(createExerciseRequestDto.getDescription())))
+                .andExpect(jsonPath("$.isCustom", is(true)))
                 .andDo(print())
                 .andReturn();
 
@@ -166,6 +167,7 @@ class ExerciseControllerTest {
                 .andExpect(jsonPath("$.id", is(notNullValue())))
                 .andExpect(jsonPath("$.title", is(createExerciseRequestDto.getTitle())))
                 .andExpect(jsonPath("$.description", is(createExerciseRequestDto.getDescription())))
+                .andExpect(jsonPath("$.isCustom", is(true)))
                 .andDo(print())
                 .andReturn();
 
@@ -328,7 +330,7 @@ class ExerciseControllerTest {
         assertEquals(2, responseDto.size());
 
         assertThat(testUserCustomExercises)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("isCustom", "bodyParts", "httpRefs", "users")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("bodyParts", "httpRefs", "users")
                 .isEqualTo(responseDto);
 
         IntStream.range(0, testUserCustomExercises.size()).forEach(id -> {
@@ -386,7 +388,7 @@ class ExerciseControllerTest {
         assertEquals(3, responseDto.size());
 
         assertThat(defaultExercises)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("isCustom", "bodyParts", "httpRefs", "users")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("bodyParts", "httpRefs", "users")
                 .isEqualTo(responseDto);
 
         IntStream.range(0, defaultExercises.size()).forEach(id -> {
@@ -442,7 +444,7 @@ class ExerciseControllerTest {
 
         assertThat(defaultExercises.get(exercise_id))
                 .usingRecursiveComparison()
-                .ignoringFields("isCustom", "bodyParts", "httpRefs", "users")
+                .ignoringFields("bodyParts", "httpRefs", "users")
                 .isEqualTo(responseDto);
 
         List<BodyPart> bodyParts_ = defaultExercises.get(exercise_id).getBodyParts().stream()

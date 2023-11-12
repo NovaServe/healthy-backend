@@ -168,7 +168,7 @@ class WorkoutServiceTest {
             saved.setId(1L);
             return saved;
         });
-        doNothing().when(userService).addWorkout(anyLong(), any(Workout.class));
+        doNothing().when(userService).addWorkout(any(User.class), any(Workout.class));
 
         // When
         WorkoutResponseDto workoutResponseDto = workoutService.createCustomWorkout(user.getId(), requestDto);
@@ -178,7 +178,7 @@ class WorkoutServiceTest {
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(4)).findById(anyLong());
         verify(workoutRepository, times(1)).save(any(Workout.class));
-        verify(userService, times(1)).addWorkout(anyLong(), any(Workout.class));
+        verify(userService, times(1)).addWorkout(any(User.class), any(Workout.class));
 
         assertEquals(1L, workoutResponseDto.getId());
         assertEquals(requestDto.getTitle(), workoutResponseDto.getTitle());
@@ -213,7 +213,7 @@ class WorkoutServiceTest {
         verify(userService, times(0)).getUserById(user.getId());
         verify(exerciseRepository, times(0)).findById(anyLong());
         verify(workoutRepository, times(0)).save(any(Workout.class));
-        verify(userService, times(0)).addWorkout(anyLong(), any(Workout.class));
+        verify(userService, times(0)).addWorkout(any(User.class), any(Workout.class));
 
         assertEquals(ErrorMessage.TITLE_DUPLICATE.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
@@ -243,7 +243,7 @@ class WorkoutServiceTest {
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(1)).findById(anyLong());
         verify(workoutRepository, times(0)).save(any(Workout.class));
-        verify(userService, times(0)).addWorkout(anyLong(), any(Workout.class));
+        verify(userService, times(0)).addWorkout(any(User.class), any(Workout.class));
 
         assertEquals(ErrorMessage.INVALID_NESTED_OBJECT.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
@@ -279,7 +279,7 @@ class WorkoutServiceTest {
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(2)).findById(anyLong());
         verify(workoutRepository, times(0)).save(any(Workout.class));
-        verify(userService, times(0)).addWorkout(anyLong(), any(Workout.class));
+        verify(userService, times(0)).addWorkout(any(User.class), any(Workout.class));
 
         assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());

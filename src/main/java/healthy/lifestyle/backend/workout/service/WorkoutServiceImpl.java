@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.users.service.UserService;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -29,15 +30,19 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     private final ModelMapper modelMapper;
 
+    private final UserRepository userRepository;
+
     public WorkoutServiceImpl(
             WorkoutRepository workoutRepository,
             ExerciseRepository exerciseRepository,
             UserService userService,
-            ModelMapper modelMapper) {
+            ModelMapper modelMapper,
+            UserRepository userRepository) {
         this.workoutRepository = workoutRepository;
         this.exerciseRepository = exerciseRepository;
         this.userService = userService;
         this.modelMapper = modelMapper;
+        this.userRepository = userRepository;
     }
 
     @Transactional
@@ -118,8 +123,8 @@ public class WorkoutServiceImpl implements WorkoutService {
 
         User user = userService.getUserById(userId);
         Set<Exercise> exerciseSet = new HashSet<>();
-        Set<BodyPart> bodyParts = new HashSet<>();
-        boolean needsEquipment = false;
+        Set<BodyPart> workoutBodyParts = new HashSet<>();
+        boolean workoutNeedsEquipment = false;
 
         for (long exerciseId : requestDto.getExerciseIds()) {
             Optional<Exercise> exerciseOptional = exerciseRepository.findById(exerciseId);
@@ -131,8 +136,8 @@ public class WorkoutServiceImpl implements WorkoutService {
                 throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
 
             exerciseSet.add(exercise);
-            bodyParts.addAll(exercise.getBodyParts());
-            if (exercise.isNeedsEquipment()) needsEquipment = true;
+            workoutBodyParts.addAll(exercise.getBodyParts());
+            if (exercise.isNeedsEquipment()) workoutNeedsEquipment = true;
         }
 
         Workout workout = Workout.builder()
@@ -142,18 +147,18 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .exercises(exerciseSet)
                 .build();
 
-        Workout saved = workoutRepository.save(workout);
-        userService.addWorkout(userId, workout);
+        Workout savedWorkout = workoutRepository.save(workout);
+        userService.addWorkout(user, workout);
 
-        WorkoutResponseDto workoutResponseDto = modelMapper.map(saved, WorkoutResponseDto.class);
-        List<BodyPartResponseDto> bodyPartRequestDtoList = bodyParts.stream()
+        WorkoutResponseDto workoutResponseDto = modelMapper.map(savedWorkout, WorkoutResponseDto.class);
+        List<BodyPartResponseDto> workoutBodyPartRequestDtoList = workoutBodyParts.stream()
                 .sorted(Comparator.comparingLong(BodyPart::getId))
                 .map(bodyPart -> modelMapper.map(bodyPart, BodyPartResponseDto.class))
                 .toList();
-        workoutResponseDto.setBodyParts(bodyPartRequestDtoList);
-        workoutResponseDto.setNeedsEquipment(needsEquipment);
+        workoutResponseDto.setBodyParts(workoutBodyPartRequestDtoList);
+        workoutResponseDto.setNeedsEquipment(workoutNeedsEquipment);
 
-        List<ExerciseResponseDto> exerciseResponseDtoList = saved.getExercises().stream()
+        List<ExerciseResponseDto> exerciseResponseDtoList = savedWorkout.getExercises().stream()
                 .map(exercise -> modelMapper.map(exercise, ExerciseResponseDto.class))
                 .peek(elt -> {
                     List<BodyPartResponseDto> bodyPartsSorted = elt.getBodyParts().stream()

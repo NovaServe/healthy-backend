@@ -12,7 +12,7 @@ public interface UserService {
 
     void addExercise(long userId, Exercise exercise);
 
-    void addWorkout(long userId, Workout workout);
+    void addWorkout(User user, Workout workout);
 
     User getUserById(long userId);
 
