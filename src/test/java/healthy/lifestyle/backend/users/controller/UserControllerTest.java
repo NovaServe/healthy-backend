@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.users.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -15,6 +16,7 @@ import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
 import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
+import healthy.lifestyle.backend.users.dto.UserResponseDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -195,6 +197,67 @@ public class UserControllerTest {
             password = "password-one",
             authorities = {"ROLE_USER"})
     void deleteUserTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        long wrongUserId = user.getId() + 1;
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, wrongUserId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user.getId())))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void getUserDetailsByIdTest_shouldReturnUserDetailsAnd200Ok_whenIdIsValid() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(REQUEST_URL, user.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        UserResponseDto responseDto = objectMapper.readValue(responseContent, new TypeReference<UserResponseDto>() {});
+
+        assertThat(responseDto).isNotNull();
+        assertAll(
+                "UserResponseDto assertions",
+                () -> assertThat(responseDto.getId()).isEqualTo(user.getId()),
+                () -> assertThat(responseDto.getUsername()).isEqualTo(user.getUsername()),
+                () -> assertThat(responseDto.getEmail()).isEqualTo(user.getEmail()),
+                () -> assertThat(responseDto.getFullName()).isEqualTo(user.getFullName()),
+                () -> assertThat(responseDto.getCountryId())
+                        .isEqualTo(user.getCountry().getId()),
+                () -> assertThat(responseDto.getAge()).isEqualTo(user.getAge()));
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void getUserDetailsByIdTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);

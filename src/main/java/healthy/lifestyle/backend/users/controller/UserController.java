@@ -58,4 +58,10 @@ public class UserController {
             throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(userService.deleteUser(userId), HttpStatus.NO_CONTENT);
     }
+
+    @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<UserResponseDto> getUserDetails(@PathVariable("userId") Long userId) {
+        return ResponseEntity.ok(userService.getUserDetailsById(userId));
+    }
 }
