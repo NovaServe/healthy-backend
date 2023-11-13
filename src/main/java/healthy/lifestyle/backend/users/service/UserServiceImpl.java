@@ -178,4 +178,12 @@ public class UserServiceImpl implements UserService {
 
         return userId;
     }
+
+    @Override
+    public UserResponseDto getUserDetailsById(long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+
+        return modelMapper.map(userOptional.get(), UserResponseDto.class);
+    }
 }

@@ -136,4 +136,40 @@ class UserServiceTest {
         assertEquals(ErrorMessage.USER_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
     }
+
+    @Test
+    void getUserDetailsByIdTest_shouldReturnUserDto() {
+        // Given
+        User user = dataUtil.createUserEntity(1L);
+        UserResponseDto expectedDto =
+                new UserResponseDto(1L, "username-1", "Full Name 1", "username-1@email.com", 1L, 30);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(modelMapper.map(user, UserResponseDto.class)).thenReturn(expectedDto);
+
+        // When
+        UserResponseDto actualDto = userService.getUserDetailsById(user.getId());
+
+        // Then
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(modelMapper, times(1)).map(user, UserResponseDto.class);
+        // assertThat(user.getId()).isEqualTo(actualDto.getId());
+        assertEquals(expectedDto, actualDto);
+    }
+
+    @Test
+    void getUserDetailsByIdTest_shouldReturnNotFoundAnd400_whenUserNotFound() {
+        // Given
+        User user = dataUtil.createUserEntity(2L);
+        when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
+
+        // When
+        ApiException exception = assertThrows(ApiException.class, () -> userService.getUserDetailsById(user.getId()));
+
+        // Then
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(modelMapper, never()).map(any(), eq(UserResponseDto.class));
+        assertEquals(ErrorMessage.USER_NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
+    }
 }
