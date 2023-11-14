@@ -257,7 +257,7 @@ public class UserControllerTest {
             username = "username-one",
             password = "password-one",
             authorities = {"ROLE_USER"})
-    void getUserDetailsByIdTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
+    void getUserDetailsByIdTest_shouldReturnErrorMessageAnd404_whenUserNotFound() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
@@ -268,13 +268,11 @@ public class UserControllerTest {
         String REQUEST_URL = URL + "/{userId}";
 
         // When
-        mockMvc.perform(delete(REQUEST_URL, wrongUserId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user.getId())))
+        mockMvc.perform(get(REQUEST_URL, wrongUserId).contentType(MediaType.APPLICATION_JSON))
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.NOT_FOUND.value())))
                 .andDo(print());
     }
 }

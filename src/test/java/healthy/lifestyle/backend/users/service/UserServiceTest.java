@@ -153,7 +153,6 @@ class UserServiceTest {
         // Then
         verify(userRepository, times(1)).findById(user.getId());
         verify(modelMapper, times(1)).map(user, UserResponseDto.class);
-        // assertThat(user.getId()).isEqualTo(actualDto.getId());
         assertEquals(expectedDto, actualDto);
     }
 
