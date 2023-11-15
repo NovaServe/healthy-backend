@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.workout.dto.CreateWorkoutRequestDto;
+import healthy.lifestyle.backend.workout.dto.UpdateWorkoutRequestDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
 import healthy.lifestyle.backend.workout.service.WorkoutService;
 import jakarta.validation.Valid;
@@ -46,5 +47,14 @@ public class WorkoutController {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         return new ResponseEntity<>(workoutService.createCustomWorkout(userId, requestDto), HttpStatus.CREATED);
+    }
+
+    @PatchMapping("/{workoutId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<WorkoutResponseDto> updateCustomWorkout(
+            @PathVariable long workoutId, @Valid @RequestBody UpdateWorkoutRequestDto requestDto) {
+        Long userId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        return new ResponseEntity<>(workoutService.updateCustomWorkout(userId, workoutId, requestDto), HttpStatus.OK);
     }
 }

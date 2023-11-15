@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,15 +22,15 @@ import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.CreateWorkoutRequestDto;
+import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
+import healthy.lifestyle.backend.workout.dto.UpdateWorkoutRequestDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.model.Workout;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -513,5 +514,322 @@ class WorkoutControllerTest {
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print())
                 .andReturn();
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomWorkoutTest_shouldReturnWorkoutResponseDtoAnd200_whenValidRequestProvided() throws Exception {
+        // Given
+        List<BodyPart> bodyParts = IntStream.rangeClosed(0, 3)
+                .mapToObj(id -> dataHelper.createBodyPart(id))
+                .toList();
+        List<HttpRef> httpRefs = IntStream.rangeClosed(0, 3)
+                .mapToObj(id -> dataHelper.createHttpRef(id, true))
+                .toList();
+        List<Exercise> exercises = IntStream.rangeClosed(0, 3)
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, true, true, Set.of(bodyParts.get(id)), Set.of(httpRefs.get(id))))
+                .toList();
+        exercises.get(3).setCustom(false);
+        dataHelper.updateExercise(exercises.get(3));
+
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country1 = dataHelper.createCountry(1);
+        User user = dataHelper.createUser(
+                "one",
+                role,
+                country1,
+                new HashSet<>() {
+                    {
+                        add(exercises.get(0));
+                        add(exercises.get(1));
+                        add(exercises.get(2));
+                    }
+                },
+                20);
+        Workout workout = dataHelper.createWorkout(1, true, new HashSet<>() {
+            {
+                add(exercises.get(0));
+                add(exercises.get(1));
+            }
+        });
+        dataHelper.userAddWorkout(user, new HashSet<>() {
+            {
+                add(workout);
+            }
+        });
+
+        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(
+                1,
+                List.of(
+                        exercises.get(0).getId(),
+                        exercises.get(1).getId(),
+                        exercises.get(2).getId(),
+                        exercises.get(3).getId()));
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(patch(REQUEST_URL, workout.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(notNullValue())))
+                .andExpect(jsonPath("$.title", is(requestDto.getTitle())))
+                .andExpect(jsonPath("$.description", is(requestDto.getDescription())))
+                .andExpect(jsonPath("$.isCustom", is(true)))
+                .andExpect(jsonPath("$.needsEquipment", is(true)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        WorkoutResponseDto responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<WorkoutResponseDto>() {});
+
+        assertThat(responseDto.getBodyParts())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(bodyParts);
+
+        assertThat(responseDto.getExercises())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("users", "httpRefs", "bodyParts")
+                .isEqualTo(exercises);
+
+        IntStream.range(0, exercises.size()).forEach(id -> {
+            ExerciseResponseDto exerciseResponseDto = responseDto.getExercises().get(id);
+
+            assertThat(exerciseResponseDto.getBodyParts())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                    .isEqualTo(exercises.get(id).getBodyParts().stream()
+                            .sorted(Comparator.comparingLong(BodyPart::getId))
+                            .toList());
+
+            assertThat(exerciseResponseDto.getHttpRefs())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                    .isEqualTo(exercises.get(id).getHttpRefs().stream()
+                            .sorted(Comparator.comparingLong(HttpRef::getId))
+                            .toList());
+        });
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomWorkoutTest_shouldThrowEmptyRequestExceptionAnd400_whenEmptyDtoProvided() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country1 = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country1, null, 20);
+
+        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        requestDto.setTitle(null);
+        requestDto.setDescription(null);
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.EMPTY_REQUEST.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomWorkoutTest_shouldThrowNotFoundExceptionAnd400_whenWorkoutNotFound() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country1 = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country1, null, 20);
+
+        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomWorkoutTest_shouldThrowUserResourceMismatchAnd400_whenUserDoesntHaveWorkouts() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country1 = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country1, null, 20);
+
+        Workout workout = dataHelper.createWorkout(1, true, null);
+
+        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, workout.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomWorkoutTest_shouldThrowUserResourceMismatchAnd400_whenWorkoutDoesntBelongToUser()
+            throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country1 = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country1, null, 20);
+
+        Workout workout1 = dataHelper.createWorkout(1, true, null);
+        dataHelper.userAddWorkout(user, new HashSet<>() {
+            {
+                add(workout1);
+            }
+        });
+
+        Workout workout2 = dataHelper.createWorkout(2, true, null);
+
+        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, workout2.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomWorkoutTest_shouldThrowTitleDuplicateAnd400_whenWorkoutTitleDuplicated() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country1 = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country1, null, 20);
+
+        Workout workout1 = dataHelper.createWorkout(1, true, null);
+        Workout workout2 = dataHelper.createWorkout(2, true, null);
+        dataHelper.userAddWorkout(user, new HashSet<>() {
+            {
+                add(workout1);
+                add(workout2);
+            }
+        });
+
+        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        workout2.setTitle(requestDto.getTitle());
+        dataHelper.updateWorkout(workout2);
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, workout1.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.TITLE_DUPLICATE.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomWorkoutTest_shouldThrowInvalidNestedObjectAnd400_whenExerciseNotFound() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country1 = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country1, null, 20);
+        BodyPart bodyPart = dataHelper.createBodyPart(1);
+        HttpRef httpRef = dataHelper.createHttpRef(1, true);
+        Exercise exercise = dataHelper.createExercise(1, true, true, Set.of(bodyPart), Set.of(httpRef));
+        Workout workout = dataHelper.createWorkout(1, true, new HashSet<>() {
+            {
+                add(exercise);
+            }
+        });
+        dataHelper.userAddWorkout(user, new HashSet<>() {
+            {
+                add(workout);
+            }
+        });
+
+        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, List.of(exercise.getId() + 1));
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, workout.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.INVALID_NESTED_OBJECT.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void updateCustomWorkoutTest_shouldThrowUserResourceMismatchAnd400_whenExerciseDoesntBelongToUser()
+            throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country1 = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country1, null, 20);
+        BodyPart bodyPart = dataHelper.createBodyPart(1);
+        HttpRef httpRef = dataHelper.createHttpRef(1, false);
+        Exercise exercise = dataHelper.createExercise(1, true, true, Set.of(bodyPart), Set.of(httpRef));
+        Workout workout = dataHelper.createWorkout(1, true, new HashSet<>() {
+            {
+                add(exercise);
+            }
+        });
+        dataHelper.userAddWorkout(user, new HashSet<>() {
+            {
+                add(workout);
+            }
+        });
+
+        Exercise exercise2 = dataHelper.createExercise(2, true, true, Set.of(bodyPart), Set.of(httpRef));
+        User user2 = dataHelper.createUser("two", role, country1, Set.of(exercise2), 20);
+        dataHelper.userAddExercises(user2, new HashSet<>() {
+            {
+                add(exercise2);
+            }
+        });
+
+        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, List.of(exercise2.getId()));
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, workout.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
     }
 }
