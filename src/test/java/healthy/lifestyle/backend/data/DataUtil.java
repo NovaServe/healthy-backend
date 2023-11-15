@@ -175,4 +175,12 @@ public class DataUtil {
                 .exerciseIds(exerciseIds)
                 .build();
     }
+
+    public UpdateWorkoutRequestDto updateWorkoutRequestDto(int seed, List<Long> exerciseIds) {
+        return UpdateWorkoutRequestDto.builder()
+                .title("Title-" + seed)
+                .description("Description-" + seed)
+                .exerciseIds(exerciseIds)
+                .build();
+    }
 }

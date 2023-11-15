@@ -93,32 +93,6 @@ public class DataHelper {
 
         String deleteCountries = "DELETE FROM countries;";
         entityManager.createNativeQuery(deleteCountries).executeUpdate();
-
-        // workouts
-        // workouts_exercises (fk workout_id -> workouts(id), fk exercise_id -> exercises(id))
-        // workoutRepository.deleteAll();
-
-        // exercises,
-        // exercises_body_parts (fk exercise_id -> exercises(id), fk body_part_id -> body_parts(id)),
-        // exercises_http_refs (fk exercise_id -> exercises(id), fk http_ref_id -> http_refs(id))
-        // exerciseRepository.deleteAll();
-
-        // body_parts
-        // bodyPartRepository.deleteAll();
-
-        // http_refs (fk user_id -> users(id))
-        // httpRefRepository.deleteAll();
-
-        // users (fk country_id -> countries(id), fk role_id -> roles(id)),
-        // users_exercises (fk user_id -> users(id), fk exercise_id -> exercises(id)
-        // users_workouts (fk user_id -> users(id), fk workout_id -> workouts(id)
-        // userRepository.deleteAll();
-
-        // roles
-        // roleRepository.deleteAll();
-
-        // countries
-        // countryRepository.deleteAll();
     }
 
     public BodyPart createBodyPart(int seed) {
@@ -153,6 +127,10 @@ public class DataHelper {
 
     public Exercise exerciseAddUsers(Exercise exercise, Set<User> users) {
         exercise.setUsers(users);
+        return exerciseRepository.save(exercise);
+    }
+
+    public Exercise updateExercise(Exercise exercise) {
         return exerciseRepository.save(exercise);
     }
 
@@ -193,6 +171,15 @@ public class DataHelper {
 
     public void userAddWorkout(User user, Set<Workout> workouts) {
         user.setWorkouts(workouts);
+        userRepository.save(user);
+    }
+
+    public Workout updateWorkout(Workout workout) {
+        return workoutRepository.save(workout);
+    }
+
+    public void userAddExercises(User user, Set<Exercise> exercises) {
+        user.setExercises(exercises);
         userRepository.save(user);
     }
 
