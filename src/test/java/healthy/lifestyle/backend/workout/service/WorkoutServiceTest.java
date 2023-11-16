@@ -90,7 +90,7 @@ class WorkoutServiceTest {
         when(workoutRepository.findById(workoutId)).thenReturn(Optional.of(workouts.get((int) workoutId)));
 
         // When
-        WorkoutResponseDto responseWorkout = workoutService.getDefaultWorkoutById(workoutId);
+        WorkoutResponseDto responseWorkout = workoutService.getWorkoutById(workoutId, false);
 
         // Then
         verify(workoutRepository, times(1)).findById(workoutId);
@@ -108,7 +108,7 @@ class WorkoutServiceTest {
 
         // When
         ApiException exception = assertThrows(ApiException.class, () -> {
-            workoutService.getDefaultWorkoutById(wrongWorkoutId);
+            workoutService.getWorkoutById(wrongWorkoutId, false);
         });
 
         // Then
@@ -130,13 +130,77 @@ class WorkoutServiceTest {
 
         // When
         ApiException exception = assertThrows(ApiException.class, () -> {
-            workoutService.getDefaultWorkoutById(workoutId);
+            workoutService.getWorkoutById(workoutId, false);
         });
 
         // Then
         verify(workoutRepository, times(1)).findById(workoutId);
         assertEquals(ErrorMessage.UNAUTHORIZED_FOR_THIS_RESOURCE.getName(), exception.getMessage());
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getHttpStatus());
+    }
+
+    @Test
+    void getCustomWorkoutByIdTest_shouldReturnCustomWorkout() {
+        // Given
+        long workoutId = 2;
+
+        List<Exercise> customExercises = IntStream.rangeClosed(1, 4)
+                .mapToObj(id -> dataUtil.createExercise(id, true, false, false, 1, 2, 1, 2))
+                .toList();
+
+        List<Exercise> defaultExercises = IntStream.rangeClosed(1, 4)
+                .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
+                .toList();
+
+        Workout workout1 = dataUtil.createWorkout(0L, true, Set.of(customExercises.get(0), customExercises.get(1)));
+        Workout workout2 = dataUtil.createWorkout(1L, false, Set.of(defaultExercises.get(0), defaultExercises.get(1)));
+        Workout workout3 = dataUtil.createWorkout(2L, true, Set.of(customExercises.get(2), customExercises.get(3)));
+        Workout workout4 = dataUtil.createWorkout(3L, false, Set.of(defaultExercises.get(2), defaultExercises.get(3)));
+        List<Workout> workouts = List.of(workout1, workout2, workout3, workout4);
+
+        when(workoutRepository.findById(workoutId)).thenReturn(Optional.of(workouts.get((int) workoutId)));
+
+        // When
+        WorkoutResponseDto responseWorkout = workoutService.getWorkoutById(workoutId, true);
+
+        // Then
+        verify(workoutRepository, times(1)).findById(workoutId);
+        assertThat(workouts.get((int) workoutId))
+                .usingRecursiveComparison()
+                .ignoringFields("exercises", "bodyParts", "users")
+                .isEqualTo(responseWorkout);
+    }
+
+    @Test
+    void getCustomWorkoutByIdTest_shouldThrowCustomWorkoutRequired_whenWorkoutIsDefault() {
+        // Given
+        long workoutId = 1;
+
+        List<Exercise> customExercises = IntStream.rangeClosed(1, 4)
+                .mapToObj(id -> dataUtil.createExercise(id, true, false, false, 1, 2, 1, 2))
+                .toList();
+
+        List<Exercise> defaultExercises = IntStream.rangeClosed(1, 4)
+                .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
+                .toList();
+
+        Workout workout1 = dataUtil.createWorkout(0L, true, Set.of(customExercises.get(0), customExercises.get(1)));
+        Workout workout2 = dataUtil.createWorkout(1L, false, Set.of(defaultExercises.get(0), defaultExercises.get(1)));
+        Workout workout3 = dataUtil.createWorkout(2L, true, Set.of(customExercises.get(2), customExercises.get(3)));
+        Workout workout4 = dataUtil.createWorkout(3L, false, Set.of(defaultExercises.get(2), defaultExercises.get(3)));
+        List<Workout> workouts = List.of(workout1, workout2, workout3, workout4);
+
+        when(workoutRepository.findById(workoutId)).thenReturn(Optional.of(workouts.get((int) workoutId)));
+
+        // When
+        ApiException exception = assertThrows(ApiException.class, () -> {
+            workoutService.getWorkoutById(workoutId, true);
+        });
+
+        // Then
+        verify(workoutRepository, times(1)).findById(workoutId);
+        assertEquals(ErrorMessage.CUSTOM_WORKOUT_REQUIRED.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
     @Test

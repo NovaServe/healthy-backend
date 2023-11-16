@@ -79,15 +79,17 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .toList();
     }
 
-    @Transactional
     @Override
-    public WorkoutResponseDto getDefaultWorkoutById(long id) {
+    @Transactional
+    public WorkoutResponseDto getWorkoutById(long id, boolean customRequired) {
         Optional<Workout> workoutOptional = workoutRepository.findById(id);
 
         if (workoutOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND);
 
-        if (workoutOptional.isPresent() && workoutOptional.get().isCustom())
+        if (workoutOptional.isPresent() && workoutOptional.get().isCustom() && !customRequired)
             throw new ApiException(ErrorMessage.UNAUTHORIZED_FOR_THIS_RESOURCE, HttpStatus.UNAUTHORIZED);
+        if (workoutOptional.isPresent() && !workoutOptional.get().isCustom() && customRequired)
+            throw new ApiException(ErrorMessage.CUSTOM_WORKOUT_REQUIRED, HttpStatus.BAD_REQUEST);
 
         WorkoutResponseDto workoutDto = modelMapper.map(workoutOptional.get(), WorkoutResponseDto.class);
 

@@ -12,6 +12,7 @@ public enum ErrorMessage {
     NOT_FOUND("Not found"),
     UNAUTHORIZED_FOR_THIS_RESOURCE("Unauthorized for this resource"),
     DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY("Default media is not allowed to modify"),
+    CUSTOM_WORKOUT_REQUIRED("Custom workout required"),
     DEFAULT_MEDIA_REQUESTED("Default media requested"),
     DEFAULT_RESOURCE_IF_NOT_ALLOWED_TO_MODIFY("Default is not allowed to modify"),
     USER_RESOURCE_MISMATCH("User-resource mismatch"),

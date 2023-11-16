@@ -37,7 +37,13 @@ public class WorkoutController {
 
     @GetMapping("/default/{workout_id}")
     public ResponseEntity<WorkoutResponseDto> getDefaultWorkoutDetails(@PathVariable("workout_id") long workoutId) {
-        return ResponseEntity.ok(workoutService.getDefaultWorkoutById(workoutId));
+        return ResponseEntity.ok(workoutService.getWorkoutById(workoutId, false));
+    }
+
+    @GetMapping("/{workout_id}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<WorkoutResponseDto> getCustomWorkoutDetails(@PathVariable("workout_id") long workoutId) {
+        return ResponseEntity.ok(workoutService.getWorkoutById(workoutId, true));
     }
 
     @PostMapping
