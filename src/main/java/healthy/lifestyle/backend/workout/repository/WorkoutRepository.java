@@ -12,4 +12,7 @@ public interface WorkoutRepository extends JpaRepository<Workout, Long> {
 
     @Query("SELECT w FROM Workout w JOIN w.users u WHERE u.id = :userId AND w.title = :title AND w.isCustom = true")
     List<Workout> findCustomByTitleAndUserId(String title, Long userId);
+
+    @Query("SELECT w FROM Workout w JOIN w.users u WHERE u.id = :userId AND w.id = :workoutId AND w.isCustom = true")
+    List<Workout> findCustomByWorkoutIdAndUserId(long workoutId, long userId);
 }

@@ -129,4 +129,80 @@ class WorkoutRepositoryTest {
         // Then
         assertEquals(0, workouts.size());
     }
+
+    @Test
+    void findCustomByWorkoutIdAndUserIdTest_shouldReturnWorkout_whenValidIdsProvided() {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+
+        User user1 = dataHelper.createUser("one", role, country, null, 18);
+        Workout workout1 = dataHelper.createWorkout(1, true, null);
+        Workout workout2 = dataHelper.createWorkout(2, true, null);
+        dataHelper.userAddWorkout(user1, Set.of(workout1, workout2));
+
+        User user2 = dataHelper.createUser("two", role, country, null, 20);
+        Workout workout3 = dataHelper.createWorkout(3, true, null);
+        dataHelper.userAddWorkout(user2, Set.of(workout3));
+
+        Workout workout4 = dataHelper.createWorkout(4, false, null);
+
+        // When
+        List<Workout> workouts = workoutRepository.findCustomByWorkoutIdAndUserId(workout1.getId(), user1.getId());
+
+        // Then
+        assertEquals(1, workouts.size());
+        assertEquals(workout1.getId(), workouts.get(0).getId());
+        assertEquals(workout1.getTitle(), workouts.get(0).getTitle());
+        assertEquals(workout1.getDescription(), workouts.get(0).getDescription());
+        assertEquals(workout1.isCustom(), workouts.get(0).isCustom());
+    }
+
+    @Test
+    void findCustomByWorkoutIdAndUserIdTest_shouldReturnEmptyList_whenWorkoutBelongsToAnotherUser() {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+
+        User user1 = dataHelper.createUser("one", role, country, null, 18);
+        Workout workout1 = dataHelper.createWorkout(1, true, null);
+        Workout workout2 = dataHelper.createWorkout(2, true, null);
+        dataHelper.userAddWorkout(user1, Set.of(workout1, workout2));
+
+        User user2 = dataHelper.createUser("two", role, country, null, 20);
+        Workout workout3 = dataHelper.createWorkout(3, true, null);
+        dataHelper.userAddWorkout(user2, Set.of(workout3));
+
+        Workout workout4 = dataHelper.createWorkout(4, false, null);
+
+        // When
+        List<Workout> workouts = workoutRepository.findCustomByWorkoutIdAndUserId(workout3.getId(), user1.getId());
+
+        // Then
+        assertEquals(0, workouts.size());
+    }
+
+    @Test
+    void findCustomByWorkoutIdAndUserIdTest_shouldReturnEmptyList_whenWorkoutIsDefault() {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+
+        User user1 = dataHelper.createUser("one", role, country, null, 18);
+        Workout workout1 = dataHelper.createWorkout(1, true, null);
+        Workout workout2 = dataHelper.createWorkout(2, true, null);
+        dataHelper.userAddWorkout(user1, Set.of(workout1, workout2));
+
+        User user2 = dataHelper.createUser("two", role, country, null, 20);
+        Workout workout3 = dataHelper.createWorkout(3, true, null);
+        dataHelper.userAddWorkout(user2, Set.of(workout3));
+
+        Workout workout4 = dataHelper.createWorkout(4, false, null);
+
+        // When
+        List<Workout> workouts = workoutRepository.findCustomByWorkoutIdAndUserId(workout4.getId(), user1.getId());
+
+        // Then
+        assertEquals(0, workouts.size());
+    }
 }

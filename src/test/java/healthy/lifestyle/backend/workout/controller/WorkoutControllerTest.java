@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -829,6 +830,113 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomWorkoutTest_shouldReturnDeletedId_whenValidUserIdAndWorkoutIdProvided() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country1 = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country1, null, 20);
+        Workout workout = dataHelper.createWorkout(1, true, null);
+        dataHelper.userAddWorkout(user, new HashSet<>() {
+            {
+                add(workout);
+            }
+        });
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, workout.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$", is(workout.getId().intValue())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomWorkoutTest_shouldThrowNotFoundAnd400_whenDefaultWorkoutRequestedToDelete() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+
+        User user1 = dataHelper.createUser("one", role, country, null, 18);
+        Workout workout1 = dataHelper.createWorkout(1, true, null);
+        Workout workout2 = dataHelper.createWorkout(2, true, null);
+        dataHelper.userAddWorkout(user1, Set.of(workout1, workout2));
+
+        User user2 = dataHelper.createUser("two", role, country, null, 20);
+        Workout workout3 = dataHelper.createWorkout(3, true, null);
+        dataHelper.userAddWorkout(user2, Set.of(workout3));
+
+        Workout workout4 = dataHelper.createWorkout(4, false, null);
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, workout4.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomWorkoutTest_shouldThrowNotFoundAnd400_whenWorkoutNotFound() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+
+        User user1 = dataHelper.createUser("one", role, country, null, 18);
+        Workout workout1 = dataHelper.createWorkout(1, true, null);
+        Workout workout2 = dataHelper.createWorkout(2, true, null);
+        dataHelper.userAddWorkout(user1, Set.of(workout1, workout2));
+
+        long nonExistingWorkoutId = workout2.getId() + 1000;
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, nonExistingWorkoutId).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void deleteCustomWorkoutTest_shouldThrowUserResourceMismatchAnd400_whenWorkoutDoesntBelongToUser()
+            throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+
+        User user1 = dataHelper.createUser("one", role, country, null, 18);
+        Workout workout1 = dataHelper.createWorkout(1, true, null);
+        Workout workout2 = dataHelper.createWorkout(2, true, null);
+        dataHelper.userAddWorkout(user1, Set.of(workout1, workout2));
+
+        User user2 = dataHelper.createUser("two", role, country, null, 20);
+        Workout workout3 = dataHelper.createWorkout(3, true, null);
+        dataHelper.userAddWorkout(user2, Set.of(workout3));
+
+        Workout workout4 = dataHelper.createWorkout(4, false, null);
+
+        String REQUEST_URL = URL + "/{workoutId}";
+
+        // When
+        mockMvc.perform(delete(REQUEST_URL, workout3.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
