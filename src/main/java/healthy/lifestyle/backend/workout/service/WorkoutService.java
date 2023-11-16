@@ -13,4 +13,6 @@ public interface WorkoutService {
     WorkoutResponseDto createCustomWorkout(long userId, CreateWorkoutRequestDto requestDto);
 
     WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, UpdateWorkoutRequestDto requestDto);
+
+    long deleteCustomWorkout(long userId, long workoutId);
 }

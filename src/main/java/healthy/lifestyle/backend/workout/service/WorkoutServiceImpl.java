@@ -265,4 +265,17 @@ public class WorkoutServiceImpl implements WorkoutService {
         workoutResponseDto.setExercises(exerciseResponseDtoList);
         return workoutResponseDto;
     }
+
+    @Override
+    @Transactional
+    public long deleteCustomWorkout(long userId, long workoutId) {
+        List<Workout> workouts = workoutRepository.findCustomByWorkoutIdAndUserId(workoutId, userId);
+        if (workouts.size() == 0) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.BAD_REQUEST);
+
+        Workout workout = workouts.get(0);
+        User user = userService.getUserById(userId);
+        userService.removeWorkout(user, workout);
+        workoutRepository.delete(workout);
+        return workoutId;
+    }
 }

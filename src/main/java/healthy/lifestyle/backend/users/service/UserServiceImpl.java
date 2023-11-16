@@ -125,6 +125,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void removeWorkout(User user, Workout workout) {
+        user.getWorkouts().remove(workout);
+    }
+
+    @Override
     public UserResponseDto updateUser(Long userId, UpdateUserRequestDto requestDto) {
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);

@@ -670,4 +670,43 @@ class WorkoutServiceTest {
         assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
+
+    @Test
+    void deleteCustomWorkoutTest_shouldReturnDeletedId_whenValidUserIdAndWorkoutIdProvided() {
+        // Given
+        User user = dataUtil.createUserEntity(1);
+        Workout workout = dataUtil.createWorkout(1, true, null);
+        user.setWorkouts(new HashSet<>() {
+            {
+                add(workout);
+            }
+        });
+        when(workoutRepository.findCustomByWorkoutIdAndUserId(workout.getId(), user.getId()))
+                .thenReturn(List.of(workout));
+
+        // When
+        long id = workoutService.deleteCustomWorkout(user.getId(), workout.getId());
+
+        // Then
+        verify(workoutRepository, times(1)).findCustomByWorkoutIdAndUserId(workout.getId(), user.getId());
+        assertEquals(workout.getId(), id);
+    }
+
+    @Test
+    void deleteCustomWorkoutTest_shouldThrowNotFoundAnd400_whenWorkoutNotFound() {
+        // Given
+        long userId = 1;
+        long workoutId = 2;
+        when(workoutRepository.findCustomByWorkoutIdAndUserId(workoutId, userId))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        ApiException exception =
+                assertThrows(ApiException.class, () -> workoutService.deleteCustomWorkout(userId, workoutId));
+
+        // Then
+        verify(workoutRepository, times(1)).findCustomByWorkoutIdAndUserId(workoutId, userId);
+        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+    }
 }
