@@ -59,9 +59,11 @@ public class UserController {
         return new ResponseEntity<>(userService.deleteUser(userId), HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/{userId}")
+    @GetMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<UserResponseDto> getUserDetails(@PathVariable("userId") Long userId) {
-        return ResponseEntity.ok(userService.getUserDetailsById(userId));
+    public ResponseEntity<UserResponseDto> getUserDetails() {
+        Long authenticatedUserId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        return ResponseEntity.ok(userService.getUserDetailsById(authenticatedUserId));
     }
 }

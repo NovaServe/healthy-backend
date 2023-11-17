@@ -222,16 +222,14 @@ public class UserControllerTest {
             username = "username-one",
             password = "password-one",
             authorities = {"ROLE_USER"})
-    void getUserDetailsByIdTest_shouldReturnUserDetailsAnd200Ok_whenIdIsValid() throws Exception {
+    void getUserDetailsTest_shouldReturnUserDetailsAnd200Ok_whenUserAuthorized() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, null, 20);
 
-        String REQUEST_URL = URL + "/{userId}";
-
         // When
-        MvcResult mvcResult = mockMvc.perform(get(REQUEST_URL, user.getId()).contentType(MediaType.APPLICATION_JSON))
+        MvcResult mvcResult = mockMvc.perform(get(URL, user.getId()).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isOk())
                 .andDo(print())
@@ -250,29 +248,5 @@ public class UserControllerTest {
                 () -> assertThat(responseDto.getCountryId())
                         .isEqualTo(user.getCountry().getId()),
                 () -> assertThat(responseDto.getAge()).isEqualTo(user.getAge()));
-    }
-
-    @Test
-    @WithMockUser(
-            username = "username-one",
-            password = "password-one",
-            authorities = {"ROLE_USER"})
-    void getUserDetailsByIdTest_shouldReturnErrorMessageAnd404_whenUserNotFound() throws Exception {
-        // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        User user = dataHelper.createUser("one", role, country, null, 20);
-
-        long wrongUserId = user.getId() + 1;
-
-        String REQUEST_URL = URL + "/{userId}";
-
-        // When
-        mockMvc.perform(get(REQUEST_URL, wrongUserId).contentType(MediaType.APPLICATION_JSON))
-                // Then
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.NOT_FOUND.value())))
-                .andDo(print());
     }
 }
