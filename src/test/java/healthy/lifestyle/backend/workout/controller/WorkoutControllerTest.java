@@ -314,6 +314,75 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getCustomWorkoutTest_shouldReturnCustomWorkoutAnd200Ok_whenIdIsValid() throws Exception {
+        // Given
+        BodyPart bodyPart1 = dataHelper.createBodyPart(1);
+        BodyPart bodyPart2 = dataHelper.createBodyPart(2);
+        BodyPart bodyPart3 = dataHelper.createBodyPart(3);
+        Exercise exercise1 = dataHelper.createExercise(1, true, false, Set.of(bodyPart1, bodyPart2), null);
+        Exercise exercise2 = dataHelper.createExercise(2, true, false, Set.of(bodyPart1, bodyPart3), null);
+        Workout workout1 = dataHelper.createWorkout(1, true, Set.of(exercise1, exercise2));
+
+        String postfix = String.format("/%d", workout1.getId());
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        WorkoutResponseDto responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<WorkoutResponseDto>() {});
+
+        assertThat(workout1)
+                .usingRecursiveComparison()
+                .ignoringFields("exercises", "bodyParts", "users")
+                .isEqualTo(responseDto);
+
+        List<BodyPart> workoutSortedBodyParts = List.of(bodyPart1, bodyPart2, bodyPart3);
+        assertThat(workoutSortedBodyParts)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(responseDto.getBodyParts());
+
+        List<Exercise> workoutSortedExercises = workout1.getExercises().stream()
+                .sorted(Comparator.comparingLong(Exercise::getId))
+                .toList();
+        assertThat(workoutSortedExercises)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("bodyParts", "httpRefs", "users")
+                .isEqualTo(responseDto.getExercises());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getCustomWorkoutTest_shouldReturnCustomWorkoutRequiredAnd400_whenWorkoutIsDefault() throws Exception {
+        // Given
+        BodyPart bodyPart1 = dataHelper.createBodyPart(1);
+        BodyPart bodyPart2 = dataHelper.createBodyPart(2);
+        BodyPart bodyPart3 = dataHelper.createBodyPart(3);
+        Exercise exercise1 = dataHelper.createExercise(1, false, false, Set.of(bodyPart1, bodyPart2), null);
+        Exercise exercise2 = dataHelper.createExercise(2, false, false, Set.of(bodyPart1, bodyPart3), null);
+        Workout workout1 = dataHelper.createWorkout(1, false, Set.of(exercise1, exercise2));
+
+        String postfix = String.format("/%d", workout1.getId());
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        ExceptionDto responseDto = objectMapper.readValue(responseContent, new TypeReference<ExceptionDto>() {});
+
+        assertEquals(ErrorMessage.CUSTOM_WORKOUT_REQUIRED.getName(), responseDto.getMessage());
+        assertEquals(Integer.valueOf(HttpStatus.BAD_REQUEST.value()), responseDto.getCode());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
     void createCustomWorkoutTest_shouldReturnWorkoutResponseDtoAnd201_whenValidRequestProvided() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");

@@ -8,7 +8,7 @@ import java.util.List;
 public interface WorkoutService {
     List<WorkoutResponseDto> getDefaultWorkouts(String sortFieldName);
 
-    WorkoutResponseDto getDefaultWorkoutById(long workoutId);
+    WorkoutResponseDto getWorkoutById(long workoutId, boolean customRequired);
 
     WorkoutResponseDto createCustomWorkout(long userId, CreateWorkoutRequestDto requestDto);
 
