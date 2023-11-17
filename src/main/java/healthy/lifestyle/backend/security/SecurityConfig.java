@@ -1,6 +1,5 @@
 package healthy.lifestyle.backend.security;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,29 +23,7 @@ public class SecurityConfig {
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
     private final JwtAuthFilter jwtAuthFilter;
 
-    @Value("${api.basePath}/${api.version}/users/auth/**")
-    private String authUrl;
-
-    @Value("${api.basePath}/${api.version}/workouts/bodyParts")
-    private String bodyPartsUrl;
-
-    @Value("${api.basePath}/${api.version}/workouts/exercises/default")
-    private String defaultExercisesUrl;
-
-    @Value("${api.basePath}/${api.version}/users/countries")
-    private String countriesUrl;
-
-    @Value("${api.basePath}/${api.version}/workouts/exercises/default/{exercise_id}")
-    private String defaultExerciseDetailsUrl;
-
-    @Value("${api.basePath}/${api.version}/workouts/httpRefs/default")
-    private String defaultHttpRefsUrl;
-
-    @Value("${api.basePath}/${api.version}/workouts/default")
-    private String defaultWorkoutsUrl;
-
-    @Value("${api.basePath}/${api.version}/workouts/default/{workout_id}")
-    private String defaultWorkoutDetailsUrl;
+    private final ApiUrl apiUrl;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -56,10 +33,12 @@ public class SecurityConfig {
     public SecurityConfig(
             CustomUserDetailsService customUserDetailsService,
             JwtAuthEntryPoint jwtAuthEntryPoint,
-            JwtAuthFilter jwtAuthFilter) {
+            JwtAuthFilter jwtAuthFilter,
+            ApiUrl apiUrl) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
         this.jwtAuthFilter = jwtAuthFilter;
+        this.apiUrl = apiUrl;
     }
 
     @Bean
@@ -69,21 +48,23 @@ public class SecurityConfig {
                 .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(jwtAuthEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, authUrl)
+                        .requestMatchers(HttpMethod.POST, apiUrl.getAuthUrl())
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, bodyPartsUrl)
+                        .requestMatchers(HttpMethod.GET, apiUrl.getBodyPartsUrl())
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, defaultExercisesUrl)
+                        .requestMatchers(HttpMethod.GET, apiUrl.getDefaultExercisesUrl())
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, countriesUrl)
+                        .requestMatchers(HttpMethod.GET, apiUrl.getCountriesUrl())
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, defaultExerciseDetailsUrl)
+                        .requestMatchers(HttpMethod.GET, apiUrl.getDefaultExerciseDetailsUrl())
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, defaultHttpRefsUrl)
+                        .requestMatchers(HttpMethod.GET, apiUrl.getDefaultHttpRefsUrl())
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, defaultWorkoutsUrl)
+                        .requestMatchers(HttpMethod.GET, apiUrl.getDefaultWorkoutsUrl())
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, defaultWorkoutDetailsUrl)
+                        .requestMatchers(HttpMethod.GET, apiUrl.getDefaultWorkoutDetailsUrl())
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, apiUrl.getAdminHelloWorldUrl())
                         .permitAll()
                         .anyRequest()
                         .authenticated());
