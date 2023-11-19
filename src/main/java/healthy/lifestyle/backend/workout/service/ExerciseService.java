@@ -11,5 +11,5 @@ public interface ExerciseService {
 
     List<ExerciseResponseDto> getDefaultExercises();
 
-    ExerciseResponseDto getDefaultExerciseById(long exerciseId);
+    ExerciseResponseDto getExerciseById(long exerciseId, boolean requiredDefault, Long userId);
 }

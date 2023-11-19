@@ -8,6 +8,9 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserServiceImpl;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -27,6 +30,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 class ExerciseServiceTest {
@@ -104,7 +108,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void getExercisesTest_shouldReturnDefaultExercises() {
+    void getDefaultExercisesTest_shouldReturnDefaultExercises() {
         // Given
         List<Exercise> exercises = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataUtil.createExercise(id, false, false, true, 1, 2, 1, 2))
@@ -144,7 +148,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void getExercisesTest_shouldReturnCustomExercises() {
+    void getCustomExercisesTest_shouldReturnCustomExercises() {
         // Given
         List<Exercise> defaultExercises = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataUtil.createExercise(id, false, false, false, 1, 2, 1, 2))
@@ -190,17 +194,59 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void getExerciseTest_shouldReturnDefaultExercise() {
+    void getExerciseByIdTest_shouldReturnDefaultExercise_whenDefaultExerciseRequested() {
         // Given
-        long exercise_id = 1L;
-        Exercise exercise = dataUtil.createExercise(exercise_id, false, false, false, 1, 2, 1, 2);
-        when(exerciseRepository.findDefaultById(exercise_id)).thenReturn(exercise);
+        Exercise exercise = dataUtil.createExercise(1L, false, false, false, 1, 2, 1, 2);
+        when(exerciseRepository.findById(exercise.getId())).thenReturn(Optional.of(exercise));
 
         // When
-        ExerciseResponseDto exerciseDtoActual = exerciseService.getDefaultExerciseById(exercise_id);
+        ExerciseResponseDto exerciseDtoActual = exerciseService.getExerciseById(exercise.getId(), true, null);
 
         // Then
-        verify((exerciseRepository), times(1)).findDefaultById(exercise_id);
+        verify((exerciseRepository), times(1)).findById(exercise.getId());
+        verify(userService, times(0)).getUserById(anyLong());
+
+        assertThat(exercise)
+                .usingRecursiveComparison()
+                .ignoringFields("users", "bodyParts", "httpRefs")
+                .isEqualTo(exerciseDtoActual);
+
+        List<BodyPart> bodyParts_ = exercise.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPart::getId))
+                .toList();
+        assertThat(bodyParts_)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exerciseDtoActual.getBodyParts());
+
+        List<HttpRef> httpRefs_ = exercise.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRef::getId))
+                .toList();
+        assertThat(httpRefs_)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(exerciseDtoActual.getHttpRefs());
+    }
+
+    @Test
+    void getExerciseByIdTest_shouldReturnCustomExercise_whenCustomExerciseRequested() {
+        // Given
+        Exercise exercise = dataUtil.createExercise(1L, true, false, false, 1, 2, 1, 2);
+        when(exerciseRepository.findById(exercise.getId())).thenReturn(Optional.of(exercise));
+
+        User user = dataUtil.createUserEntity(1L);
+        user.setExercises(new HashSet<>() {
+            {
+                add(exercise);
+            }
+        });
+        when(userService.getUserById(user.getId())).thenReturn(user);
+
+        // When
+        ExerciseResponseDto exerciseDtoActual = exerciseService.getExerciseById(exercise.getId(), false, user.getId());
+
+        // Then
+        verify((exerciseRepository), times(1)).findById(exercise.getId());
+        verify(userService, times(1)).getUserById(user.getId());
+
         Assertions.assertThat(exercise)
                 .usingRecursiveComparison()
                 .ignoringFields("users", "bodyParts", "httpRefs")
@@ -219,5 +265,92 @@ class ExerciseServiceTest {
         assertThat(httpRefs_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                 .isEqualTo(exerciseDtoActual.getHttpRefs());
+    }
+
+    @Test
+    void getExerciseByIdTest_shouldThrowNotFoundAnd404_whenExerciseNotFound() {
+        // Given
+        long exerciseId = 1L;
+        when(exerciseRepository.findById(exerciseId)).thenReturn(Optional.empty());
+
+        // When
+        ApiException exception =
+                assertThrows(ApiException.class, () -> exerciseService.getExerciseById(exerciseId, true, null));
+
+        // Then
+        verify((exerciseRepository), times(1)).findById(exerciseId);
+        verify(userService, times(0)).getUserById(anyLong());
+
+        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
+    }
+
+    @Test
+    void getExerciseByIdTest_shouldThrowDefaultCustomMismatchAnd400_whenCustomExerciseAndDefaultRequestOccurred() {
+        // Given
+        Exercise exercise = dataUtil.createExercise(1L, true, false, true, 1, 2, 1, 2);
+        when(exerciseRepository.findById(exercise.getId())).thenReturn(Optional.of(exercise));
+
+        // When
+        ApiException exception =
+                assertThrows(ApiException.class, () -> exerciseService.getExerciseById(exercise.getId(), true, null));
+
+        // Then
+        verify((exerciseRepository), times(1)).findById(exercise.getId());
+        verify(userService, times(0)).getUserById(anyLong());
+
+        assertEquals(ErrorMessage.DEFAULT_CUSTOM_MISMATCH.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+    }
+
+    @Test
+    void getExerciseByIdTest_shouldThrowDefaultCustomMismatchAnd400_whenDefaultExerciseAndCustomRequestOccurred() {
+        // Given
+        Exercise exercise = dataUtil.createExercise(1L, false, false, false, 1, 2, 1, 2);
+        when(exerciseRepository.findById(exercise.getId())).thenReturn(Optional.of(exercise));
+
+        // When
+        ApiException exception =
+                assertThrows(ApiException.class, () -> exerciseService.getExerciseById(exercise.getId(), false, null));
+
+        // Then
+        verify((exerciseRepository), times(1)).findById(exercise.getId());
+        verify(userService, times(0)).getUserById(anyLong());
+
+        assertEquals(ErrorMessage.DEFAULT_CUSTOM_MISMATCH.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+    }
+
+    @Test
+    void getExerciseByIdTest_shouldThrowUserResourceMismatchAnd400_whenRequestedExerciseDoesntBelongToUser() {
+        // Given
+        Exercise exercise = dataUtil.createExercise(1L, true, false, false, 1, 2, 1, 2);
+        User user = dataUtil.createUserEntity(1L);
+        user.setExercises(new HashSet<>() {
+            {
+                add(exercise);
+            }
+        });
+        when(exerciseRepository.findById(exercise.getId())).thenReturn(Optional.of(exercise));
+
+        Exercise exercise2 = dataUtil.createExercise(2L, true, false, false, 3, 4, 3, 4);
+        User user2 = dataUtil.createUserEntity(2L);
+        user2.setExercises(new HashSet<>() {
+            {
+                add(exercise2);
+            }
+        });
+        when(userService.getUserById(user2.getId())).thenReturn(user2);
+
+        // When
+        ApiException exception = assertThrows(
+                ApiException.class, () -> exerciseService.getExerciseById(exercise.getId(), false, user2.getId()));
+
+        // Then
+        verify((exerciseRepository), times(1)).findById(exercise.getId());
+        verify(userService, times(1)).getUserById(user2.getId());
+
+        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
     }
 }

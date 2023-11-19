@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -30,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -94,8 +96,7 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
+        User user = dataHelper.createUser("one", role, country, null, 20);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -148,8 +149,7 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
+        User user = dataHelper.createUser("one", role, country, null, 20);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -190,8 +190,7 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
+        User user = dataHelper.createUser("one", role, country, null, 20);
 
         List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
@@ -219,8 +218,7 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
+        User user = dataHelper.createUser("one", role, country, null, 20);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -250,8 +248,7 @@ class ExerciseControllerTest {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
+        User user = dataHelper.createUser("one", role, country, null, 20);
 
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
@@ -281,7 +278,6 @@ class ExerciseControllerTest {
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
                 .toList();
-
         List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
@@ -301,6 +297,7 @@ class ExerciseControllerTest {
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
         Integer age = 20;
+
         // Test user with 2 default and 2 custom exercises
         User testUser = dataHelper.createUser(
                 "one",
@@ -358,7 +355,6 @@ class ExerciseControllerTest {
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
                 .toList();
-
         List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
@@ -411,28 +407,26 @@ class ExerciseControllerTest {
     }
 
     @Test
-    void getDefaultExerciseTest_ShouldReturnExerciseAnd200Ok() throws Exception {
+    void getExerciseByIdTest_ShouldReturnDefaultExerciseAnd200_whenDefaultExerciseRequested() throws Exception {
         // Given
-        int exercise_id = 0;
-
         List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createBodyPart(id))
                 .toList();
-
         List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        List<Exercise> defaultExercises = IntStream.rangeClosed(1, 5)
+        List<Exercise> exercises = IntStream.rangeClosed(1, 5)
                 .mapToObj(id ->
                         dataHelper.createExercise(id, false, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
                 .toList();
 
-        long id = defaultExercises.get(exercise_id).getId();
+        int exerciseListId = 0;
+        long exerciseId = exercises.get(exerciseListId).getId();
+        String REQUEST_URL = URL + "/default/{exerciseId}";
 
         // When
-        String postfix = String.format("/default/%d", id);
-        MvcResult mvcResult = mockMvc.perform(get(URL + postfix).contentType(MediaType.APPLICATION_JSON))
+        MvcResult mvcResult = mockMvc.perform(get(REQUEST_URL, exerciseId).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isOk())
                 .andDo(print())
@@ -442,23 +436,139 @@ class ExerciseControllerTest {
         ExerciseResponseDto responseDto =
                 objectMapper.readValue(responseContent, new TypeReference<ExerciseResponseDto>() {});
 
-        assertThat(defaultExercises.get(exercise_id))
+        assertThat(exercises.get(exerciseListId))
                 .usingRecursiveComparison()
                 .ignoringFields("bodyParts", "httpRefs", "users")
                 .isEqualTo(responseDto);
 
-        List<BodyPart> bodyParts_ = defaultExercises.get(exercise_id).getBodyParts().stream()
+        List<BodyPart> bodyParts_ = exercises.get(exerciseListId).getBodyParts().stream()
                 .sorted(Comparator.comparingLong(BodyPart::getId))
                 .toList();
         assertThat(bodyParts_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
                 .isEqualTo(responseDto.getBodyParts());
 
-        List<HttpRef> HttpRefs_ = defaultExercises.get(exercise_id).getHttpRefs().stream()
+        List<HttpRef> HttpRefs_ = exercises.get(exerciseListId).getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
         assertThat(HttpRefs_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                 .isEqualTo(responseDto.getHttpRefs());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getExerciseByIdTest_ShouldReturnCustomExerciseAnd200_whenCustomExerciseRequested() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        User user = dataHelper.createUser("one", role, country, null, 20);
+
+        List<BodyPart> bodyParts = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createBodyPart(id))
+                .toList();
+        List<HttpRef> httpRefs = IntStream.rangeClosed(1, 2)
+                .mapToObj(id -> dataHelper.createHttpRef(id, false))
+                .toList();
+
+        List<Exercise> exercises = IntStream.rangeClosed(1, 2)
+                .mapToObj(id ->
+                        dataHelper.createExercise(id, true, false, new HashSet<>(bodyParts), new HashSet<>(httpRefs)))
+                .toList();
+
+        int exerciseListId = 0;
+        dataHelper.userAddExercises(user, new HashSet<>() {
+            {
+                add(exercises.get(exerciseListId));
+            }
+        });
+        long exerciseId = exercises.get(exerciseListId).getId();
+        String REQUEST_URL = URL + "/{exerciseId}";
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(REQUEST_URL, exerciseId).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        ExerciseResponseDto responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<ExerciseResponseDto>() {});
+
+        assertThat(exercises.get(exerciseListId))
+                .usingRecursiveComparison()
+                .ignoringFields("bodyParts", "httpRefs", "users")
+                .isEqualTo(responseDto);
+
+        List<BodyPart> bodyPartsSorted = exercises.get(exerciseListId).getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPart::getId))
+                .toList();
+        assertThat(bodyPartsSorted)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(responseDto.getBodyParts());
+
+        List<HttpRef> HttpRefsSorted = exercises.get(exerciseListId).getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRef::getId))
+                .toList();
+        assertThat(HttpRefsSorted)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(responseDto.getHttpRefs());
+    }
+
+    @Test
+    void getExerciseByIdTest_ShouldReturnErrorMessageNotFoundAnd404_whenDefaultExerciseNotFound() throws Exception {
+        // Given
+        long wrongExerciseId = 1000L;
+        String REQUEST_URL = URL + "/default/{exerciseId}";
+
+        // When
+        mockMvc.perform(get(REQUEST_URL, wrongExerciseId).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.NOT_FOUND.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getExerciseByIdTest_ShouldReturnErrorMessageNotFoundAnd404_whenCustomExerciseNotFound() throws Exception {
+        // Given
+        long wrongExerciseId = 1000L;
+        String REQUEST_URL = URL + "/{exerciseId}";
+
+        // When
+        mockMvc.perform(get(REQUEST_URL, wrongExerciseId).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.NOT_FOUND.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
+    void getExerciseByIdTest_ShouldReturnErrorUserResourceMismatchAnd400_whenRequestedExerciseBelongsToAnotherUser()
+            throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+
+        Exercise exercise1 = dataHelper.createExercise(1, true, false, null, null);
+        User user1 = dataHelper.createUser("one", role, country, Set.of(exercise1), 20);
+
+        Exercise exercise2 = dataHelper.createExercise(2, true, false, null, null);
+        User user2 = dataHelper.createUser("two", role, country, Set.of(exercise2), 20);
+
+        String REQUEST_URL = URL + "/{exerciseId}";
+
+        // When
+        mockMvc.perform(get(REQUEST_URL, exercise2.getId()).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
     }
 }
