@@ -16,7 +16,8 @@ public enum ErrorMessage {
     DEFAULT_MEDIA_REQUESTED("Default media requested"),
     DEFAULT_RESOURCE_IF_NOT_ALLOWED_TO_MODIFY("Default is not allowed to modify"),
     USER_RESOURCE_MISMATCH("User-resource mismatch"),
-    EMPTY_REQUEST("Empty request");
+    EMPTY_REQUEST("Empty request"),
+    DEFAULT_CUSTOM_MISMATCH("Default-custom mismatch");
 
     private final String name;
 

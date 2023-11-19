@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -189,17 +190,33 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     @Transactional
-    public ExerciseResponseDto getDefaultExerciseById(long exerciseId) {
-        ExerciseResponseDto exerciseRespondDto =
-                modelMapper.map(exerciseRepository.findDefaultById(exerciseId), ExerciseResponseDto.class);
+    public ExerciseResponseDto getExerciseById(long exerciseId, boolean requiredDefault, Long userId) {
+        Optional<Exercise> exerciseOptional = exerciseRepository.findById(exerciseId);
+        if (exerciseOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND);
+
+        Exercise exercise = exerciseOptional.get();
+        if ((exercise.isCustom() && requiredDefault) || (!exercise.isCustom() && !requiredDefault))
+            throw new ApiException(ErrorMessage.DEFAULT_CUSTOM_MISMATCH, HttpStatus.BAD_REQUEST);
+
+        if (nonNull(userId)) {
+            User user = userService.getUserById(userId);
+            if (exercise.isCustom() && !user.getExercises().contains(exercise))
+                throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+        }
+
+        ExerciseResponseDto exerciseRespondDto = modelMapper.map(exercise, ExerciseResponseDto.class);
+
         List<BodyPartResponseDto> bodyPartsSorted = exerciseRespondDto.getBodyParts().stream()
                 .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
                 .toList();
+
         List<HttpRefResponseDto> httpRefsSorted = exerciseRespondDto.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
                 .toList();
+
         exerciseRespondDto.setBodyParts(bodyPartsSorted);
         exerciseRespondDto.setHttpRefs(httpRefsSorted);
+
         return exerciseRespondDto;
     }
 }

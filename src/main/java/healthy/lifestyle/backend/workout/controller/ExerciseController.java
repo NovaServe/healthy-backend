@@ -26,20 +26,28 @@ public class ExerciseController {
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<ExerciseResponseDto> createExercise(@RequestBody CreateExerciseRequestDto requestDto) {
+    public ResponseEntity<ExerciseResponseDto> createCustomExercise(@RequestBody CreateExerciseRequestDto requestDto) {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         return new ResponseEntity<>(exerciseService.createExercise(requestDto, userId), HttpStatus.CREATED);
     }
 
+    @GetMapping("/default/{exercise_id}")
+    public ResponseEntity<ExerciseResponseDto> getDefaultExerciseById(@PathVariable("exercise_id") long exercise_id) {
+        return ResponseEntity.ok(exerciseService.getExerciseById(exercise_id, true, null));
+    }
+
+    @GetMapping("/{exercise_id}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<ExerciseResponseDto> getCustomExerciseById(@PathVariable("exercise_id") long exercise_id) {
+        Long userId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        return ResponseEntity.ok(exerciseService.getExerciseById(exercise_id, false, userId));
+    }
+
     @GetMapping("/default")
     public ResponseEntity<List<ExerciseResponseDto>> getDefaultExercises() {
         return ResponseEntity.ok(exerciseService.getDefaultExercises());
-    }
-
-    @GetMapping("/default/{exercise_id}")
-    public ResponseEntity<ExerciseResponseDto> getExerciseById(@PathVariable("exercise_id") long exercise_id) {
-        return ResponseEntity.ok(exerciseService.getDefaultExerciseById(exercise_id));
     }
 
     @GetMapping

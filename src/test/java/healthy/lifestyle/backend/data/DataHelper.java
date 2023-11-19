@@ -151,6 +151,12 @@ public class DataHelper {
                 .build());
     }
 
+    public User createUser(String seed, Set<Exercise> exercises) {
+        Role role = createRole("ROLE_USER");
+        Country country = createCountry(1);
+        return createUser(seed, role, country, exercises, 20);
+    }
+
     public User getUserById(Long id) {
         return userRepository.getReferenceById(id);
     }
