@@ -2,7 +2,9 @@ package healthy.lifestyle.backend.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.springframework.stereotype.Component;
 
+@Component
 public class UsernameValidator implements ConstraintValidator<UsernameValidation, String> {
     @Override
     public void initialize(UsernameValidation constraintAnnotation) {

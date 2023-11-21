@@ -12,6 +12,7 @@ import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.repository.CountryRepository;
 import healthy.lifestyle.backend.users.repository.RoleRepository;
 import healthy.lifestyle.backend.users.repository.UserRepository;
+import healthy.lifestyle.backend.validation.*;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.Workout;
 import jakarta.persistence.EntityNotFoundException;
@@ -36,6 +37,11 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final ModelMapper modelMapper;
+    private final PasswordValidator passwordValidator;
+    private final EmailValidator emailValidator;
+    private final FullnameValidator fullnameValidator;
+    private final UsernameValidator usernameValidator;
+    private final AgeValidator ageValidator;
 
     public UserServiceImpl(
             UserRepository userRepository,
@@ -44,7 +50,12 @@ public class UserServiceImpl implements UserService {
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
             JwtTokenProvider jwtTokenProvider,
-            ModelMapper modelMapper) {
+            ModelMapper modelMapper,
+            PasswordValidator passwordValidator,
+            EmailValidator emailValidator,
+            FullnameValidator fullnameValidator,
+            UsernameValidator usernameValidator,
+            AgeValidator ageValidator) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.countryRepository = countryRepository;
@@ -52,6 +63,11 @@ public class UserServiceImpl implements UserService {
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
         this.modelMapper = modelMapper;
+        this.passwordValidator = passwordValidator;
+        this.emailValidator = emailValidator;
+        this.fullnameValidator = fullnameValidator;
+        this.usernameValidator = usernameValidator;
+        this.ageValidator = ageValidator;
     }
 
     @Override
@@ -146,28 +162,48 @@ public class UserServiceImpl implements UserService {
         if (nonNull(requestDto.getUpdatedUsername())
                 && !requestDto.getUpdatedUsername().isEmpty()
                 && !requestDto.getUpdatedUsername().equals(user.getUsername())) {
-            user.setUsername(requestDto.getUpdatedUsername());
+            if (usernameValidator.validation(requestDto.getUpdatedUsername())) {
+                user.setUsername(requestDto.getUpdatedUsername());
+            } else {
+                throw new ApiException(ErrorMessage.INVALID_SYMBOLS, HttpStatus.BAD_REQUEST);
+            }
         }
 
         if (nonNull(requestDto.getUpdatedEmail())
                 && !requestDto.getUpdatedEmail().isEmpty()
                 && !requestDto.getUpdatedEmail().equals(user.getEmail())) {
-            user.setEmail(requestDto.getUpdatedEmail());
+            if (emailValidator.validation(requestDto.getUpdatedEmail())) {
+                user.setEmail(requestDto.getUpdatedEmail());
+            } else {
+                throw new ApiException(ErrorMessage.INVALID_SYMBOLS, HttpStatus.BAD_REQUEST);
+            }
         }
 
         if (nonNull(requestDto.getUpdatedPassword())
                 && !requestDto.getUpdatedPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(requestDto.getUpdatedPassword()));
+            if (passwordValidator.validation(requestDto.getUpdatedPassword())) {
+                user.setPassword(passwordEncoder.encode(requestDto.getUpdatedPassword()));
+            } else {
+                throw new ApiException(ErrorMessage.INVALID_SYMBOLS, HttpStatus.BAD_REQUEST);
+            }
         }
 
         if (nonNull(requestDto.getUpdatedFullName())
                 && !requestDto.getUpdatedFullName().isEmpty()
                 && !requestDto.getUpdatedFullName().equals(user.getFullName())) {
-            user.setFullName(requestDto.getUpdatedFullName());
+            if (fullnameValidator.validation(requestDto.getUpdatedFullName())) {
+                user.setFullName(requestDto.getUpdatedFullName());
+            } else {
+                throw new ApiException(ErrorMessage.INVALID_SYMBOLS, HttpStatus.BAD_REQUEST);
+            }
         }
 
         if (nonNull(requestDto.getUpdatedAge()) && !requestDto.getUpdatedAge().equals(user.getAge())) {
-            user.setAge(requestDto.getUpdatedAge());
+            if (ageValidator.validation(requestDto.getUpdatedAge())) {
+                user.setAge(requestDto.getUpdatedAge());
+            } else {
+                throw new ApiException(ErrorMessage.INVALID_SYMBOLS, HttpStatus.BAD_REQUEST);
+            }
         }
 
         return modelMapper.map(userRepository.save(user), UserResponseDto.class);

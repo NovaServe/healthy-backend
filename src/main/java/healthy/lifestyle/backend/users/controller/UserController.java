@@ -10,7 +10,6 @@ import healthy.lifestyle.backend.users.dto.UserResponseDto;
 import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.users.service.CountryService;
 import healthy.lifestyle.backend.users.service.UserService;
-import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +40,7 @@ public class UserController {
     @PatchMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<UserResponseDto> updateUser(
-            @PathVariable("userId") Long userId, @Valid @RequestBody UpdateUserRequestDto requestDto) {
+            @PathVariable("userId") Long userId, @RequestBody UpdateUserRequestDto requestDto) {
         Long authenticatedUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))

@@ -2,7 +2,9 @@ package healthy.lifestyle.backend.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.springframework.stereotype.Component;
 
+@Component
 public class EmailValidator implements ConstraintValidator<EmailValidation, String> {
     @Override
     public void initialize(EmailValidation constraintAnnotation) {

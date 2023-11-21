@@ -19,6 +19,7 @@ import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.repository.CountryRepository;
 import healthy.lifestyle.backend.users.repository.RoleRepository;
 import healthy.lifestyle.backend.users.repository.UserRepository;
+import healthy.lifestyle.backend.validation.*;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +53,21 @@ class UserServiceTest {
 
     @Spy
     ModelMapper modelMapper;
+
+    @Spy
+    private UsernameValidator usernameValidator;
+
+    @Spy
+    private EmailValidator emailValidator;
+
+    @Spy
+    private FullnameValidator fullnameValidator;
+
+    @Spy
+    private PasswordValidator passwordValidator;
+
+    @Spy
+    private AgeValidator ageValidator;
 
     @Test
     void createUserTest_shouldReturnUserDto() {
@@ -105,6 +121,47 @@ class UserServiceTest {
         assertEquals(25, updatedUserResponse.getAge());
         assertEquals(1L, updatedUserResponse.getCountryId());
         assertEquals(user.getId(), updatedUserResponse.getId());
+    }
+
+    @Test
+    void updateUserTest_shouldReturnServerErrorAnd500_whenUserNotFound() {
+        // Given
+        User user = dataUtil.createUserEntity(2L);
+        UpdateUserRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one", 1L, 25);
+        when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
+
+        // When
+        ApiException exception =
+                assertThrows(ApiException.class, () -> userService.updateUser(user.getId(), updateUserRequestDto));
+
+        // Then
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(modelMapper, never()).map(any(), eq(UserResponseDto.class));
+        assertEquals(ErrorMessage.SERVER_ERROR.getName(), exception.getMessage());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatus());
+    }
+
+    @Test
+    void updateUserTest_shouldReturn400_whenInvalidSymbol() {
+        // Given
+        Country country = Country.builder().id(1L).name("Country").build();
+        User user = dataUtil.createUserEntity(1L);
+        user.setCountry(country);
+
+        UpdateUserRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one1", 1L, 3);
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(countryRepository.findById(updateUserRequestDto.getUpdatedCountryId()))
+                .thenReturn(Optional.of(country));
+
+        // When
+        ApiException exception =
+                assertThrows(ApiException.class, () -> userService.updateUser(user.getId(), updateUserRequestDto));
+
+        // Then
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(modelMapper, never()).map(any(), eq(UserResponseDto.class));
+        assertEquals(ErrorMessage.INVALID_SYMBOLS.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
     @Test
