@@ -2,8 +2,7 @@ package healthy.lifestyle.backend.users.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -170,6 +169,224 @@ public class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenUsernameHasInvalidSymbol() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 20;
+        User user = dataHelper.createUser("two", role, country, null, age);
+        Country updatedCountry = dataHelper.createCountry(2);
+        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        requestDto.setUpdatedUsername("two2/&%*)_-=+!@");
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.updatedUsername", is("Not allowed symbols")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenUsernameOutOfSize() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 20;
+        User user = dataHelper.createUser("two", role, country, null, age);
+        Country updatedCountry = dataHelper.createCountry(2);
+        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        requestDto.setUpdatedUsername("two");
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.updatedUsername", is("size must be between 6 and 20")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenEmailHasInvalidSymbol() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 20;
+        User user = dataHelper.createUser("two", role, country, null, age);
+        Country updatedCountry = dataHelper.createCountry(2);
+        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        requestDto.setUpdatedEmail("two2/*&");
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.updatedEmail", is("Not allowed symbols")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenFullNameHasInvalidSymbol() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 20;
+        User user = dataHelper.createUser("two", role, country, null, age);
+        Country updatedCountry = dataHelper.createCountry(2);
+        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        requestDto.setUpdatedFullName("two2/*&");
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.updatedFullName", is("Not allowed symbols")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenPasswordOutOfSize() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 20;
+        User user = dataHelper.createUser("two", role, country, null, age);
+        Country updatedCountry = dataHelper.createCountry(2);
+        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        requestDto.setUpdatedPassword(" ");
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.updatedPassword", is("size must be between 10 and 64")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenPasswordHasInvalidSymbol() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 20;
+        User user = dataHelper.createUser("two", role, country, null, age);
+        Country updatedCountry = dataHelper.createCountry(2);
+        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        requestDto.setUpdatedPassword("   ???//////// ");
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.updatedPassword", is("Not allowed symbols")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenPasswordAndConfirmPasswordNotEquals() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 20;
+        User user = dataHelper.createUser("two", role, country, null, age);
+        Country updatedCountry = dataHelper.createCountry(2);
+        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        requestDto.setUpdatedPassword("PasswordConfirm");
+        requestDto.setUpdatedConfirmPassword("PasswordNotConfirm");
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andDo(print());
+
+        assertNotEquals(requestDto.getUpdatedPassword(), requestDto.getUpdatedConfirmPassword());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenAgeOutOfRange() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 20;
+        User user = dataHelper.createUser("two", role, country, null, age);
+        Country updatedCountry = dataHelper.createCountry(2);
+        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        requestDto.setUpdatedAge(3);
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.updatedAge", is("Not allowed age, should be in 5-200")))
                 .andDo(print());
     }
 
