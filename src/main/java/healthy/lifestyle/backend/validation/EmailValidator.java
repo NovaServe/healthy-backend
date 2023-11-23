@@ -1,10 +1,10 @@
 package healthy.lifestyle.backend.validation;
 
+import static java.util.Objects.nonNull;
+
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import org.springframework.stereotype.Component;
 
-@Component
 public class EmailValidator implements ConstraintValidator<EmailValidation, String> {
     @Override
     public void initialize(EmailValidation constraintAnnotation) {
@@ -17,12 +17,14 @@ public class EmailValidator implements ConstraintValidator<EmailValidation, Stri
     }
 
     public boolean validation(String input) {
-        String trim = input.trim();
-        char[] notAllowed = new char[] {
-            '!', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', ',', '<', '>', '?', '\\', '/', '`', '~', ' '
-        };
-        for (char ch : notAllowed) {
-            if (trim.indexOf(ch) != -1) return false;
+        if (nonNull(input)) {
+            String trim = input.trim();
+            char[] notAllowed = new char[] {
+                '!', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', ',', '<', '>', '?', '\\', '/', '`', '~', ' '
+            };
+            for (char ch : notAllowed) {
+                if (trim.indexOf(ch) != -1) return false;
+            }
         }
         return true;
     }

@@ -4,9 +4,7 @@ import static java.util.Objects.nonNull;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import org.springframework.stereotype.Component;
 
-@Component
 public class AgeValidator implements ConstraintValidator<AgeValidation, Integer> {
     @Override
     public void initialize(AgeValidation constraintAnnotation) {

@@ -19,7 +19,6 @@ import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.repository.CountryRepository;
 import healthy.lifestyle.backend.users.repository.RoleRepository;
 import healthy.lifestyle.backend.users.repository.UserRepository;
-import healthy.lifestyle.backend.validation.*;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,21 +52,6 @@ class UserServiceTest {
 
     @Spy
     ModelMapper modelMapper;
-
-    @Spy
-    private UsernameValidator usernameValidator;
-
-    @Spy
-    private EmailValidator emailValidator;
-
-    @Spy
-    private FullnameValidator fullnameValidator;
-
-    @Spy
-    private PasswordValidator passwordValidator;
-
-    @Spy
-    private AgeValidator ageValidator;
 
     @Test
     void createUserTest_shouldReturnUserDto() {
@@ -142,13 +126,14 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUserTest_shouldReturn400_whenInvalidSymbol() {
+    void updateUserTest_shouldReturn400_whenPasswordsMismatch() {
         // Given
         Country country = Country.builder().id(1L).name("Country").build();
         User user = dataUtil.createUserEntity(1L);
         user.setCountry(country);
 
         UpdateUserRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one1", 1L, 3);
+        updateUserRequestDto.setUpdatedConfirmPassword("one");
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(countryRepository.findById(updateUserRequestDto.getUpdatedCountryId()))
                 .thenReturn(Optional.of(country));

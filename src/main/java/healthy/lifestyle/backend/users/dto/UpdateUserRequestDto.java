@@ -10,12 +10,6 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-@FieldsValueMatch.List({
-    @FieldsValueMatch(
-            field = "updatedPassword",
-            fieldMatch = "updatedConfirmPassword",
-            message = "Passwords don't match")
-})
 public class UpdateUserRequestDto {
     @Size(min = 6, max = 20)
     @UsernameValidation
