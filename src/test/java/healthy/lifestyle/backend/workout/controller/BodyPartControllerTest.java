@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import healthy.lifestyle.backend.data.BodyPartJpaTestBuilder;
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
@@ -44,6 +45,9 @@ class BodyPartControllerTest {
 
     @Autowired
     DataHelper dataHelper;
+
+    @Autowired
+    BodyPartJpaTestBuilder bodyPartJpaTestBuilder;
 
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
@@ -90,6 +94,27 @@ class BodyPartControllerTest {
         assertEquals(bodyPart1.getName(), responseDto.get(0).getName());
         assertEquals(bodyPart2.getId(), responseDto.get(1).getId());
         assertEquals(bodyPart2.getName(), responseDto.get(1).getName());
+    }
+
+    @Test
+    void getBodyPartsTest_shouldReturnBodyPartsDtoListAnd200_whenAllBodyPartsRequested() throws Exception {
+        // Given
+        BodyPartJpaTestBuilder.BodyPartWrapper bodyPartsWrapper = bodyPartJpaTestBuilder.getWrapper();
+        bodyPartsWrapper.setSeed(1).setAmountOfEntities(2).buildBodyPartsList();
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        List<BodyPartResponseDto> responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<List<BodyPartResponseDto>>() {});
+
+        assertEquals(bodyPartsWrapper.size(), responseDto.size());
+        assertThat(responseDto).usingRecursiveComparison().isEqualTo(bodyPartsWrapper.getBodyPartsSorted());
     }
 
     @Test

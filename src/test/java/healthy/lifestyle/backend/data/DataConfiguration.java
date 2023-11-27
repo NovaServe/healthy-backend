@@ -14,4 +14,24 @@ public class DataConfiguration {
     public DataUtil dataUtil() {
         return new DataUtil();
     }
+
+    @Bean
+    public BodyPartJpaTestBuilder bodyPartJpaTestBuilder() {
+        return new BodyPartJpaTestBuilder();
+    }
+
+    @Bean
+    public ExerciseJpaTestBuilder exerciseJpaTestBuilder() {
+        return new ExerciseJpaTestBuilder();
+    }
+
+    @Bean
+    public UserJpaTestBuilder userJpaTestBuilder() {
+        return new UserJpaTestBuilder();
+    }
+
+    @Bean
+    public ExerciseDtoTestBuilder exerciseDtoTestBuilder() {
+        return new ExerciseDtoTestBuilder();
+    }
 }

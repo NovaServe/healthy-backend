@@ -135,7 +135,7 @@ public class DataHelper {
     }
 
     public Role createRole(String name) {
-        return roleRepository.save(new Role(name));
+        return roleRepository.save(Role.builder().name(name).build());
     }
 
     public User createUser(String seed, Role role, Country country, Set<Exercise> exercises, Integer age) {

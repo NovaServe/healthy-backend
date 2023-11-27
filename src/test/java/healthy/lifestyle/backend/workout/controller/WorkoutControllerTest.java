@@ -23,7 +23,6 @@ import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.CreateWorkoutRequestDto;
-import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.workout.dto.UpdateWorkoutRequestDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -31,7 +30,6 @@ import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.model.Workout;
 import java.util.*;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,8 +39,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -69,11 +65,6 @@ class WorkoutControllerTest {
 
     @Autowired
     DataUtil dataUtil;
-
-    @Autowired
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
@@ -590,18 +581,19 @@ class WorkoutControllerTest {
     @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
     void updateCustomWorkoutTest_shouldReturnWorkoutResponseDtoAnd200_whenValidRequestProvided() throws Exception {
         // Given
-        List<BodyPart> bodyParts = IntStream.rangeClosed(0, 3)
-                .mapToObj(id -> dataHelper.createBodyPart(id))
-                .toList();
-        List<HttpRef> httpRefs = IntStream.rangeClosed(0, 3)
-                .mapToObj(id -> dataHelper.createHttpRef(id, true))
-                .toList();
-        List<Exercise> exercises = IntStream.rangeClosed(0, 3)
-                .mapToObj(id ->
-                        dataHelper.createExercise(id, true, true, Set.of(bodyParts.get(id)), Set.of(httpRefs.get(id))))
-                .toList();
-        exercises.get(3).setCustom(false);
-        dataHelper.updateExercise(exercises.get(3));
+        BodyPart bodyPart1 = dataHelper.createBodyPart(1);
+        BodyPart bodyPart2 = dataHelper.createBodyPart(2);
+        BodyPart bodyPart3 = dataHelper.createBodyPart(3);
+        BodyPart bodyPart4 = dataHelper.createBodyPart(4);
+        HttpRef httpRef1 = dataHelper.createHttpRef(1, true);
+        HttpRef httpRef2 = dataHelper.createHttpRef(2, true);
+        HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
+        HttpRef httpRef4 = dataHelper.createHttpRef(4, false);
+
+        Exercise exercise1 = dataHelper.createExercise(1, true, true, Set.of(bodyPart1), Set.of(httpRef1));
+        Exercise exercise2 = dataHelper.createExercise(2, true, true, Set.of(bodyPart2), Set.of(httpRef2));
+        Exercise exercise3 = dataHelper.createExercise(3, true, true, Set.of(bodyPart3), Set.of(httpRef3));
+        Exercise exercise4 = dataHelper.createExercise(4, false, true, Set.of(bodyPart4), Set.of(httpRef4));
 
         Role role = dataHelper.createRole("ROLE_USER");
         Country country1 = dataHelper.createCountry(1);
@@ -611,16 +603,18 @@ class WorkoutControllerTest {
                 country1,
                 new HashSet<>() {
                     {
-                        add(exercises.get(0));
-                        add(exercises.get(1));
-                        add(exercises.get(2));
+                        add(exercise1);
+                        add(exercise2);
+                        add(exercise3);
+                        add(exercise4);
                     }
                 },
                 20);
+
         Workout workout = dataHelper.createWorkout(1, true, new HashSet<>() {
             {
-                add(exercises.get(0));
-                add(exercises.get(1));
+                add(exercise1);
+                add(exercise2);
             }
         });
         dataHelper.userAddWorkout(user, new HashSet<>() {
@@ -629,13 +623,8 @@ class WorkoutControllerTest {
             }
         });
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(
-                1,
-                List.of(
-                        exercises.get(0).getId(),
-                        exercises.get(1).getId(),
-                        exercises.get(2).getId(),
-                        exercises.get(3).getId()));
+        UpdateWorkoutRequestDto requestDto =
+                dataUtil.updateWorkoutRequestDto(1, List.of(exercise2.getId(), exercise3.getId(), exercise4.getId()));
 
         String REQUEST_URL = URL + "/{workoutId}";
 
@@ -659,27 +648,47 @@ class WorkoutControllerTest {
 
         assertThat(responseDto.getBodyParts())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(bodyParts);
+                .isEqualTo(List.of(bodyPart2, bodyPart3, bodyPart4));
 
         assertThat(responseDto.getExercises())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("users", "httpRefs", "bodyParts")
-                .isEqualTo(exercises);
+                .isEqualTo(List.of(exercise2, exercise3, exercise4));
 
-        IntStream.range(0, exercises.size()).forEach(id -> {
-            ExerciseResponseDto exerciseResponseDto = responseDto.getExercises().get(id);
+        assertThat(responseDto.getExercises().get(0).getBodyParts())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exercise2.getBodyParts().stream()
+                        .sorted(Comparator.comparingLong(BodyPart::getId))
+                        .toList());
 
-            assertThat(exerciseResponseDto.getBodyParts())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                    .isEqualTo(exercises.get(id).getBodyParts().stream()
-                            .sorted(Comparator.comparingLong(BodyPart::getId))
-                            .toList());
+        assertThat(responseDto.getExercises().get(1).getBodyParts())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exercise3.getBodyParts().stream()
+                        .sorted(Comparator.comparingLong(BodyPart::getId))
+                        .toList());
 
-            assertThat(exerciseResponseDto.getHttpRefs())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                    .isEqualTo(exercises.get(id).getHttpRefs().stream()
-                            .sorted(Comparator.comparingLong(HttpRef::getId))
-                            .toList());
-        });
+        assertThat(responseDto.getExercises().get(2).getBodyParts())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(exercise4.getBodyParts().stream()
+                        .sorted(Comparator.comparingLong(BodyPart::getId))
+                        .toList());
+
+        assertThat(responseDto.getExercises().get(0).getHttpRefs())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(exercise2.getHttpRefs().stream()
+                        .sorted(Comparator.comparingLong(HttpRef::getId))
+                        .toList());
+
+        assertThat(responseDto.getExercises().get(1).getHttpRefs())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(exercise3.getHttpRefs().stream()
+                        .sorted(Comparator.comparingLong(HttpRef::getId))
+                        .toList());
+
+        assertThat(responseDto.getExercises().get(2).getHttpRefs())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(exercise4.getHttpRefs().stream()
+                        .sorted(Comparator.comparingLong(HttpRef::getId))
+                        .toList());
     }
 
     @Test

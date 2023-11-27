@@ -61,7 +61,7 @@ class UserServiceTest {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
 
-        Role role = new Role.Builder().id(1L).name("ROLE_USER").build();
+        Role role = Role.builder().id(1L).name("ROLE_USER").build();
         when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.ofNullable(role));
         Country country = Country.builder().id(1L).name("Country").build();
         when(countryRepository.getReferenceById(1L)).thenReturn(country);
