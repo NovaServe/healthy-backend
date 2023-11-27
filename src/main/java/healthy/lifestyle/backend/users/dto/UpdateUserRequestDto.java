@@ -10,6 +10,12 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
+@PasswordsMatchValidation.List({
+    @PasswordsMatchValidation(
+            password = "updatedPassword",
+            confirmPassword = "updatedConfirmPassword",
+            message = "Passwords must match")
+})
 public class UpdateUserRequestDto {
     @Size(min = 6, max = 20)
     @UsernameValidation

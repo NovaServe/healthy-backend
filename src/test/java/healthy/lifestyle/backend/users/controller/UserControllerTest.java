@@ -239,7 +239,7 @@ public class UserControllerTest {
         User user = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-        requestDto.setUpdatedEmail("two2/*&");
+        requestDto.setUpdatedEmail("!@gmail.com");
 
         String REQUEST_URL = URL + "/{userId}";
 
@@ -250,6 +250,33 @@ public class UserControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.updatedEmail", is("Not allowed symbols")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(
+            username = "username-one",
+            password = "password-one",
+            authorities = {"ROLE_USER"})
+    void updateUserTest_shouldReturnErrorMessageAnd400_whenEmailNotWellFormed() throws Exception {
+        // Given
+        Role role = dataHelper.createRole("ROLE_USER");
+        Country country = dataHelper.createCountry(1);
+        Integer age = 20;
+        User user = dataHelper.createUser("two", role, country, null, age);
+        Country updatedCountry = dataHelper.createCountry(2);
+        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        requestDto.setUpdatedEmail("secondUser");
+
+        String REQUEST_URL = URL + "/{userId}";
+
+        // When
+        mockMvc.perform(patch(REQUEST_URL, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.updatedEmail", is("must be a well-formed email address")))
                 .andDo(print());
     }
 

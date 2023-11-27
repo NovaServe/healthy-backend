@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.users.service;
 
 import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
@@ -143,22 +144,19 @@ public class UserServiceImpl implements UserService {
             user.setCountry(countryOptional.get());
         }
 
-        if (notEmptyUserData(requestDto.getUpdatedUsername())) {
+        if (isNotBlank(requestDto.getUpdatedUsername())) {
             user.setUsername(requestDto.getUpdatedUsername());
         }
 
-        if (notEmptyUserData(requestDto.getUpdatedEmail())) {
+        if (isNotBlank(requestDto.getUpdatedEmail())) {
             user.setEmail(requestDto.getUpdatedEmail());
         }
 
-        if (notEmptyUserData(requestDto.getUpdatedPassword())) {
-            if (!requestDto.getUpdatedPassword().equals(requestDto.getUpdatedConfirmPassword())) {
-                throw new ApiException(ErrorMessage.INVALID_SYMBOLS, HttpStatus.BAD_REQUEST);
-            }
+        if (isNotBlank(requestDto.getUpdatedPassword())) {
             user.setPassword(passwordEncoder.encode(requestDto.getUpdatedPassword()));
         }
 
-        if (notEmptyUserData(requestDto.getUpdatedFullName())) {
+        if (isNotBlank(requestDto.getUpdatedFullName())) {
             user.setFullName(requestDto.getUpdatedFullName());
         }
 
@@ -187,9 +185,5 @@ public class UserServiceImpl implements UserService {
         if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
 
         return modelMapper.map(userOptional.get(), UserResponseDto.class);
-    }
-
-    private boolean notEmptyUserData(String input) {
-        return nonNull(input) && !input.isEmpty();
     }
 }
