@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.data;
+package healthy.lifestyle.backend.data.exercise;
 
 import healthy.lifestyle.backend.workout.dto.ExerciseUpdateRequestDto;
 import java.lang.reflect.Field;
@@ -9,14 +9,14 @@ import org.springframework.boot.test.context.TestComponent;
 
 @TestComponent
 public class ExerciseDtoTestBuilder {
-    public <T> ExerciseDtoWrapper<T> getWrapper() {
-        return new ExerciseDtoWrapper<>();
+    public <T> ExerciseDtoWrapper<T> getWrapper(Class<T> type) {
+        return new ExerciseDtoWrapper<>(type);
     }
 
     public static class ExerciseDtoWrapper<T> {
         private T dto;
 
-        private long id;
+        private Class<T> type;
 
         private String title;
 
@@ -32,30 +32,12 @@ public class ExerciseDtoTestBuilder {
 
         private List<Long> bodyPartsIds;
 
-        public String getSeed() {
-            return seed;
+        public ExerciseDtoWrapper(Class<T> type) {
+            this.type = type;
         }
 
-        /**
-         * ExerciseUpdateRequestDto
-         */
-        public ExerciseDtoWrapper<T> setId(long id) {
-            this.id = id;
-            return this;
-        }
-
-        public ExerciseDtoWrapper<T> setTitle(String title) {
-            this.title = title;
-            return this;
-        }
-
-        public ExerciseDtoWrapper<T> setDescription(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public ExerciseDtoWrapper<T> setCustom(boolean custom) {
-            isCustom = custom;
+        public ExerciseDtoWrapper<T> setCustom(boolean isCustom) {
+            this.isCustom = isCustom;
             return this;
         }
 
@@ -79,36 +61,36 @@ public class ExerciseDtoTestBuilder {
             return this;
         }
 
-        public ExerciseDtoWrapper<T> buildUpdateExerciseDto() {
+        public ExerciseDtoWrapper<T> buildExerciseUpdateRequestDto() {
             if (this.seed == null || this.needsEquipment == null || this.mediasIds == null || this.bodyPartsIds == null)
                 throw new IllegalStateException("Not all required parameters are set");
 
-            this.dto = (T) ExerciseUpdateRequestDto.builder()
+            this.dto = this.type.cast(ExerciseUpdateRequestDto.builder()
                     .title("Title " + seed)
                     .description("Description " + seed)
                     .needsEquipment(this.needsEquipment)
                     .httpRefIds(this.mediasIds)
                     .bodyPartIds(this.bodyPartsIds)
-                    .build();
+                    .build());
             return this;
         }
 
-        public ExerciseDtoWrapper<T> buildEmptyUpdateExerciseDto() {
-            this.dto = (T) ExerciseUpdateRequestDto.builder()
+        public ExerciseDtoWrapper<T> buildEmptyExerciseUpdateRequestDto() {
+            this.dto = this.type.cast(ExerciseUpdateRequestDto.builder()
                     .title(null)
                     .description(null)
                     .needsEquipment(null)
                     .httpRefIds(Collections.emptyList())
                     .bodyPartIds(Collections.emptyList())
-                    .build();
+                    .build());
             return this;
         }
 
-        public ExerciseDtoWrapper<T> buildRandomUpdateExerciseDto() {
+        public ExerciseDtoWrapper<T> buildRandomExerciseUpdateRequestDto() {
             int intRand = ThreadLocalRandom.current().nextInt(10, 20);
             boolean boolRand = ThreadLocalRandom.current().nextInt(0, 1) != 0;
 
-            this.dto = (T) ExerciseUpdateRequestDto.builder()
+            this.dto = type.cast(ExerciseUpdateRequestDto.builder()
                     .title("Title " + intRand)
                     .description("Description " + intRand)
                     .needsEquipment(boolRand)
@@ -116,7 +98,7 @@ public class ExerciseDtoTestBuilder {
                             ThreadLocalRandom.current().nextInt(11, 20)))
                     .bodyPartIds(List.of((long) ThreadLocalRandom.current().nextInt(1, 10), (long)
                             ThreadLocalRandom.current().nextInt(11, 20)))
-                    .build();
+                    .build());
             return this;
         }
 

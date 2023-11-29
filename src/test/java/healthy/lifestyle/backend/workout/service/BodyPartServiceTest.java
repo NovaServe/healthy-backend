@@ -5,8 +5,8 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.data.BodyPartTestBuilder;
 import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.data.bodypart.BodyPartTestBuilder;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
@@ -58,8 +58,8 @@ class BodyPartServiceTest {
     void getBodyPartsTest_shouldReturnAllBodyParts() {
         // Given
         BodyPartTestBuilder.BodyPartWrapper bodyPartWrapper = bodyPartTestBuilder.getWrapper();
-        bodyPartWrapper.setAmountOfEntities(2).setStartId(1).buildBodyPartsList();
-        when(bodyPartRepository.findAll()).thenReturn(bodyPartWrapper.getEntities());
+        bodyPartWrapper.setAmountOfEntities(2).setIdOrSeed(1).buildList();
+        when(bodyPartRepository.findAll()).thenReturn(bodyPartWrapper.getAll());
 
         // When
         List<BodyPartResponseDto> bodyPartsActual = bodyPartService.getBodyParts();
@@ -67,7 +67,7 @@ class BodyPartServiceTest {
         // Then
         verify(bodyPartRepository, times(1)).findAll();
         org.hamcrest.MatcherAssert.assertThat(bodyPartsActual, hasSize(bodyPartWrapper.size()));
-        assertThat(bodyPartWrapper.getEntities())
+        assertThat(bodyPartWrapper.getAll())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
                 .isEqualTo(bodyPartsActual);
     }

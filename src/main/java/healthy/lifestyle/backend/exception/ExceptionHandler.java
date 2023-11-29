@@ -64,9 +64,7 @@ public class ExceptionHandler<T> {
             return new ExceptionNested<>(type);
         }
 
-        /**
-         * Messages
-         */
+        // Messages
         public ExceptionNested<T> messageNotFound() {
             this.message = ErrorMessage.NOT_FOUND;
             return this;
@@ -74,6 +72,11 @@ public class ExceptionHandler<T> {
 
         public ExceptionNested<T> messageEmptyRequest() {
             this.message = ErrorMessage.EMPTY_REQUEST;
+            return this;
+        }
+
+        public ExceptionNested<T> messageNoUpdatesRequest() {
+            this.message = ErrorMessage.NO_UPDATES_REQUEST;
             return this;
         }
 
@@ -92,9 +95,22 @@ public class ExceptionHandler<T> {
             return this;
         }
 
-        /**
-         * Status codes
-         */
+        public ExceptionNested<T> messageTitlesAreNotDifferent() {
+            this.message = ErrorMessage.TITLES_ARE_NOT_DIFFERENT;
+            return this;
+        }
+
+        public ExceptionNested<T> messageDescriptionsAreNotDifferent() {
+            this.message = ErrorMessage.DESCRIPTIONS_ARE_NOT_DIFFERENT;
+            return this;
+        }
+
+        public ExceptionNested<T> messageNeedsEquipmentAreNotDifferent() {
+            this.message = ErrorMessage.NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT;
+            return this;
+        }
+
+        // Status codes
         public ExceptionNested<T> statusNotFound() {
             this.httpStatus = HttpStatus.NOT_FOUND;
             return this;

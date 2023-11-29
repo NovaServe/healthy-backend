@@ -10,9 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.data.BodyPartJpaTestBuilder;
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
+import healthy.lifestyle.backend.data.bodypart.BodyPartJpaTestBuilder;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import java.util.List;
@@ -100,7 +100,7 @@ class BodyPartControllerTest {
     void getBodyPartsTest_shouldReturnBodyPartsDtoListAnd200_whenAllBodyPartsRequested() throws Exception {
         // Given
         BodyPartJpaTestBuilder.BodyPartWrapper bodyPartsWrapper = bodyPartJpaTestBuilder.getWrapper();
-        bodyPartsWrapper.setSeed(1).setAmountOfEntities(2).buildBodyPartsList();
+        bodyPartsWrapper.setIdOrSeed(1).setAmountOfEntities(2).buildList();
 
         // When
         MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
@@ -114,7 +114,7 @@ class BodyPartControllerTest {
                 objectMapper.readValue(responseContent, new TypeReference<List<BodyPartResponseDto>>() {});
 
         assertEquals(bodyPartsWrapper.size(), responseDto.size());
-        assertThat(responseDto).usingRecursiveComparison().isEqualTo(bodyPartsWrapper.getBodyPartsSorted());
+        assertThat(responseDto).usingRecursiveComparison().isEqualTo(bodyPartsWrapper.getAll());
     }
 
     @Test

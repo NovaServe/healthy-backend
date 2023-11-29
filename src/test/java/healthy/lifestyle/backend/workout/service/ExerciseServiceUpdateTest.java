@@ -1,7 +1,6 @@
 package healthy.lifestyle.backend.workout.service;
 
 import static java.util.Objects.nonNull;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,9 +10,13 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.times;
 
 import healthy.lifestyle.backend.data.*;
+import healthy.lifestyle.backend.data.bodypart.BodyPartTestBuilder;
+import healthy.lifestyle.backend.data.exercise.ExerciseDtoTestBuilder;
+import healthy.lifestyle.backend.data.exercise.ExerciseTestBuilder;
+import healthy.lifestyle.backend.data.httpref.HttpRefTestBuilder;
+import healthy.lifestyle.backend.data.user.UserTestBuilder;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserServiceImpl;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.workout.dto.ExerciseUpdateRequestDto;
@@ -57,195 +60,113 @@ public class ExerciseServiceUpdateTest {
     @InjectMocks
     ExerciseServiceImpl exerciseService;
 
-    DataUtil dataUtil = new DataUtil();
-
     UserTestBuilder userTestBuilder = new UserTestBuilder();
 
     BodyPartTestBuilder bodyPartTestBuilder = new BodyPartTestBuilder();
 
-    MediaTestBuilder mediaTestBuilder = new MediaTestBuilder();
+    HttpRefTestBuilder mediaTestBuilder = new HttpRefTestBuilder();
 
     ExerciseDtoTestBuilder exerciseDtoTestBuilder = new ExerciseDtoTestBuilder();
 
     ExerciseTestBuilder exerciseTestBuilder = new ExerciseTestBuilder();
 
-    @Test
-    void updateCustomExerciseTest_shouldReturnExerciseDto_whenValidRequestDtoProvidedOld() {
-        // Given
-        List<BodyPart> bodyParts = dataUtil.createBodyParts(1, 4);
-        List<HttpRef> httpRefsCustom = dataUtil.createHttpRefs(1, 4, true);
-        List<HttpRef> httpRefsDefault = dataUtil.createHttpRefs(5, 6, false);
-        Exercise exercise = dataUtil.createExercise(
-                1,
-                true,
-                true,
-                new HashSet<>() {
-                    {
-                        add(bodyParts.get(0));
-                        add(bodyParts.get(1));
-                    }
-                },
-                new HashSet<>() {
-                    {
-                        add(httpRefsCustom.get(0));
-                        add(httpRefsCustom.get(1));
-                    }
-                });
-
-        User user = dataUtil.createUserEntity(1);
-        user.setHttpRefs(new HashSet<>() {
-            {
-                add(httpRefsCustom.get(0));
-                add(httpRefsCustom.get(1));
-                add(httpRefsCustom.get(2));
-                add(httpRefsCustom.get(3));
-            }
-        });
-        user.setExercises(Set.of(exercise));
-
-        ExerciseUpdateRequestDto requestDto = dataUtil.exerciseUpdateRequestDto(
-                1,
-                false,
-                List.of(bodyParts.get(1).getId(), bodyParts.get(2).getId()),
-                List.of(
-                        httpRefsCustom.get(1).getId(),
-                        httpRefsCustom.get(2).getId(),
-                        httpRefsDefault.get(0).getId()));
-
-        when(exerciseRepository.findById(exercise.getId())).thenReturn(Optional.of(exercise));
-        when(userService.getUserById(user.getId())).thenReturn(user);
-        when(exerciseRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
-                .thenReturn(Optional.empty());
-
-        when(bodyPartRepository.findById(bodyParts.get(0).getId())).thenReturn(Optional.of(bodyParts.get(0)));
-        when(bodyPartRepository.findById(bodyParts.get(2).getId())).thenReturn(Optional.of(bodyParts.get(2)));
-
-        when(httpRefRepository.findById(httpRefsCustom.get(0).getId())).thenReturn(Optional.of(httpRefsCustom.get(0)));
-        when(httpRefRepository.findById(httpRefsCustom.get(2).getId())).thenReturn(Optional.of(httpRefsCustom.get(2)));
-        when(httpRefRepository.findById(httpRefsDefault.get(0).getId()))
-                .thenReturn(Optional.of(httpRefsDefault.get(0)));
-
-        when(exerciseRepository.save(any(Exercise.class)))
-                .thenAnswer(invocation -> invocation.getArguments()[0]);
-
-        // When
-        ExerciseResponseDto responseDto =
-                exerciseService.updateCustomExercise(exercise.getId(), user.getId(), requestDto);
-
-        // Then
-        verify(exerciseRepository, times(1)).findById(exercise.getId());
-        verify(userService, times(1)).getUserById(user.getId());
-        verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
-        verify(bodyPartRepository, times(2)).findById(anyLong());
-        verify(httpRefRepository, times(3)).findById(anyLong());
-
-        assertThat(responseDto)
-                .usingRecursiveComparison()
-                .ignoringFields("bodyParts", "httpRefs", "id", "isCustom")
-                .isEqualTo(requestDto);
-
-        assertEquals(responseDto.getId(), exercise.getId());
-        assertTrue(responseDto.isCustom());
-
-        assertThat(List.of(bodyParts.get(1), bodyParts.get(2)))
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(responseDto.getBodyParts());
-
-        assertThat(List.of(httpRefsCustom.get(1), httpRefsCustom.get(2), httpRefsDefault.get(0)))
-                .usingRecursiveComparison()
-                .ignoringFields("exercises", "user")
-                .isEqualTo(responseDto.getHttpRefs());
-    }
-
     @ParameterizedTest
-    @MethodSource("updateCustomExerciseMultiplePositiveInputs")
-    void updateCustomExerciseTest_shouldReturnUpdatedExerciseDto_whenValidRequestDtoProvided(
+    @MethodSource("updateCustomExerciseMultipleValidInputs")
+    void updateCustomExerciseTest_shouldReturnUpdatedExerciseDto_whenValidRequestDtoGiven(
             String updateTitle, String updateDescription, Boolean updateNeedsEquipment)
             throws NoSuchFieldException, IllegalAccessException {
         // Given
         // User with one exercise and related body parts and default media.
         UserTestBuilder.UserWrapper userWrapper = userTestBuilder.getWrapper();
         userWrapper
-                .setUserId(1)
-                .setRoleUserWithId(1)
-                .setExerciseCustom(true)
-                .setExerciseId(1)
-                .setExerciseNeedsEquipment(true)
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(1)
+                .setIsExerciseNeedsEquipment(true)
                 .setAmountOfExerciseNestedEntities(4)
-                .setStartIdForExerciseNestedEntities(1)
-                .setMediaCustom(false)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
                 .buildUserAndAddSingleExercise();
 
-        // Custom and default medias to update existing exercise.
-        MediaTestBuilder.MediaWrapper mediaCustomWrapper = mediaTestBuilder.getWrapper();
-        mediaCustomWrapper
-                .setMediaCustom(true)
-                .setId(10)
-                .setUser(userWrapper.getUser())
-                .buildSingleMedia();
-        userWrapper.addCustomMedias(mediaCustomWrapper.getEntityCollection());
+        String initialTitle = userWrapper.getExerciseSingle().getTitle();
+        String initialDescription = userWrapper.getExerciseSingle().getDescription();
+        boolean initialNeedsEquipment = userWrapper.getExerciseSingle().isNeedsEquipment();
 
-        MediaTestBuilder.MediaWrapper mediaDefaultWrapper = mediaTestBuilder.getWrapper();
-        mediaDefaultWrapper.setMediaCustom(false).setId(20).buildSingleMedia();
+        // Custom and default medias to update existing exercise.
+        HttpRefTestBuilder.HttpRefWrapper mediaCustomWrapper = mediaTestBuilder.getWrapper();
+        mediaCustomWrapper
+                .setIsCustom(true)
+                .setIdOrSeed(10)
+                .setUser(userWrapper.getUser())
+                .buildSingle();
+        userWrapper.addCustomHttpRefs(mediaCustomWrapper.getSingleAsList());
+
+        HttpRefTestBuilder.HttpRefWrapper mediaDefaultWrapper = mediaTestBuilder.getWrapper();
+        mediaDefaultWrapper.setIsCustom(false).setIdOrSeed(20).buildSingle();
 
         BodyPartTestBuilder.BodyPartWrapper bodyPartWrapper = bodyPartTestBuilder.getWrapper();
-        bodyPartWrapper.setId(10).buildSingleBodyPart();
+        bodyPartWrapper.setIdOrSeed(10).buildSingle();
 
         // Update DTO, nested entities should be added and removed as well.
         ExerciseDtoTestBuilder.ExerciseDtoWrapper<ExerciseUpdateRequestDto> requestDtoWrapper =
-                exerciseDtoTestBuilder.getWrapper();
+                exerciseDtoTestBuilder.getWrapper(ExerciseUpdateRequestDto.class);
 
         List<Long> newBodyPartsIds = List.of(
-                userWrapper.getBodyPartIdFromSingleExercise(1),
-                userWrapper.getBodyPartIdFromSingleExercise(2),
+                userWrapper.getBodyPartIdByIndexFromSingleExercise(1),
+                userWrapper.getBodyPartIdByIndexFromSingleExercise(2),
                 bodyPartWrapper.getSingleId());
-        List<Long> newMediasIds = List.of(
-                userWrapper.getMediaIdFromSingleExercise(1),
-                userWrapper.getMediaIdFromSingleExercise(2),
+        List<Long> newHttpRefsIds = List.of(
+                userWrapper.getHttpRefIdByIndexFromSingleExercise(1),
+                userWrapper.getHttpRefIdByIndexFromSingleExercise(2),
                 mediaCustomWrapper.getSingleId(),
                 mediaDefaultWrapper.getSingleId());
 
         requestDtoWrapper
-                .setSeed(String.valueOf(userWrapper.getSingleExerciseId()))
-                .setNeedsEquipment(nonNull(updateNeedsEquipment) ? updateNeedsEquipment : true)
+                .setSeed(String.valueOf(userWrapper.getExerciseIdSingle()))
+                .setNeedsEquipment(true)
                 .setBodyPartsIds(newBodyPartsIds)
-                .setMediasIds(newMediasIds)
-                .buildUpdateExerciseDto();
-        if (nonNull(updateTitle)) requestDtoWrapper.setFieldValue("title", updateTitle);
-        if (nonNull(updateDescription)) requestDtoWrapper.setFieldValue("description", updateDescription);
+                .setMediasIds(newHttpRefsIds)
+                .buildExerciseUpdateRequestDto();
+        requestDtoWrapper.setFieldValue("title", updateTitle);
+        requestDtoWrapper.setFieldValue("description", updateDescription);
+        requestDtoWrapper.setFieldValue("needsEquipment", updateNeedsEquipment);
 
         // Expected nested objects
         List<BodyPart> expectedBodyParts = List.of(
-                userWrapper.getBodyPartFromSingleExercise(1),
-                userWrapper.getBodyPartFromSingleExercise(2),
+                userWrapper.getBodyPartByIndexFromSingleExercise(1),
+                userWrapper.getBodyPartByIndexFromSingleExercise(2),
                 bodyPartWrapper.getSingle());
-        List<HttpRef> expectedMedias = List.of(
-                userWrapper.getMediaFromSingleExercise(1),
-                userWrapper.getMediaFromSingleExercise(2),
+        List<HttpRef> expectedHttpRefs = List.of(
+                userWrapper.getHttpRefByIndexFromSingleExercise(1),
+                userWrapper.getHttpRefByIndexFromSingleExercise(2),
                 mediaCustomWrapper.getSingle(),
                 mediaDefaultWrapper.getSingle());
 
         // Mocking
-        when(exerciseRepository.findById(userWrapper.getSingleExerciseId()))
-                .thenReturn(Optional.of(userWrapper.getSingleExercise()));
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(
+                        userWrapper.getExerciseIdSingle(), userWrapper.getUserId()))
+                .thenReturn(Optional.of(userWrapper.getExerciseSingle()));
         when(userService.getUserById(userWrapper.getUserId())).thenReturn(userWrapper.getUser());
+
         if (nonNull(updateTitle)) {
             when(exerciseRepository.findCustomByTitleAndUserId(
                             requestDtoWrapper.getDto().getTitle(), userWrapper.getUserId()))
                     .thenReturn(Optional.empty());
         }
 
-        when(bodyPartRepository.findById(userWrapper.getBodyPartIdFromSingleExercise(0)))
-                .thenReturn(Optional.ofNullable(userWrapper.getBodyPartFromSingleExercise(0)));
-        when(bodyPartRepository.findById(userWrapper.getBodyPartIdFromSingleExercise(3)))
-                .thenReturn(Optional.ofNullable(userWrapper.getBodyPartFromSingleExercise(3)));
+        when(bodyPartRepository.findById(userWrapper.getBodyPartIdByIndexFromSingleExercise(0)))
+                .thenReturn(Optional.ofNullable(userWrapper.getBodyPartByIndexFromSingleExercise(0)));
+        when(bodyPartRepository.findById(userWrapper.getBodyPartIdByIndexFromSingleExercise(3)))
+                .thenReturn(Optional.ofNullable(userWrapper.getBodyPartByIndexFromSingleExercise(3)));
         when(bodyPartRepository.findById(bodyPartWrapper.getSingleId()))
                 .thenReturn(Optional.of(bodyPartWrapper.getSingle()));
 
-        when(httpRefRepository.findById(userWrapper.getMediaIdFromSingleExercise(0)))
-                .thenReturn(Optional.of(userWrapper.getMediaFromSingleExercise(0)));
-        when(httpRefRepository.findById(userWrapper.getMediaIdFromSingleExercise(3)))
-                .thenReturn(Optional.of(userWrapper.getMediaFromSingleExercise(3)));
+        when(httpRefRepository.findById(userWrapper.getHttpRefIdByIndexFromSingleExercise(0)))
+                .thenReturn(Optional.of(userWrapper.getHttpRefByIndexFromSingleExercise(0)));
+        when(httpRefRepository.findById(userWrapper.getHttpRefIdByIndexFromSingleExercise(3)))
+                .thenReturn(Optional.of(userWrapper.getHttpRefByIndexFromSingleExercise(3)));
         when(httpRefRepository.findById(mediaCustomWrapper.getSingleId()))
                 .thenReturn(Optional.of(mediaCustomWrapper.getSingle()));
         when(httpRefRepository.findById(mediaDefaultWrapper.getSingle().getId()))
@@ -256,12 +177,13 @@ public class ExerciseServiceUpdateTest {
 
         // When
         ExerciseResponseDto responseDto = exerciseService.updateCustomExercise(
-                userWrapper.getSingleExerciseId(), userWrapper.getUserId(), requestDtoWrapper.getDto());
+                userWrapper.getExerciseIdSingle(), userWrapper.getUserId(), requestDtoWrapper.getDto());
 
         // Then
         verify(exerciseRepository, times(1))
-                .findById(userWrapper.getSingleExercise().getId());
+                .findCustomByExerciseIdAndUserId(userWrapper.getExerciseIdSingle(), userWrapper.getUserId());
         verify(userService, times(1)).getUserById(userWrapper.getUserId());
+
         if (nonNull(updateTitle)) {
             verify(exerciseRepository, times(1))
                     .findCustomByTitleAndUserId(requestDtoWrapper.getDto().getTitle(), userWrapper.getUserId());
@@ -270,17 +192,25 @@ public class ExerciseServiceUpdateTest {
         verify(httpRefRepository, times(4)).findById(anyLong());
         verify(exerciseRepository, times(1)).save(any(Exercise.class));
 
-        assertEquals(responseDto.getId(), userWrapper.getSingleExerciseId());
+        assertEquals(responseDto.getId(), userWrapper.getExerciseIdSingle());
         assertTrue(responseDto.isCustom());
-        assertThat(responseDto)
-                .usingRecursiveComparison()
-                .ignoringFields("bodyParts", "httpRefs", "id", "isCustom")
-                .isEqualTo(requestDtoWrapper.getDto());
-        TestUtilities.assertBodyParts(responseDto.getBodyParts(), expectedBodyParts);
-        TestUtilities.assertHttpRefs(responseDto.getHttpRefs(), expectedMedias);
+
+        if (nonNull(updateTitle)) assertEquals(requestDtoWrapper.getFieldValue("title"), responseDto.getTitle());
+        else assertEquals(initialTitle, responseDto.getTitle());
+
+        if (nonNull(updateDescription))
+            assertEquals(requestDtoWrapper.getFieldValue("description"), responseDto.getDescription());
+        else assertEquals(initialDescription, responseDto.getDescription());
+
+        if (nonNull(updateNeedsEquipment))
+            assertEquals(requestDtoWrapper.getFieldValue("needsEquipment"), responseDto.isNeedsEquipment());
+        else assertEquals(initialNeedsEquipment, responseDto.isNeedsEquipment());
+
+        TestUtilities.assertBodyPartsResponseDtoList(responseDto.getBodyParts(), expectedBodyParts);
+        TestUtilities.assertHttpRefsResponseDtoList(responseDto.getHttpRefs(), expectedHttpRefs);
     }
 
-    static Stream<Arguments> updateCustomExerciseMultiplePositiveInputs() {
+    static Stream<Arguments> updateCustomExerciseMultipleValidInputs() {
         return Stream.of(
                 Arguments.of("Update title", "Update description", false),
                 Arguments.of("Update title", "Update description", null),
@@ -291,55 +221,57 @@ public class ExerciseServiceUpdateTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldReturnUpdatedExerciseDto_whenEmptyMediasIdsListProvided()
+    void updateCustomExerciseTest_shouldReturnUpdatedExerciseDto_whenEmptyHttpRefsIdsListGiven()
             throws NoSuchFieldException, IllegalAccessException {
         // Given
         UserTestBuilder.UserWrapper userWrapper = userTestBuilder.getWrapper();
         userWrapper
-                .setUserId(1)
-                .setRoleUserWithId(1)
-                .setExerciseCustom(true)
-                .setExerciseId(1)
-                .setExerciseNeedsEquipment(true)
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(1)
+                .setIsExerciseNeedsEquipment(true)
                 .setAmountOfExerciseNestedEntities(2)
-                .setStartIdForExerciseNestedEntities(1)
-                .setMediaCustom(false)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
                 .buildUserAndAddSingleExercise();
 
-        // Update DTO, medias should be removed from the target exercise.
+        // Update DTO, medias should be removed from the target exercise. Other fields should remain the same.
         ExerciseDtoTestBuilder.ExerciseDtoWrapper<ExerciseUpdateRequestDto> requestDtoWrapper =
-                exerciseDtoTestBuilder.getWrapper();
+                exerciseDtoTestBuilder.getWrapper(ExerciseUpdateRequestDto.class);
 
-        List<Long> newMediasIds = Collections.emptyList();
+        List<Long> newHttpRefsIds = Collections.emptyList();
 
         requestDtoWrapper
-                .setSeed(String.valueOf(userWrapper.getSingleExerciseId()))
+                .setSeed(String.valueOf(userWrapper.getExerciseIdSingle()))
                 .setNeedsEquipment(true)
-                .setBodyPartsIds(userWrapper.getBodyPartsIdsFromSingleExercise())
-                .setMediasIds(newMediasIds)
-                .buildUpdateExerciseDto();
-        requestDtoWrapper.setFieldValue("title", userWrapper.getSingleExercise().getTitle());
-        requestDtoWrapper.setFieldValue(
-                "description", userWrapper.getSingleExercise().getDescription());
+                .setBodyPartsIds(userWrapper.getBodyPartsIdsSortedFromSingleExercise())
+                .setMediasIds(newHttpRefsIds)
+                .buildExerciseUpdateRequestDto();
+        requestDtoWrapper.setFieldValue("title", null);
+        requestDtoWrapper.setFieldValue("description", null);
+        requestDtoWrapper.setFieldValue("needsEquipment", null);
 
         // Expected nested objects
         List<BodyPart> expectedBodyParts = userWrapper.getBodyPartsSortedFromSingleExercise();
         List<HttpRef> expectedMedias = Collections.emptyList();
 
         // Mocking
-        when(exerciseRepository.findById(userWrapper.getSingleExerciseId()))
-                .thenReturn(Optional.of(userWrapper.getSingleExercise()));
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(
+                        userWrapper.getExerciseIdSingle(), userWrapper.getUserId()))
+                .thenReturn(Optional.of(userWrapper.getExerciseSingle()));
         when(userService.getUserById(userWrapper.getUserId())).thenReturn(userWrapper.getUser());
         when(exerciseRepository.save(any(Exercise.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
 
         // When
         ExerciseResponseDto responseDto = exerciseService.updateCustomExercise(
-                userWrapper.getSingleExerciseId(), userWrapper.getUserId(), requestDtoWrapper.getDto());
+                userWrapper.getExerciseIdSingle(), userWrapper.getUserId(), requestDtoWrapper.getDto());
 
         // Then
         verify(exerciseRepository, times(1))
-                .findById(userWrapper.getSingleExercise().getId());
+                .findCustomByExerciseIdAndUserId(userWrapper.getExerciseSingle().getId(), userWrapper.getUserId());
         verify(userService, times(1)).getUserById(userWrapper.getUserId());
         verify(exerciseRepository, times(0))
                 .findCustomByTitleAndUserId(requestDtoWrapper.getDto().getTitle(), userWrapper.getUserId());
@@ -347,37 +279,58 @@ public class ExerciseServiceUpdateTest {
         verify(httpRefRepository, times(0)).findById(anyLong());
         verify(exerciseRepository, times(1)).save(any(Exercise.class));
 
-        assertEquals(responseDto.getId(), userWrapper.getSingleExerciseId());
+        assertEquals(responseDto.getId(), userWrapper.getExerciseIdSingle());
         assertTrue(responseDto.isCustom());
-        assertTrue(responseDto.isNeedsEquipment());
-        assertEquals(userWrapper.getSingleExercise().getTitle(), responseDto.getTitle());
-        assertEquals(userWrapper.getSingleExercise().getDescription(), responseDto.getDescription());
-        TestUtilities.assertBodyParts(responseDto.getBodyParts(), expectedBodyParts);
-        TestUtilities.assertHttpRefs(responseDto.getHttpRefs(), expectedMedias);
+        assertEquals(userWrapper.getExerciseSingle().getTitle(), responseDto.getTitle());
+        assertEquals(userWrapper.getExerciseSingle().getDescription(), responseDto.getDescription());
+        assertEquals(userWrapper.getExerciseSingle().isNeedsEquipment(), responseDto.isNeedsEquipment());
+        TestUtilities.assertBodyPartsResponseDtoList(responseDto.getBodyParts(), expectedBodyParts);
+        TestUtilities.assertHttpRefsResponseDtoList(responseDto.getHttpRefs(), expectedMedias);
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowEmptyRequestAnd400_whenEmptyRequestDtoProvided() {
+    void updateCustomExerciseTest_shouldThrowEmptyRequestAnd400_whenNoUpdatesRequestGiven()
+            throws NoSuchFieldException, IllegalAccessException {
         // Given
+        UserTestBuilder.UserWrapper userWrapper = userTestBuilder.getWrapper();
+        userWrapper
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(1)
+                .setIsExerciseNeedsEquipment(true)
+                .setAmountOfExerciseNestedEntities(1)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
+                .buildUserAndAddSingleExercise();
+
         ExerciseDtoTestBuilder.ExerciseDtoWrapper<ExerciseUpdateRequestDto> requestDtoWrapper =
-                exerciseDtoTestBuilder.getWrapper();
-        requestDtoWrapper.buildEmptyUpdateExerciseDto();
-        long randomExerciseId = 100L;
-        long randomUserId = 100L;
+                exerciseDtoTestBuilder.getWrapper(ExerciseUpdateRequestDto.class);
+        requestDtoWrapper.buildEmptyExerciseUpdateRequestDto();
+        requestDtoWrapper.setFieldValue("bodyPartIds", userWrapper.getBodyPartsIdsSortedFromSingleExercise());
+        requestDtoWrapper.setFieldValue("httpRefIds", userWrapper.getHttpRefsIdsSortedFromSingleExercise());
+
+        // Mocking
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(
+                        userWrapper.getExerciseIdSingle(), userWrapper.getUserId()))
+                .thenReturn(Optional.ofNullable(userWrapper.getExerciseSingle()));
 
         // When
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> exerciseService.updateCustomExercise(randomExerciseId, randomUserId, requestDtoWrapper.getDto()));
+                () -> exerciseService.updateCustomExercise(
+                        userWrapper.getExerciseIdSingle(), userWrapper.getUserId(), requestDtoWrapper.getDto()));
 
         // Then
-        verify(exerciseRepository, times(0)).findById(anyLong());
+        verify(exerciseRepository, times(1))
+                .findCustomByExerciseIdAndUserId(userWrapper.getExerciseIdSingle(), userWrapper.getUserId());
         verify(userService, times(0)).getUserById(anyLong());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.EMPTY_REQUEST.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.NO_UPDATES_REQUEST.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
     }
 
@@ -385,11 +338,12 @@ public class ExerciseServiceUpdateTest {
     void updateCustomExerciseTest_shouldThrowNotFoundAnd404_whenExerciseNotFound() {
         // Given
         ExerciseDtoTestBuilder.ExerciseDtoWrapper<ExerciseUpdateRequestDto> requestDtoWrapper =
-                exerciseDtoTestBuilder.getWrapper();
-        requestDtoWrapper.buildRandomUpdateExerciseDto();
+                exerciseDtoTestBuilder.getWrapper(ExerciseUpdateRequestDto.class);
+        requestDtoWrapper.buildRandomExerciseUpdateRequestDto();
         long randomExerciseId = 1L;
         long randomUserId = 2L;
-        when(exerciseRepository.findById(randomExerciseId)).thenReturn(Optional.empty());
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(randomExerciseId, randomUserId))
+                .thenReturn(Optional.empty());
 
         // When
         ApiException exception = assertThrows(
@@ -397,7 +351,7 @@ public class ExerciseServiceUpdateTest {
                 () -> exerciseService.updateCustomExercise(randomExerciseId, randomUserId, requestDtoWrapper.getDto()));
 
         // Then
-        verify(exerciseRepository, times(1)).findById(randomExerciseId);
+        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(randomExerciseId, randomUserId);
         verify(userService, times(0)).getUserById(anyLong());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
@@ -408,54 +362,57 @@ public class ExerciseServiceUpdateTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowUserResourceMismatchAnd400_whenExerciseDoesntBelongToUser() {
+    void updateCustomExerciseTest_shouldThrowNotFoundAnd404_whenExerciseDoesntBelongToUser() {
         UserTestBuilder.UserWrapper userWrapper1 = userTestBuilder.getWrapper();
         userWrapper1
-                .setUserId(1)
-                .setRoleUserWithId(1)
-                .setExerciseCustom(true)
-                .setExerciseId(1)
-                .setExerciseNeedsEquipment(true)
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(1)
+                .setIsExerciseNeedsEquipment(true)
                 .setAmountOfExerciseNestedEntities(1)
-                .setStartIdForExerciseNestedEntities(1)
-                .setMediaCustom(false)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
                 .buildUserAndAddSingleExercise();
 
         UserTestBuilder.UserWrapper userWrapper2 = userTestBuilder.getWrapper();
         userWrapper2
-                .setUserId(2)
-                .setRoleUserWithId(1)
-                .setExerciseCustom(true)
-                .setExerciseId(2)
-                .setExerciseNeedsEquipment(true)
+                .setUserIdOrSeed(2)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(2)
+                .setIsExerciseNeedsEquipment(true)
                 .setAmountOfExerciseNestedEntities(1)
-                .setStartIdForExerciseNestedEntities(2)
-                .setMediaCustom(false)
+                .setStartIdOrSeedForExerciseNestedEntities(2)
+                .setIsExerciseHttpRefsCustom(false)
                 .buildUserAndAddSingleExercise();
 
         ExerciseDtoTestBuilder.ExerciseDtoWrapper<ExerciseUpdateRequestDto> requestDtoWrapper =
-                exerciseDtoTestBuilder.getWrapper();
-        requestDtoWrapper.buildRandomUpdateExerciseDto();
+                exerciseDtoTestBuilder.getWrapper(ExerciseUpdateRequestDto.class);
+        requestDtoWrapper.buildRandomExerciseUpdateRequestDto();
 
-        when(exerciseRepository.findById(userWrapper1.getSingleExerciseId()))
-                .thenReturn(Optional.ofNullable(userWrapper1.getSingleExercise()));
-        when(userService.getUserById(userWrapper2.getUserId())).thenReturn(userWrapper2.getUser());
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(
+                        userWrapper1.getExerciseIdSingle(), userWrapper2.getUserId()))
+                .thenReturn(Optional.empty());
 
         // When
         ApiException exception = assertThrows(
                 ApiException.class,
                 () -> exerciseService.updateCustomExercise(
-                        userWrapper1.getSingleExerciseId(), userWrapper2.getUserId(), requestDtoWrapper.getDto()));
+                        userWrapper1.getExerciseIdSingle(), userWrapper2.getUserId(), requestDtoWrapper.getDto()));
 
         // Then
-        verify(exerciseRepository, times(1)).findById(userWrapper1.getSingleExerciseId());
-        verify(userService, times(1)).getUserById(userWrapper2.getUserId());
+        verify(exerciseRepository, times(1))
+                .findCustomByExerciseIdAndUserId(userWrapper1.getExerciseIdSingle(), userWrapper2.getUserId());
+        verify(userService, times(0)).getUserById(userWrapper2.getUserId());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
     }
 
     @Test
@@ -463,39 +420,41 @@ public class ExerciseServiceUpdateTest {
             throws NoSuchFieldException, IllegalAccessException {
         UserTestBuilder.UserWrapper userWrapper = userTestBuilder.getWrapper();
         userWrapper
-                .setUserId(1)
-                .setRoleUserWithId(1)
-                .setExerciseCustom(true)
-                .setExerciseId(1)
-                .setExerciseNeedsEquipment(true)
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(1)
+                .setIsExerciseNeedsEquipment(true)
                 .setAmountOfExerciseNestedEntities(1)
-                .setStartIdForExerciseNestedEntities(1)
-                .setMediaCustom(false)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
                 .buildUserAndAddSingleExercise();
 
         ExerciseTestBuilder.ExerciseWrapper exerciseAlreadyExistsWrapper = exerciseTestBuilder.getWrapper();
         exerciseAlreadyExistsWrapper
-                .setId(2)
-                .setExerciseCustom(true)
+                .setIdOrSeed(2)
+                .setIsExerciseCustom(true)
                 .setNeedsEquipment(false)
-                .setMediaCustom(false)
+                .setIsHttpRefCustom(false)
                 .setAmountOfNestedEntities(1)
-                .setStartIdForNestedEntities(2)
+                .setStartIdOrSeedForNestedEntities(2)
                 .buildSingle();
-        userWrapper.addCustomExercises(exerciseAlreadyExistsWrapper.getSingleExerciseCollection());
+        userWrapper.addCustomExercises(exerciseAlreadyExistsWrapper.getExerciseSingleAsList());
 
         ExerciseDtoTestBuilder.ExerciseDtoWrapper<ExerciseUpdateRequestDto> requestDtoWrapper =
-                exerciseDtoTestBuilder.getWrapper();
-        requestDtoWrapper.buildRandomUpdateExerciseDto();
+                exerciseDtoTestBuilder.getWrapper(ExerciseUpdateRequestDto.class);
+        requestDtoWrapper.buildRandomExerciseUpdateRequestDto();
         requestDtoWrapper.setFieldValue(
-                "title", exerciseAlreadyExistsWrapper.getSingleExercise().getTitle());
+                "title", exerciseAlreadyExistsWrapper.getExerciseSingle().getTitle());
 
-        when(exerciseRepository.findById(userWrapper.getExerciseIdFromSortedList(0)))
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(
+                        userWrapper.getExerciseIdFromSortedList(0), userWrapper.getUserId()))
                 .thenReturn(Optional.ofNullable(userWrapper.getExerciseFromSortedList(0)));
         when(userService.getUserById(userWrapper.getUserId())).thenReturn(userWrapper.getUser());
         when(exerciseRepository.findCustomByTitleAndUserId(
                         (String) requestDtoWrapper.getFieldValue("title"), userWrapper.getUserId()))
-                .thenReturn(Optional.ofNullable(exerciseAlreadyExistsWrapper.getSingleExercise()));
+                .thenReturn(Optional.ofNullable(exerciseAlreadyExistsWrapper.getExerciseSingle()));
 
         // When
         ApiException exception = assertThrows(
@@ -506,7 +465,8 @@ public class ExerciseServiceUpdateTest {
                         requestDtoWrapper.getDto()));
 
         // Then
-        verify(exerciseRepository, times(1)).findById(userWrapper.getExerciseIdFromSortedList(0));
+        verify(exerciseRepository, times(1))
+                .findCustomByExerciseIdAndUserId(userWrapper.getExerciseIdFromSortedList(0), userWrapper.getUserId());
         verify(userService, times(1)).getUserById(userWrapper.getUserId());
         verify(exerciseRepository, times(1))
                 .findCustomByTitleAndUserId((String) requestDtoWrapper.getFieldValue("title"), userWrapper.getUserId());
@@ -523,25 +483,27 @@ public class ExerciseServiceUpdateTest {
         // Given
         UserTestBuilder.UserWrapper userWrapper = userTestBuilder.getWrapper();
         userWrapper
-                .setUserId(1)
-                .setRoleUserWithId(1)
-                .setExerciseCustom(true)
-                .setExerciseId(1)
-                .setExerciseNeedsEquipment(true)
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(1)
+                .setIsExerciseNeedsEquipment(true)
                 .setAmountOfExerciseNestedEntities(1)
-                .setStartIdForExerciseNestedEntities(1)
-                .setMediaCustom(false)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
                 .buildUserAndAddSingleExercise();
 
         long nonExistingBodyPartId = 100L;
 
         ExerciseDtoTestBuilder.ExerciseDtoWrapper<ExerciseUpdateRequestDto> requestDtoWrapper =
-                exerciseDtoTestBuilder.getWrapper();
-        requestDtoWrapper.buildRandomUpdateExerciseDto();
+                exerciseDtoTestBuilder.getWrapper(ExerciseUpdateRequestDto.class);
+        requestDtoWrapper.buildRandomExerciseUpdateRequestDto();
         requestDtoWrapper.setFieldValue("bodyPartIds", List.of(nonExistingBodyPartId));
 
-        when(exerciseRepository.findById(userWrapper.getSingleExerciseId()))
-                .thenReturn(Optional.ofNullable(userWrapper.getSingleExercise()));
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(
+                        userWrapper.getExerciseIdSingle(), userWrapper.getUserId()))
+                .thenReturn(Optional.ofNullable(userWrapper.getExerciseSingle()));
         when(userService.getUserById(userWrapper.getUserId())).thenReturn(userWrapper.getUser());
         when(exerciseRepository.findCustomByTitleAndUserId(
                         (String) requestDtoWrapper.getFieldValue("title"), userWrapper.getUserId()))
@@ -552,10 +514,11 @@ public class ExerciseServiceUpdateTest {
         ApiException exception = assertThrows(
                 ApiException.class,
                 () -> exerciseService.updateCustomExercise(
-                        userWrapper.getSingleExerciseId(), userWrapper.getUserId(), requestDtoWrapper.getDto()));
+                        userWrapper.getExerciseIdSingle(), userWrapper.getUserId(), requestDtoWrapper.getDto()));
 
         // Then
-        verify(exerciseRepository, times(1)).findById(userWrapper.getSingleExerciseId());
+        verify(exerciseRepository, times(1))
+                .findCustomByExerciseIdAndUserId(userWrapper.getExerciseIdSingle(), userWrapper.getUserId());
         verify(userService, times(1)).getUserById(userWrapper.getUserId());
         verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(1)).findById(anyLong());
@@ -571,52 +534,56 @@ public class ExerciseServiceUpdateTest {
         // Given
         UserTestBuilder.UserWrapper userWrapper1 = userTestBuilder.getWrapper();
         userWrapper1
-                .setUserId(1)
-                .setRoleUserWithId(1)
-                .setExerciseCustom(true)
-                .setExerciseId(1)
-                .setExerciseNeedsEquipment(true)
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(1)
+                .setIsExerciseNeedsEquipment(true)
                 .setAmountOfExerciseNestedEntities(1)
-                .setStartIdForExerciseNestedEntities(1)
-                .setMediaCustom(true)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(true)
                 .buildUserAndAddSingleExercise();
 
         UserTestBuilder.UserWrapper userWrapper2 = userTestBuilder.getWrapper();
         userWrapper2
-                .setUserId(2)
-                .setRoleUserWithId(1)
-                .setExerciseCustom(true)
-                .setExerciseId(2)
-                .setExerciseNeedsEquipment(true)
+                .setUserIdOrSeed(2)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(2)
+                .setIsExerciseNeedsEquipment(true)
                 .setAmountOfExerciseNestedEntities(1)
-                .setStartIdForExerciseNestedEntities(2)
-                .setMediaCustom(true)
+                .setStartIdOrSeedForExerciseNestedEntities(2)
+                .setIsExerciseHttpRefsCustom(true)
                 .buildUserAndAddSingleExercise();
 
         ExerciseDtoTestBuilder.ExerciseDtoWrapper<ExerciseUpdateRequestDto> requestDtoWrapper =
-                exerciseDtoTestBuilder.getWrapper();
-        requestDtoWrapper.buildRandomUpdateExerciseDto();
-        requestDtoWrapper.setFieldValue("httpRefIds", List.of(userWrapper2.getMediaIdFromSingleExercise(0)));
-        requestDtoWrapper.setFieldValue("bodyPartIds", List.of(userWrapper1.getBodyPartIdFromSingleExercise(0)));
+                exerciseDtoTestBuilder.getWrapper(ExerciseUpdateRequestDto.class);
+        requestDtoWrapper.buildRandomExerciseUpdateRequestDto();
+        requestDtoWrapper.setFieldValue("httpRefIds", userWrapper2.getHttpRefsIdsSortedFromSingleExercise());
+        requestDtoWrapper.setFieldValue("bodyPartIds", userWrapper1.getBodyPartsIdsSortedFromSingleExercise());
 
-        when(exerciseRepository.findById(userWrapper1.getSingleExerciseId()))
-                .thenReturn(Optional.ofNullable(userWrapper1.getSingleExercise()));
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(
+                        userWrapper1.getExerciseIdSingle(), userWrapper1.getUserId()))
+                .thenReturn(Optional.ofNullable(userWrapper1.getExerciseSingle()));
         when(userService.getUserById(userWrapper1.getUserId())).thenReturn(userWrapper1.getUser());
         when(exerciseRepository.findCustomByTitleAndUserId(
                         (String) requestDtoWrapper.getFieldValue("title"), userWrapper1.getUserId()))
                 .thenReturn(Optional.empty());
         when(httpRefRepository.findById(
                         requestDtoWrapper.getDto().getHttpRefIds().get(0)))
-                .thenReturn(Optional.ofNullable(userWrapper2.getMediaFromSingleExercise(0)));
+                .thenReturn(Optional.ofNullable(userWrapper2.getHttpRefByIndexFromSingleExercise(0)));
 
         // When
         ApiException exception = assertThrows(
                 ApiException.class,
                 () -> exerciseService.updateCustomExercise(
-                        userWrapper1.getSingleExerciseId(), userWrapper1.getUserId(), requestDtoWrapper.getDto()));
+                        userWrapper1.getExerciseIdSingle(), userWrapper1.getUserId(), requestDtoWrapper.getDto()));
 
         // Then
-        verify(exerciseRepository, times(1)).findById(userWrapper1.getSingleExerciseId());
+        verify(exerciseRepository, times(1))
+                .findCustomByExerciseIdAndUserId(userWrapper1.getExerciseIdSingle(), userWrapper1.getUserId());
         verify(userService, times(1)).getUserById(userWrapper1.getUserId());
         verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
@@ -624,5 +591,68 @@ public class ExerciseServiceUpdateTest {
 
         assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+    }
+
+    @ParameterizedTest
+    @MethodSource("updateCustomExerciseMultipleValidButNotDifferentInputs")
+    void updateCustomExerciseTest_shouldThrowFieldIsNotDifferentAnd400_whenNewFieldValueIsNotDifferent(
+            String updateTitle, String updateDescription, Boolean updateNeedsEquipment)
+            throws NoSuchFieldException, IllegalAccessException {
+        // Given
+        UserTestBuilder.UserWrapper userWrapper = userTestBuilder.getWrapper();
+        userWrapper
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setRoleId(1)
+                .setIsExerciseCustom(true)
+                .setExerciseIdOrSeed(1)
+                .setIsExerciseNeedsEquipment(true)
+                .setAmountOfExerciseNestedEntities(1)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
+                .buildUserAndAddSingleExercise();
+
+        ExerciseDtoTestBuilder.ExerciseDtoWrapper<ExerciseUpdateRequestDto> requestDtoWrapper =
+                exerciseDtoTestBuilder.getWrapper(ExerciseUpdateRequestDto.class);
+        requestDtoWrapper.buildEmptyExerciseUpdateRequestDto();
+        requestDtoWrapper.setFieldValue("bodyPartIds", userWrapper.getBodyPartsIdsSortedFromSingleExercise());
+
+        if (nonNull(updateTitle)) requestDtoWrapper.setFieldValue("title", updateTitle);
+        if (nonNull(updateDescription)) requestDtoWrapper.setFieldValue("description", updateDescription);
+        if (nonNull(updateNeedsEquipment)) requestDtoWrapper.setFieldValue("needsEquipment", updateNeedsEquipment);
+
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(
+                        userWrapper.getExerciseIdSingle(), userWrapper.getUserId()))
+                .thenReturn(Optional.ofNullable(userWrapper.getExerciseSingle()));
+        when(userService.getUserById(userWrapper.getUserId())).thenReturn(userWrapper.getUser());
+
+        // When
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> exerciseService.updateCustomExercise(
+                        userWrapper.getExerciseIdSingle(), userWrapper.getUserId(), requestDtoWrapper.getDto()));
+
+        // Then
+        verify(exerciseRepository, times(1))
+                .findCustomByExerciseIdAndUserId(userWrapper.getExerciseIdSingle(), userWrapper.getUserId());
+        verify(userService, times(1)).getUserById(userWrapper.getUserId());
+        verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
+        verify(bodyPartRepository, times(0)).findById(anyLong());
+        verify(httpRefRepository, times(0)).findById(anyLong());
+
+        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+
+        if (nonNull(updateTitle)) assertEquals(ErrorMessage.TITLES_ARE_NOT_DIFFERENT.getName(), exception.getMessage());
+        if (nonNull(updateDescription))
+            assertEquals(ErrorMessage.DESCRIPTIONS_ARE_NOT_DIFFERENT.getName(), exception.getMessage());
+        if (nonNull(updateNeedsEquipment))
+            assertEquals(ErrorMessage.NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT.getName(), exception.getMessage());
+    }
+
+    static Stream<Arguments> updateCustomExerciseMultipleValidButNotDifferentInputs() {
+        return Stream.of(
+                Arguments.of("Title 1", null, null),
+                Arguments.of(null, "Description 1", null),
+                Arguments.of(null, null, true));
     }
 }

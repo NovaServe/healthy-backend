@@ -60,10 +60,12 @@ public class ExerciseController {
         return ResponseEntity.ok(exerciseService.getCustomExercises(userId));
     }
 
-    @PatchMapping("/{exercise_id}")
+    @PatchMapping("/{exerciseId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<List<ExerciseResponseDto>> updateCustomExercise(
-            @PathVariable("exercise_id") long exercise_id, @Valid @RequestBody ExerciseUpdateRequestDto requestDto) {
-        return null;
+    public ResponseEntity<ExerciseResponseDto> updateCustomExercise(
+            @PathVariable("exerciseId") long exerciseId, @Valid @RequestBody ExerciseUpdateRequestDto requestDto) {
+        Long userId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        return ResponseEntity.ok(exerciseService.updateCustomExercise(exerciseId, userId, requestDto));
     }
 }

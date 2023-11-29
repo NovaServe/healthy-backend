@@ -1,18 +1,25 @@
 package healthy.lifestyle.backend.workout.repository;
 
+import static java.util.Objects.nonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
+import healthy.lifestyle.backend.data.TestUtilities;
+import healthy.lifestyle.backend.data.user.UserJpaTestBuilder;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import java.util.*;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -44,6 +51,9 @@ class ExerciseRepositoryTest {
 
     @Autowired
     DataHelper dataHelper;
+
+    @Autowired
+    UserJpaTestBuilder userJpaTestBuilder;
 
     @BeforeEach
     void beforeEach() {
@@ -189,5 +199,111 @@ class ExerciseRepositoryTest {
         assertThat(customExercises)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("httpRefs", "bodyParts", "users")
                 .isEqualTo(exercisesActual);
+    }
+
+    @Test
+    void findCustomByExerciseIdAndUserIdTest_shouldReturnOptionalOfExercise_whenValidExerciseIdAndUserIdGiven() {
+        // Given
+        UserJpaTestBuilder.UserWrapper userWrapper = userJpaTestBuilder.getWrapper();
+        userWrapper
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setIsExerciseCustom(true)
+                .setIsExerciseNeedsEquipment(true)
+                .setAmountOfExercises(2)
+                .setExerciseIdOrSeed(1)
+                .setAmountOfExerciseNestedEntities(1)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
+                .buildUserAndAddMultipleExercises();
+
+        // When
+        Optional<Exercise> exerciseOptional = exerciseRepository.findCustomByExerciseIdAndUserId(
+                userWrapper.getExerciseIdFromSortedList(0), userWrapper.getUserId());
+
+        // Then
+        assertTrue(exerciseOptional.isPresent());
+        Exercise exercise = exerciseOptional.get();
+        assertThat(exercise)
+                .usingRecursiveComparison()
+                .ignoringFields("bodyParts", "httpRefs", "users")
+                .isEqualTo(userWrapper.getExerciseFromSortedList(0));
+        TestUtilities.assertBodyParts(
+                exercise.getBodyParts(), userWrapper.getBodyPartsSortedFromExerciseListByIndex(0));
+        TestUtilities.assertHttpRefs(exercise.getHttpRefs(), userWrapper.getHttpRefsSortedFromExerciseListByIndex(0));
+    }
+
+    @ParameterizedTest
+    @MethodSource("findCustomByExerciseIdAndUserId_multipleInvalidInputs")
+    void findCustomByExerciseIdAndUserIdTest_shouldReturnOptionalEmpty_whenInvalidIdGiven(
+            Long nonExistingExerciseId, Long nonExistingUserId) {
+        // Given
+        UserJpaTestBuilder.UserWrapper userWrapper = userJpaTestBuilder.getWrapper();
+        userWrapper
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setIsExerciseCustom(true)
+                .setIsExerciseNeedsEquipment(true)
+                .setAmountOfExercises(2)
+                .setExerciseIdOrSeed(1)
+                .setAmountOfExerciseNestedEntities(1)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
+                .buildUserAndAddMultipleExercises();
+
+        // When
+        Optional<Exercise> exerciseOptional = null;
+
+        if (nonNull(nonExistingExerciseId))
+            exerciseOptional =
+                    exerciseRepository.findCustomByExerciseIdAndUserId(nonExistingExerciseId, userWrapper.getUserId());
+        else if (nonNull(nonExistingUserId))
+            exerciseOptional = exerciseRepository.findCustomByExerciseIdAndUserId(
+                    userWrapper.getExerciseIdFromSortedList(0), nonExistingUserId);
+
+        // Then
+        assertFalse(exerciseOptional.isPresent());
+    }
+
+    static Stream<Arguments> findCustomByExerciseIdAndUserId_multipleInvalidInputs() {
+        return Stream.of(Arguments.of(1000L, null), Arguments.of(null, 1000L));
+    }
+
+    @Test
+    void findCustomByExerciseIdAndUserIdTest_shouldReturnOptionalEmpty_whenUserExerciseMismatchOccurred() {
+        // Given
+        UserJpaTestBuilder.UserWrapper userWrapper1 = userJpaTestBuilder.getWrapper();
+        userWrapper1
+                .setUserIdOrSeed(1)
+                .setUserRole()
+                .setIsExerciseCustom(true)
+                .setIsExerciseNeedsEquipment(true)
+                .setAmountOfExercises(2)
+                .setExerciseIdOrSeed(1)
+                .setAmountOfExerciseNestedEntities(1)
+                .setStartIdOrSeedForExerciseNestedEntities(1)
+                .setIsExerciseHttpRefsCustom(false)
+                .buildUserAndAddMultipleExercises();
+
+        UserJpaTestBuilder.UserWrapper userWrapper2 = userJpaTestBuilder.getWrapper();
+        userWrapper2
+                .setUserIdOrSeed(2)
+                .setUserRole()
+                .setIsRoleAlreadyCreated(true)
+                .setIsExerciseCustom(true)
+                .setIsExerciseNeedsEquipment(true)
+                .setAmountOfExercises(2)
+                .setExerciseIdOrSeed(3)
+                .setAmountOfExerciseNestedEntities(1)
+                .setStartIdOrSeedForExerciseNestedEntities(2)
+                .setIsExerciseHttpRefsCustom(false)
+                .buildUserAndAddMultipleExercises();
+
+        // When
+        Optional<Exercise> exerciseOptional = exerciseRepository.findCustomByExerciseIdAndUserId(
+                userWrapper1.getExerciseIdFromSortedList(0), userWrapper2.getUserId());
+
+        // Then
+        assertFalse(exerciseOptional.isPresent());
     }
 }
