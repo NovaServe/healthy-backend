@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.workout.service;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
@@ -7,7 +8,9 @@ import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
 import healthy.lifestyle.backend.workout.dto.*;
+import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
+import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
@@ -218,5 +221,151 @@ public class ExerciseServiceImpl implements ExerciseService {
         exerciseRespondDto.setHttpRefs(httpRefsSorted);
 
         return exerciseRespondDto;
+    }
+
+    @Override
+    @Transactional
+    public ExerciseResponseDto updateCustomExercise(long exerciseId, long userId, ExerciseUpdateRequestDto requestDto) {
+        Exercise exercise = exerciseRepository
+                .findCustomByExerciseIdAndUserId(exerciseId, userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        boolean noUpdatesRequest = isNull(requestDto.getTitle())
+                && isNull(requestDto.getDescription())
+                && isNull(requestDto.getNeedsEquipment())
+                && exercise.getBodyParts().stream()
+                        .map(BodyPart::getId)
+                        .sorted(Comparator.comparingLong(Long::longValue))
+                        .toList()
+                        .equals(requestDto.getBodyPartIds())
+                && exercise.getHttpRefs().stream()
+                        .map(HttpRef::getId)
+                        .sorted(Comparator.comparingLong(Long::longValue))
+                        .toList()
+                        .equals(requestDto.getHttpRefIds());
+        if (noUpdatesRequest) throw new ApiException(ErrorMessage.NO_UPDATES_REQUEST, HttpStatus.BAD_REQUEST);
+
+        User user = userService.getUserById(userId);
+
+        boolean userDoesntHaveExercise =
+                isNull(user.getExercises()) || !user.getExercises().contains(exercise);
+        if (userDoesntHaveExercise) throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+
+        if (nonNull(requestDto.getTitle())) {
+            boolean titlesAreDifferent = !requestDto.getTitle().equals(exercise.getTitle());
+            if (titlesAreDifferent) {
+                exerciseRepository
+                        .findCustomByTitleAndUserId(requestDto.getTitle(), userId)
+                        .ifPresent(existingExercise -> {
+                            throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
+                        });
+                exercise.setTitle(requestDto.getTitle());
+            } else throw new ApiException(ErrorMessage.TITLES_ARE_NOT_DIFFERENT, HttpStatus.BAD_REQUEST);
+        }
+
+        if (nonNull(requestDto.getDescription())) {
+            boolean descriptionsAreDifferent = !requestDto.getDescription().equals(exercise.getDescription());
+            if (descriptionsAreDifferent) exercise.setDescription(requestDto.getDescription());
+            else throw new ApiException(ErrorMessage.DESCRIPTIONS_ARE_NOT_DIFFERENT, HttpStatus.BAD_REQUEST);
+        }
+
+        if (nonNull(requestDto.getNeedsEquipment())) {
+            boolean needsEquipmentAreDifferent = (requestDto.getNeedsEquipment() != exercise.isNeedsEquipment());
+            if (needsEquipmentAreDifferent) exercise.setNeedsEquipment(requestDto.getNeedsEquipment());
+            else throw new ApiException(ErrorMessage.NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT, HttpStatus.BAD_REQUEST);
+        }
+
+        boolean bodyPartsAreDifferent = !exercise.getBodyParts().stream()
+                .map(BodyPart::getId)
+                .sorted(Comparator.comparingLong(Long::longValue))
+                .toList()
+                .equals(requestDto.getBodyPartIds());
+        if (bodyPartsAreDifferent) updateBodyParts(requestDto, exercise);
+
+        boolean httpRefsAreDifferent = !exercise.getHttpRefs().stream()
+                .map(HttpRef::getId)
+                .sorted(Comparator.comparingLong(Long::longValue))
+                .toList()
+                .equals(requestDto.getHttpRefIds());
+        if (httpRefsAreDifferent) updateHttpRefs(requestDto, exercise, user);
+
+        Exercise savedExercise = exerciseRepository.save(exercise);
+        return mapExerciseToExerciseResponseDto(savedExercise);
+    }
+
+    private void updateBodyParts(ExerciseUpdateRequestDto requestDto, Exercise exercise) {
+        Set<Long> idsToAdd = new HashSet<>(requestDto.getBodyPartIds());
+        Set<Long> idsToRemove = new HashSet<>();
+
+        for (BodyPart bodyPart : exercise.getBodyParts()) {
+            idsToAdd.remove(bodyPart.getId());
+            if (!requestDto.getBodyPartIds().contains(bodyPart.getId())) idsToRemove.add(bodyPart.getId());
+        }
+
+        for (long id : idsToAdd) {
+            BodyPart bodyPart = bodyPartRepository
+                    .findById(id)
+                    .orElseThrow(() -> new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST));
+            exercise.getBodyParts().add(bodyPart);
+        }
+
+        for (long id : idsToRemove) {
+            BodyPart bodyPart = bodyPartRepository
+                    .findById(id)
+                    .orElseThrow(() -> new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST));
+            exercise.getBodyParts().remove(bodyPart);
+        }
+    }
+
+    private void updateHttpRefs(ExerciseUpdateRequestDto requestDto, Exercise exercise, User user) {
+        if (requestDto.getHttpRefIds().isEmpty()) {
+            exercise.getHttpRefs().clear();
+            return;
+        }
+
+        Set<Long> idsToAdd = new HashSet<>(requestDto.getHttpRefIds());
+        Set<Long> idsToRemove = new HashSet<>();
+
+        for (HttpRef httpRef : exercise.getHttpRefs()) {
+            idsToAdd.remove(httpRef.getId());
+            if (!requestDto.getHttpRefIds().contains(httpRef.getId())) idsToRemove.add(httpRef.getId());
+        }
+
+        for (long id : idsToAdd) {
+            HttpRef httpRef = httpRefRepository
+                    .findById(id)
+                    .orElseThrow(() -> new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST));
+
+            boolean userDoesntHaveCustomHttpRef =
+                    httpRef.isCustom() && !user.getHttpRefs().contains(httpRef);
+            if (userDoesntHaveCustomHttpRef)
+                throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+            exercise.getHttpRefs().add(httpRef);
+        }
+
+        for (long id : idsToRemove) {
+            HttpRef httpRef = httpRefRepository
+                    .findById(id)
+                    .orElseThrow(() -> new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST));
+            exercise.getHttpRefs().remove(httpRef);
+        }
+    }
+
+    private ExerciseResponseDto mapExerciseToExerciseResponseDto(Exercise exercise) {
+        ExerciseResponseDto exerciseResponseDto = modelMapper.map(exercise, ExerciseResponseDto.class);
+
+        List<BodyPartResponseDto> exerciseBodyPartsSorted = exercise.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPart::getId))
+                .map(bodyPart -> modelMapper.map(bodyPart, BodyPartResponseDto.class))
+                .toList();
+        exerciseResponseDto.setBodyParts(exerciseBodyPartsSorted);
+
+        List<HttpRefResponseDto> exerciseHttpRefsSorted = exercise.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRef::getId))
+                .map(httpRef -> modelMapper.map(httpRef, HttpRefResponseDto.class))
+                .toList();
+        exerciseResponseDto.setHttpRefs(exerciseHttpRefsSorted);
+
+        return exerciseResponseDto;
     }
 }

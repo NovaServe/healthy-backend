@@ -17,7 +17,11 @@ public enum ErrorMessage {
     DEFAULT_RESOURCE_IF_NOT_ALLOWED_TO_MODIFY("Default is not allowed to modify"),
     USER_RESOURCE_MISMATCH("User-resource mismatch"),
     EMPTY_REQUEST("Empty request"),
-    DEFAULT_CUSTOM_MISMATCH("Default-custom mismatch");
+    NO_UPDATES_REQUEST("No updates request"),
+    DEFAULT_CUSTOM_MISMATCH("Default-custom mismatch"),
+    TITLES_ARE_NOT_DIFFERENT("Title are not different"),
+    DESCRIPTIONS_ARE_NOT_DIFFERENT("Descriptions are not different"),
+    NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT("Needs equipment are not different");
 
     private final String name;
 

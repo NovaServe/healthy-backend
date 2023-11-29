@@ -352,52 +352,59 @@ class WorkoutServiceTest {
     @Test
     void updateCustomWorkoutTest_shouldReturnWorkoutResponseDto_whenValidRequestDtoProvided() {
         User user = dataUtil.createUserEntity(1);
-        when(userService.getUserById(1)).thenReturn(user);
 
         Exercise exercise1 = dataUtil.createExercise(1, true, true, true, 1, 2, 1, 2);
         Exercise exercise2 = dataUtil.createExercise(2, true, true, true, 3, 4, 3, 4);
-        user.setExercises(new HashSet<>());
-        user.getExercises().add(exercise1);
-        user.getExercises().add(exercise2);
+        Exercise exercise3 = dataUtil.createExercise(3, true, true, false, 5, 6, 5, 6);
+        Exercise exercise4 = dataUtil.createExercise(4, false, true, false, 8, 9, 8, 9);
+
+        user.setExercises(new HashSet<>() {
+            {
+                add(exercise1);
+                add(exercise2);
+                add(exercise3);
+                add(exercise4);
+            }
+        });
+
         Workout workout = dataUtil.createWorkout(1, true, new HashSet<>() {
             {
                 add(exercise1);
                 add(exercise2);
             }
         });
-        user.setWorkouts(new HashSet<>());
-        user.getWorkouts().add(workout);
-        when(workoutRepository.findById(workout.getId())).thenReturn(Optional.of(workout));
-        when(workoutRepository.save(any(Workout.class)))
-                .thenAnswer(invocation -> invocation.getArguments()[0]);
+        user.setWorkouts(new HashSet<>() {
+            {
+                add(workout);
+            }
+        });
 
-        Exercise exercise3 = dataUtil.createExercise(3, true, true, false, 5, 6, 5, 6);
-        user.getExercises().add(exercise3);
-
-        // Default exercise
-        Exercise exercise4 = dataUtil.createExercise(4, false, true, false, 8, 9, 8, 9);
-
-        when(exerciseRepository.findById(exercise3.getId())).thenReturn(Optional.of(exercise3));
-        when(exerciseRepository.findById(exercise4.getId())).thenReturn(Optional.of(exercise4));
-
-        Set<BodyPart> expectedBodyPartsSet = new HashSet<>();
-        expectedBodyPartsSet.addAll(exercise1.getBodyParts());
-        expectedBodyPartsSet.addAll(exercise2.getBodyParts());
-        expectedBodyPartsSet.addAll(exercise3.getBodyParts());
-        expectedBodyPartsSet.addAll(exercise4.getBodyParts());
-
+        Set<BodyPart> expectedBodyPartsSet = new HashSet<>() {
+            {
+                addAll(exercise2.getBodyParts());
+                addAll(exercise3.getBodyParts());
+                addAll(exercise4.getBodyParts());
+            }
+        };
         List<BodyPart> expectedBodyPartList = expectedBodyPartsSet.stream()
                 .sorted(Comparator.comparingLong(BodyPart::getId))
                 .toList();
 
         UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, new ArrayList<>() {
             {
-                add(exercise1.getId());
                 add(exercise2.getId());
                 add(exercise3.getId());
                 add(exercise4.getId());
             }
         });
+
+        when(userService.getUserById(1)).thenReturn(user);
+        when(workoutRepository.findById(workout.getId())).thenReturn(Optional.of(workout));
+        when(workoutRepository.save(any(Workout.class)))
+                .thenAnswer(invocation -> invocation.getArguments()[0]);
+        when(exerciseRepository.findById(exercise1.getId())).thenReturn(Optional.of(exercise1));
+        when(exerciseRepository.findById(exercise3.getId())).thenReturn(Optional.of(exercise3));
+        when(exerciseRepository.findById(exercise4.getId())).thenReturn(Optional.of(exercise4));
 
         // When
         WorkoutResponseDto responseDto = workoutService.updateCustomWorkout(user.getId(), workout.getId(), requestDto);
@@ -405,7 +412,9 @@ class WorkoutServiceTest {
         // Then
         verify(userService, times(1)).getUserById(1);
         verify(workoutRepository, times(1)).findById(workout.getId());
+        verify(workoutRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         verify(workoutRepository, times(1)).save(any(Workout.class));
+        verify(exerciseRepository, times(1)).findById(exercise1.getId());
         verify(exerciseRepository, times(1)).findById(exercise3.getId());
         verify(exerciseRepository, times(1)).findById(exercise4.getId());
 
@@ -421,30 +430,23 @@ class WorkoutServiceTest {
 
         assertThat(responseDto.getExercises())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("bodyParts", "httpRefs", "users")
-                .isEqualTo(List.of(exercise1, exercise2, exercise3, exercise4));
+                .isEqualTo(List.of(exercise2, exercise3, exercise4));
 
         assertThat(responseDto.getExercises().get(0).getBodyParts())
-                .usingRecursiveComparison()
-                .ignoringFields("exercises")
-                .isEqualTo(exercise1.getBodyParts().stream()
-                        .sorted(Comparator.comparingLong(BodyPart::getId))
-                        .toList());
-
-        assertThat(responseDto.getExercises().get(1).getBodyParts())
                 .usingRecursiveComparison()
                 .ignoringFields("exercises")
                 .isEqualTo(exercise2.getBodyParts().stream()
                         .sorted(Comparator.comparingLong(BodyPart::getId))
                         .toList());
 
-        assertThat(responseDto.getExercises().get(2).getBodyParts())
+        assertThat(responseDto.getExercises().get(1).getBodyParts())
                 .usingRecursiveComparison()
                 .ignoringFields("exercises")
                 .isEqualTo(exercise3.getBodyParts().stream()
                         .sorted(Comparator.comparingLong(BodyPart::getId))
                         .toList());
 
-        assertThat(responseDto.getExercises().get(3).getBodyParts())
+        assertThat(responseDto.getExercises().get(2).getBodyParts())
                 .usingRecursiveComparison()
                 .ignoringFields("exercises")
                 .isEqualTo(exercise4.getBodyParts().stream()
@@ -454,25 +456,18 @@ class WorkoutServiceTest {
         assertThat(responseDto.getExercises().get(0).getHttpRefs())
                 .usingRecursiveComparison()
                 .ignoringFields("exercises", "user")
-                .isEqualTo(exercise1.getHttpRefs().stream()
+                .isEqualTo(exercise2.getHttpRefs().stream()
                         .sorted(Comparator.comparingLong(HttpRef::getId))
                         .toList());
 
         assertThat(responseDto.getExercises().get(1).getHttpRefs())
                 .usingRecursiveComparison()
                 .ignoringFields("exercises", "user")
-                .isEqualTo(exercise2.getHttpRefs().stream()
-                        .sorted(Comparator.comparingLong(HttpRef::getId))
-                        .toList());
-
-        assertThat(responseDto.getExercises().get(2).getHttpRefs())
-                .usingRecursiveComparison()
-                .ignoringFields("exercises", "user")
                 .isEqualTo(exercise3.getHttpRefs().stream()
                         .sorted(Comparator.comparingLong(HttpRef::getId))
                         .toList());
 
-        assertThat(responseDto.getExercises().get(3).getHttpRefs())
+        assertThat(responseDto.getExercises().get(2).getHttpRefs())
                 .usingRecursiveComparison()
                 .ignoringFields("exercises", "user")
                 .isEqualTo(exercise4.getHttpRefs().stream()

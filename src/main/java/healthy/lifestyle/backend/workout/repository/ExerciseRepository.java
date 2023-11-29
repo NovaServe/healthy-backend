@@ -19,4 +19,7 @@ public interface ExerciseRepository extends JpaRepository<Exercise, Long> {
 
     @Query("SELECT e FROM Exercise e WHERE e.id = :exerciseId AND e.isCustom = false")
     Exercise findDefaultById(long exerciseId);
+
+    @Query("SELECT e FROM Exercise e JOIN e.users u WHERE u.id = :userId AND e.id = :exerciseId AND e.isCustom = true")
+    Optional<Exercise> findCustomByExerciseIdAndUserId(long exerciseId, long userId);
 }

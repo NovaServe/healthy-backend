@@ -213,17 +213,22 @@ public class WorkoutServiceImpl implements WorkoutService {
         Set<BodyPart> workoutBodyParts = new HashSet<>();
 
         if (requestDto.getExerciseIds().size() > 0) {
-            Set<Long> exerciseIdsToAdd = new HashSet<>(requestDto.getExerciseIds());
+            Set<Long> idsToAdd = new HashSet<>(requestDto.getExerciseIds());
+            Set<Long> idsToRemove = new HashSet<>();
 
             for (Exercise exercise : workout.getExercises()) {
-                exerciseIdsToAdd.remove(exercise.getId());
+                idsToAdd.remove(exercise.getId());
+
+                if (!requestDto.getExerciseIds().contains(exercise.getId())) {
+                    idsToRemove.add(exercise.getId());
+                }
 
                 if (exercise.isNeedsEquipment()) workoutNeedsEquipment = true;
                 workoutBodyParts.addAll(exercise.getBodyParts());
             }
 
-            for (long exerciseId : exerciseIdsToAdd) {
-                Optional<Exercise> exerciseOptional = exerciseRepository.findById(exerciseId);
+            for (long id : idsToAdd) {
+                Optional<Exercise> exerciseOptional = exerciseRepository.findById(id);
                 if (exerciseOptional.isEmpty())
                     throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
 
@@ -234,6 +239,13 @@ public class WorkoutServiceImpl implements WorkoutService {
                 workout.getExercises().add(exercise);
                 if (exercise.isNeedsEquipment()) workoutNeedsEquipment = true;
                 workoutBodyParts.addAll(exercise.getBodyParts());
+            }
+
+            for (long id : idsToRemove) {
+                Optional<Exercise> exerciseOptional = exerciseRepository.findById(id);
+                Exercise exercise = exerciseOptional.get();
+                workout.getExercises().remove(exercise);
+                workoutBodyParts.removeAll(exercise.getBodyParts());
             }
         }
 

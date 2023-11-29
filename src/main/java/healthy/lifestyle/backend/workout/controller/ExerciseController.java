@@ -3,7 +3,9 @@ package healthy.lifestyle.backend.workout.controller;
 import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.workout.dto.CreateExerciseRequestDto;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
+import healthy.lifestyle.backend.workout.dto.ExerciseUpdateRequestDto;
 import healthy.lifestyle.backend.workout.service.ExerciseService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,5 +58,14 @@ public class ExerciseController {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         return ResponseEntity.ok(exerciseService.getCustomExercises(userId));
+    }
+
+    @PatchMapping("/{exerciseId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<ExerciseResponseDto> updateCustomExercise(
+            @PathVariable("exerciseId") long exerciseId, @Valid @RequestBody ExerciseUpdateRequestDto requestDto) {
+        Long userId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        return ResponseEntity.ok(exerciseService.updateCustomExercise(exerciseId, userId, requestDto));
     }
 }
