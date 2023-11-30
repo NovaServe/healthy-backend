@@ -68,4 +68,12 @@ public class ExerciseController {
                 SecurityContextHolder.getContext().getAuthentication());
         return ResponseEntity.ok(exerciseService.updateCustomExercise(exerciseId, userId, requestDto));
     }
+
+    @DeleteMapping("/{exerciseId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<Long> deleteCustomExercise(@PathVariable("exerciseId") long exerciseId) {
+        Long userId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        return new ResponseEntity<>(exerciseService.deleteCustomExercise(exerciseId, userId), HttpStatus.NO_CONTENT);
+    }
 }

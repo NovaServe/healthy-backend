@@ -178,10 +178,11 @@ public class UserTestBuilder {
                     .setIsHttpRefCustom(this.isExerciseHttpRefsCustom)
                     .setAmountOfNestedEntities(this.amountOfExerciseNestedEntities)
                     .setStartIdOrSeedForNestedEntities(this.startIdOrSeedForExerciseNestedEntities)
-                    .buildSingle();
+                    .buildList();
             if (this.isExerciseCustom && this.isExerciseHttpRefsCustom) {
                 this.user.getHttpRefs().addAll(exerciseWrapper.getDistinctHttpRefsFromList());
             }
+            this.user.getExercises().addAll(exerciseWrapper.getExercisesAll());
             return this.user;
         }
 

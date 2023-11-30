@@ -192,4 +192,14 @@ public class UserServiceImpl implements UserService {
 
         return modelMapper.map(userOptional.get(), UserResponseDto.class);
     }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void deleteUserExercise(long userId, Exercise exercise) {
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
+        user.getExercises().remove(exercise);
+        userRepository.save(user);
+    }
 }

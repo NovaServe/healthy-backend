@@ -15,4 +15,6 @@ public interface ExerciseService {
     ExerciseResponseDto getExerciseById(long exerciseId, boolean requiredDefault, Long userId);
 
     ExerciseResponseDto updateCustomExercise(long exerciseId, long userId, ExerciseUpdateRequestDto requestDto);
+
+    Long deleteCustomExercise(long exerciseId, long userId);
 }

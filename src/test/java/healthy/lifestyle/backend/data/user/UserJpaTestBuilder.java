@@ -3,6 +3,8 @@ package healthy.lifestyle.backend.data.user;
 import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.data.exercise.ExerciseJpaTestBuilder;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -19,6 +21,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -506,6 +509,12 @@ public class UserJpaTestBuilder {
         @Override
         public List<HttpRef> getDistinctSortedHttpRefsFromExerciseList() {
             return exerciseWrapper.getDistinctHttpRefsSortedFromList();
+        }
+
+        public User getUserById(long userId) {
+            return userRepository
+                    .findById(userId)
+                    .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
         }
     }
 }

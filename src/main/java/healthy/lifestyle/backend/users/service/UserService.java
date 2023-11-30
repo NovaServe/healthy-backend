@@ -23,4 +23,6 @@ public interface UserService {
     long deleteUser(Long userId);
 
     UserResponseDto getUserDetailsById(long userId);
+
+    void deleteUserExercise(long userId, Exercise exercise);
 }
