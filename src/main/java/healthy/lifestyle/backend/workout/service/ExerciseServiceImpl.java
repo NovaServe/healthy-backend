@@ -368,4 +368,15 @@ public class ExerciseServiceImpl implements ExerciseService {
 
         return exerciseResponseDto;
     }
+
+    @Override
+    @Transactional
+    public Long deleteCustomExercise(long exerciseId, long userId) {
+        Exercise exercise = exerciseRepository
+                .findCustomByExerciseIdAndUserId(exerciseId, userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
+        userService.deleteUserExercise(userId, exercise);
+        exerciseRepository.delete(exercise);
+        return exerciseId;
+    }
 }
