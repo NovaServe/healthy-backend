@@ -58,7 +58,7 @@ class ExerciseServiceTest {
     @Test
     void createExerciseTest_shouldReturnNewExercise() {
         // Given
-        CreateExerciseRequestDto requestDto =
+        ExerciseCreateRequestDto requestDto =
                 dataUtil.createExerciseRequestDto(1, false, new Long[] {1L, 2L}, new Long[] {1L, 2L});
 
         List<BodyPart> bodyPartsMock = dataUtil.createBodyParts(1, 2);

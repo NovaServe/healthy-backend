@@ -1,8 +1,8 @@
 package healthy.lifestyle.backend.workout.service;
 
-import healthy.lifestyle.backend.workout.dto.CreateWorkoutRequestDto;
-import healthy.lifestyle.backend.workout.dto.UpdateWorkoutRequestDto;
+import healthy.lifestyle.backend.workout.dto.WorkoutCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
+import healthy.lifestyle.backend.workout.dto.WorkoutUpdateRequestDto;
 import java.util.List;
 
 public interface WorkoutService {
@@ -10,9 +10,9 @@ public interface WorkoutService {
 
     WorkoutResponseDto getWorkoutById(long workoutId, boolean customRequired);
 
-    WorkoutResponseDto createCustomWorkout(long userId, CreateWorkoutRequestDto requestDto);
+    WorkoutResponseDto createCustomWorkout(long userId, WorkoutCreateRequestDto requestDto);
 
-    WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, UpdateWorkoutRequestDto requestDto);
+    WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, WorkoutUpdateRequestDto requestDto);
 
     long deleteCustomWorkout(long userId, long workoutId);
 }

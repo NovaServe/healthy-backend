@@ -12,7 +12,7 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class UpdateWorkoutRequestDto {
+public class WorkoutUpdateRequestDto {
     @TitleValidation
     @Size(min = 5, max = 255, message = "Size should be from 5 to 255 characters long")
     private String title;

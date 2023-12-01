@@ -9,9 +9,9 @@ import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserServiceImpl;
-import healthy.lifestyle.backend.workout.dto.CreateWorkoutRequestDto;
-import healthy.lifestyle.backend.workout.dto.UpdateWorkoutRequestDto;
+import healthy.lifestyle.backend.workout.dto.WorkoutCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
+import healthy.lifestyle.backend.workout.dto.WorkoutUpdateRequestDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
@@ -217,7 +217,7 @@ class WorkoutServiceTest {
         Exercise exercise3 = dataUtil.createExercise(3, false, true, true, 5, 6, 5, 6);
         Exercise exercise4 = dataUtil.createExercise(4, false, false, false, 7, 8, 7, 8);
 
-        CreateWorkoutRequestDto requestDto = dataUtil.createWorkoutRequestDto(
+        WorkoutCreateRequestDto requestDto = dataUtil.createWorkoutRequestDto(
                 1, List.of(exercise1.getId(), exercise2.getId(), exercise3.getId(), exercise4.getId()));
 
         when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
@@ -262,7 +262,7 @@ class WorkoutServiceTest {
 
         Workout workout = dataUtil.createWorkout(1L, true, null);
 
-        CreateWorkoutRequestDto requestDto = dataUtil.createWorkoutRequestDto(1, List.of(exercise1.getId()));
+        WorkoutCreateRequestDto requestDto = dataUtil.createWorkoutRequestDto(1, List.of(exercise1.getId()));
 
         when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
                 .thenReturn(List.of(workout));
@@ -290,7 +290,7 @@ class WorkoutServiceTest {
         Exercise exercise1 = dataUtil.createExercise(1, true, true, true, 1, 2, 1, 2);
         exercise1.setUsers(Set.of(user));
 
-        CreateWorkoutRequestDto requestDto = dataUtil.createWorkoutRequestDto(1, List.of(exercise1.getId()));
+        WorkoutCreateRequestDto requestDto = dataUtil.createWorkoutRequestDto(1, List.of(exercise1.getId()));
 
         when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
                 .thenReturn(Collections.emptyList());
@@ -324,7 +324,7 @@ class WorkoutServiceTest {
         Exercise exercise2 = dataUtil.createExercise(2, true, true, true, 3, 4, 3, 4);
         exercise2.setUsers(Set.of(user2));
 
-        CreateWorkoutRequestDto requestDto =
+        WorkoutCreateRequestDto requestDto =
                 dataUtil.createWorkoutRequestDto(1, List.of(exercise1.getId(), exercise2.getId()));
 
         when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
@@ -390,7 +390,7 @@ class WorkoutServiceTest {
                 .sorted(Comparator.comparingLong(BodyPart::getId))
                 .toList();
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, new ArrayList<>() {
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, new ArrayList<>() {
             {
                 add(exercise2.getId());
                 add(exercise3.getId());
@@ -478,7 +478,7 @@ class WorkoutServiceTest {
     @Test
     void updateCustomWorkoutTest_shouldThrowEmptyRequestExceptionAnd400_whenEmptyDtoProvided() {
         // Given
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
         requestDto.setTitle(null);
         requestDto.setDescription(null);
 
@@ -504,7 +504,7 @@ class WorkoutServiceTest {
         when(userService.getUserById(user.getId())).thenReturn(user);
         long workoutId = 1L;
         when(workoutRepository.findById(workoutId)).thenReturn(Optional.empty());
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
 
         // When
         ApiException exception = assertThrows(ApiException.class, () -> {
@@ -528,7 +528,7 @@ class WorkoutServiceTest {
         when(userService.getUserById(user.getId())).thenReturn(user);
         Workout workout = dataUtil.createWorkout(1L, true, null);
         when(workoutRepository.findById(workout.getId())).thenReturn(Optional.of(workout));
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
 
         // When
         ApiException exception = assertThrows(ApiException.class, () -> {
@@ -558,7 +558,7 @@ class WorkoutServiceTest {
         });
         Workout workout2 = dataUtil.createWorkout(2L, true, null);
         when(workoutRepository.findById(workout2.getId())).thenReturn(Optional.of(workout2));
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
 
         // When
         ApiException exception = assertThrows(ApiException.class, () -> {
@@ -587,7 +587,7 @@ class WorkoutServiceTest {
             }
         });
         when(workoutRepository.findById(workout.getId())).thenReturn(Optional.of(workout));
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
         Workout workout2 = dataUtil.createWorkout(2L, true, null);
         when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
                 .thenReturn(List.of(workout2));
@@ -640,7 +640,7 @@ class WorkoutServiceTest {
         when(exerciseRepository.findById(exercise4.getId())).thenReturn(Optional.of(exercise4));
         when(exerciseRepository.findById(nonExistingExerciseId)).thenReturn(Optional.empty());
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, new ArrayList<>() {
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, new ArrayList<>() {
             {
                 add(exercise1.getId());
                 add(exercise2.getId());
@@ -703,7 +703,7 @@ class WorkoutServiceTest {
         when(exerciseRepository.findById(exercise4.getId())).thenReturn(Optional.of(exercise4));
         when(exerciseRepository.findById(exercise5.getId())).thenReturn(Optional.of(exercise5));
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, new ArrayList<>() {
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, new ArrayList<>() {
             {
                 add(exercise1.getId());
                 add(exercise2.getId());

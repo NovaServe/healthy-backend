@@ -131,7 +131,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDto updateUser(Long userId, UpdateUserRequestDto requestDto) {
+    public UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto) {
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
         User user = userOptional.get();

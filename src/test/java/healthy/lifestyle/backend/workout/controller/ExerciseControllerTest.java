@@ -106,7 +106,7 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(
+        ExerciseCreateRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(
                 1, false, new Long[] {bodyParts.get(0).getId(), bodyParts.get(1).getId()}, new Long[] {
                     httpRefs.get(0).getId(), httpRefs.get(1).getId()
                 });
@@ -155,7 +155,7 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createBodyPart(id))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(
+        ExerciseCreateRequestDto createExerciseRequestDto = dataUtil.createExerciseRequestDto(
                 1, false, new Long[] {bodyParts.get(0).getId(), bodyParts.get(1).getId()}, new Long[] {});
 
         // When
@@ -196,7 +196,7 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto =
+        ExerciseCreateRequestDto createExerciseRequestDto =
                 dataUtil.createExerciseRequestDto(1, false, new Long[] {}, new Long[] {
                     httpRefs.get(0).getId(), httpRefs.get(1).getId()
                 });
@@ -228,7 +228,7 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto =
+        ExerciseCreateRequestDto createExerciseRequestDto =
                 dataUtil.createExerciseRequestDto(1, false, new Long[] {1000L}, new Long[] {1111L});
 
         // When
@@ -258,7 +258,7 @@ class ExerciseControllerTest {
                 .mapToObj(id -> dataHelper.createHttpRef(id, false))
                 .toList();
 
-        CreateExerciseRequestDto createExerciseRequestDto =
+        ExerciseCreateRequestDto createExerciseRequestDto =
                 dataUtil.createExerciseRequestDto(1, false, new Long[] {1000L}, new Long[] {1111L});
 
         // When

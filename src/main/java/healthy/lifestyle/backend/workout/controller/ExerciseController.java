@@ -1,7 +1,7 @@
 package healthy.lifestyle.backend.workout.controller;
 
 import healthy.lifestyle.backend.users.service.AuthService;
-import healthy.lifestyle.backend.workout.dto.CreateExerciseRequestDto;
+import healthy.lifestyle.backend.workout.dto.ExerciseCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.workout.dto.ExerciseUpdateRequestDto;
 import healthy.lifestyle.backend.workout.service.ExerciseService;
@@ -28,7 +28,7 @@ public class ExerciseController {
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<ExerciseResponseDto> createCustomExercise(@RequestBody CreateExerciseRequestDto requestDto) {
+    public ResponseEntity<ExerciseResponseDto> createCustomExercise(@RequestBody ExerciseCreateRequestDto requestDto) {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         return new ResponseEntity<>(exerciseService.createExercise(requestDto, userId), HttpStatus.CREATED);

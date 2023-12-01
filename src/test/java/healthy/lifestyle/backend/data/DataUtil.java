@@ -2,7 +2,7 @@ package healthy.lifestyle.backend.data;
 
 import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
-import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
+import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.*;
@@ -43,8 +43,8 @@ public class DataUtil {
                 .build();
     }
 
-    public UpdateHttpRefRequestDto createUpdateHttpRefRequestDto(int seed) {
-        return UpdateHttpRefRequestDto.builder()
+    public HttpRefUpdateRequestDto createUpdateHttpRefRequestDto(int seed) {
+        return HttpRefUpdateRequestDto.builder()
                 .updatedName("Update Name " + seed)
                 .updatedRef("https://ref-updated-" + seed)
                 .updatedDescription("Updated Description " + seed)
@@ -110,10 +110,10 @@ public class DataUtil {
                 .collect(Collectors.toList());
     }
 
-    public CreateExerciseRequestDto createExerciseRequestDto(
+    public ExerciseCreateRequestDto createExerciseRequestDto(
             int seed, boolean needsEquipment, Long[] bodyPartIds, Long[] httpRefIds) {
 
-        return CreateExerciseRequestDto.builder()
+        return ExerciseCreateRequestDto.builder()
                 .title("Title " + seed)
                 .description("Desc " + seed)
                 .needsEquipment(needsEquipment)
@@ -156,8 +156,8 @@ public class DataUtil {
                 .build();
     }
 
-    public CreateHttpRequestDto createHttpRequestDto(int seed) {
-        return CreateHttpRequestDto.builder()
+    public HttpRefCreateRequestDto createHttpRequestDto(int seed) {
+        return HttpRefCreateRequestDto.builder()
                 .name("Name " + seed)
                 .description("Description " + seed)
                 .ref("http://ref-" + seed)
@@ -173,8 +173,8 @@ public class DataUtil {
                 .build();
     }
 
-    public UpdateUserRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
-        return UpdateUserRequestDto.builder()
+    public UserUpdateRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
+        return UserUpdateRequestDto.builder()
                 .updatedUsername("username-" + seed)
                 .updatedEmail("username-" + seed + "@email.com")
                 .updatedPassword("password-" + seed)
@@ -185,16 +185,16 @@ public class DataUtil {
                 .build();
     }
 
-    public CreateWorkoutRequestDto createWorkoutRequestDto(int seed, List<Long> exerciseIds) {
-        return CreateWorkoutRequestDto.builder()
+    public WorkoutCreateRequestDto createWorkoutRequestDto(int seed, List<Long> exerciseIds) {
+        return WorkoutCreateRequestDto.builder()
                 .title("Title-" + seed)
                 .description("Description-" + seed)
                 .exerciseIds(exerciseIds)
                 .build();
     }
 
-    public UpdateWorkoutRequestDto updateWorkoutRequestDto(int seed, List<Long> exerciseIds) {
-        return UpdateWorkoutRequestDto.builder()
+    public WorkoutUpdateRequestDto updateWorkoutRequestDto(int seed, List<Long> exerciseIds) {
+        return WorkoutUpdateRequestDto.builder()
                 .title("Title-" + seed)
                 .description("Description-" + seed)
                 .exerciseIds(exerciseIds)
