@@ -9,19 +9,7 @@ jobs:
  checkstyle:
    runs-on: ubuntu-latest
 
-   outputs:
-     temp: ${{ steps.set.outputs.temp }}
-
    steps:
-     - name: Set versions
-       id: set
-       run: |
-         echo "temp=$(cat ./.github/TEMP)" >> $GITHUB_OUTPUT
-
-     - name: Display versions
-       run: |
-         echo ">>>>> temp is ${{ steps.set.outputs.temp }}"
-
      - name: Checkout
        uses: actions/checkout@v3
 
