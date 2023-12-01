@@ -16,7 +16,7 @@ jobs:
      - name: Set versions
        id: set
        run: |
-         echo "temp=$(cat /.github/TEMP)" >> $GITHUB_OUTPUT
+         echo "temp=$(cat .github/TEMP)" >> $GITHUB_OUTPUT
 
      - name: Display versions
        run: |
