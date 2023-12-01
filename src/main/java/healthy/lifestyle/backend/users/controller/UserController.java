@@ -5,8 +5,8 @@ import static java.util.Objects.isNull;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
-import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
 import healthy.lifestyle.backend.users.dto.UserResponseDto;
+import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.users.service.CountryService;
 import healthy.lifestyle.backend.users.service.UserService;
@@ -41,7 +41,7 @@ public class UserController {
     @PatchMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<UserResponseDto> updateUser(
-            @PathVariable("userId") Long userId, @Valid @RequestBody UpdateUserRequestDto requestDto) {
+            @PathVariable("userId") Long userId, @Valid @RequestBody UserUpdateRequestDto requestDto) {
         Long authenticatedUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))

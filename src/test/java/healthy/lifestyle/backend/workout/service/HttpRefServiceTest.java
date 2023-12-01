@@ -10,9 +10,9 @@ import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
-import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
+import healthy.lifestyle.backend.workout.dto.HttpRefCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
-import healthy.lifestyle.backend.workout.dto.UpdateHttpRefRequestDto;
+import healthy.lifestyle.backend.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.List;
@@ -90,7 +90,7 @@ class HttpRefServiceTest {
     @Test
     void createCustomHttpRefTest_shouldReturnHttpRefResponseDto() {
         // Given
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
         long userId = 1L;
         User user = dataUtil.createUserEntity(userId);
         when(userService.getUserById(user.getId())).thenReturn(user);
@@ -124,7 +124,7 @@ class HttpRefServiceTest {
     @Test
     void createCustomHttpRefTest_shouldReturnUserNotFoundAndBadRequest_whenInvalidUserIdProvided() {
         // Given
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
         long userId = 1L;
         when(userService.getUserById(userId)).thenReturn(null);
 
@@ -144,7 +144,7 @@ class HttpRefServiceTest {
     @Test
     void createCustomHttpRefTest_shouldReturnAlreadyExistsAndBadRequest_whenNameDuplicated() {
         // Given
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
         long userId = 1L;
         User user = dataUtil.createUserEntity(userId);
         when(userService.getUserById(user.getId())).thenReturn(user);
@@ -171,7 +171,7 @@ class HttpRefServiceTest {
         // Given
         User user = dataUtil.createUserEntity(1);
         HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
         when(httpRefRepository.save(httpRef)).thenReturn(httpRef);
 
@@ -191,7 +191,7 @@ class HttpRefServiceTest {
     @Test
     void updateCustomHttpRefTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() {
         // Given
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
         when(httpRefRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // When
@@ -211,7 +211,7 @@ class HttpRefServiceTest {
         // Given
         User user = dataUtil.createUserEntity(1);
         HttpRef httpRef = dataUtil.createHttpRef(1, false, user);
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
@@ -232,7 +232,7 @@ class HttpRefServiceTest {
         // Given
         User user = dataUtil.createUserEntity(1);
         HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
         long wrongUserId = user.getId() + 1;
 
@@ -251,7 +251,7 @@ class HttpRefServiceTest {
     @Test
     void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenEmptyDtoProvided() {
         // Given
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
         requestDto.setUpdatedName(null);
         requestDto.setUpdatedDescription(null);
         requestDto.setUpdatedRef(null);

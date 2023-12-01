@@ -120,7 +120,7 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     @Transactional
-    public WorkoutResponseDto createCustomWorkout(long userId, CreateWorkoutRequestDto requestDto) {
+    public WorkoutResponseDto createCustomWorkout(long userId, WorkoutCreateRequestDto requestDto) {
         List<Workout> workouts = workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), userId);
         if (workouts.size() > 0) throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
 
@@ -184,7 +184,7 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     @Transactional
-    public WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, UpdateWorkoutRequestDto requestDto) {
+    public WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, WorkoutUpdateRequestDto requestDto) {
         if (isNull(requestDto.getTitle())
                 && isNull(requestDto.getDescription())
                 && requestDto.getExerciseIds().size() == 0)

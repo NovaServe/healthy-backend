@@ -22,9 +22,9 @@ import healthy.lifestyle.backend.exception.ExceptionDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.workout.dto.CreateWorkoutRequestDto;
-import healthy.lifestyle.backend.workout.dto.UpdateWorkoutRequestDto;
+import healthy.lifestyle.backend.workout.dto.WorkoutCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
+import healthy.lifestyle.backend.workout.dto.WorkoutUpdateRequestDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
@@ -404,7 +404,7 @@ class WorkoutControllerTest {
         Exercise exercise5 = dataHelper.createExercise(5, false, true, Set.of(bodyPart1), Set.of(httpRef1));
         Exercise exercise6 = dataHelper.createExercise(6, false, false, Set.of(bodyPart3), Set.of(httpRef3));
 
-        CreateWorkoutRequestDto requestDto =
+        WorkoutCreateRequestDto requestDto =
                 dataUtil.createWorkoutRequestDto(1, List.of(exercise1.getId(), exercise2.getId()));
 
         // When
@@ -486,7 +486,7 @@ class WorkoutControllerTest {
             }
         });
 
-        CreateWorkoutRequestDto requestDto =
+        WorkoutCreateRequestDto requestDto =
                 dataUtil.createWorkoutRequestDto(1, List.of(exercise1.getId(), exercise2.getId()));
         requestDto.setTitle(workout.getTitle());
 
@@ -518,7 +518,7 @@ class WorkoutControllerTest {
                 dataHelper.createExercise(2, true, false, Set.of(bodyPart1, bodyPart2), Set.of(httpRef1, httpRef2));
         User user = dataHelper.createUser("one", role, country1, Set.of(exercise1, exercise2), 20);
 
-        CreateWorkoutRequestDto requestDto =
+        WorkoutCreateRequestDto requestDto =
                 dataUtil.createWorkoutRequestDto(1, List.of(exercise1.getId(), exercise2.getId(), 3L));
 
         // When
@@ -562,7 +562,7 @@ class WorkoutControllerTest {
                 dataHelper.createExercise(4, true, false, Set.of(bodyPart3, bodyPart4), Set.of(httpRef3, httpRef4));
         User user2 = dataHelper.createUser("two", role, country2, Set.of(exercise3, exercise4), 20);
 
-        CreateWorkoutRequestDto requestDto =
+        WorkoutCreateRequestDto requestDto =
                 dataUtil.createWorkoutRequestDto(1, List.of(exercise1.getId(), exercise2.getId(), exercise3.getId()));
 
         // When
@@ -623,7 +623,7 @@ class WorkoutControllerTest {
             }
         });
 
-        UpdateWorkoutRequestDto requestDto =
+        WorkoutUpdateRequestDto requestDto =
                 dataUtil.updateWorkoutRequestDto(1, List.of(exercise2.getId(), exercise3.getId(), exercise4.getId()));
 
         String REQUEST_URL = URL + "/{workoutId}";
@@ -699,7 +699,7 @@ class WorkoutControllerTest {
         Country country1 = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country1, null, 20);
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
         requestDto.setTitle(null);
         requestDto.setDescription(null);
 
@@ -724,7 +724,7 @@ class WorkoutControllerTest {
         Country country1 = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country1, null, 20);
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
 
         String REQUEST_URL = URL + "/{workoutId}";
 
@@ -749,7 +749,7 @@ class WorkoutControllerTest {
 
         Workout workout = dataHelper.createWorkout(1, true, null);
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
 
         String REQUEST_URL = URL + "/{workoutId}";
 
@@ -782,7 +782,7 @@ class WorkoutControllerTest {
 
         Workout workout2 = dataHelper.createWorkout(2, true, null);
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
 
         String REQUEST_URL = URL + "/{workoutId}";
 
@@ -814,7 +814,7 @@ class WorkoutControllerTest {
             }
         });
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, Collections.emptyList());
         workout2.setTitle(requestDto.getTitle());
         dataHelper.updateWorkout(workout2);
 
@@ -852,7 +852,7 @@ class WorkoutControllerTest {
             }
         });
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, List.of(exercise.getId() + 1));
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, List.of(exercise.getId() + 1));
 
         String REQUEST_URL = URL + "/{workoutId}";
 
@@ -897,7 +897,7 @@ class WorkoutControllerTest {
             }
         });
 
-        UpdateWorkoutRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, List.of(exercise2.getId()));
+        WorkoutUpdateRequestDto requestDto = dataUtil.updateWorkoutRequestDto(1, List.of(exercise2.getId()));
 
         String REQUEST_URL = URL + "/{workoutId}";
 

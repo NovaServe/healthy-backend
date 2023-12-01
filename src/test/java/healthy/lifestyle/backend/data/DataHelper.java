@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.data;
 
-import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
+import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -189,8 +189,8 @@ public class DataHelper {
         userRepository.save(user);
     }
 
-    public UpdateUserRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
-        return UpdateUserRequestDto.builder()
+    public UserUpdateRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
+        return UserUpdateRequestDto.builder()
                 .updatedUsername("username-" + seed)
                 .updatedEmail("username-" + seed + "@email.com")
                 .updatedPassword("password-" + seed)

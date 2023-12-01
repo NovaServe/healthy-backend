@@ -48,7 +48,7 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Transactional
     @Override
-    public ExerciseResponseDto createExercise(CreateExerciseRequestDto requestDto, long userId) {
+    public ExerciseResponseDto createExercise(ExerciseCreateRequestDto requestDto, long userId) {
         validateCreateExerciseRequestDto(requestDto, userId);
 
         Exercise exercise = Exercise.builder()
@@ -90,7 +90,7 @@ public class ExerciseServiceImpl implements ExerciseService {
         return exerciseResponseDto;
     }
 
-    private void validateCreateExerciseRequestDto(CreateExerciseRequestDto requestDto, long userId) {
+    private void validateCreateExerciseRequestDto(ExerciseCreateRequestDto requestDto, long userId) {
         // Check is there duplicated exercise in the database for this particular user
         if (exerciseTitleDuplicateExists(requestDto.getTitle(), userId))
             throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);

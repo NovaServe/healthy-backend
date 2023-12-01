@@ -13,7 +13,7 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class CreateExerciseRequestDto {
+public class ExerciseCreateRequestDto {
     @NotBlank(message = "Title should contain at least 2 characters")
     @Size(min = 2, max = 255, message = "Available size is 2 to 255 chars")
     @TitleValidation

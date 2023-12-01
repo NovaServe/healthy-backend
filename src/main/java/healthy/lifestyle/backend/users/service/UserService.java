@@ -18,7 +18,7 @@ public interface UserService {
 
     void removeWorkout(User user, Workout workout);
 
-    UserResponseDto updateUser(Long userId, UpdateUserRequestDto requestDto);
+    UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto);
 
     long deleteUser(Long userId);
 
