@@ -21,9 +21,9 @@ import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
+import healthy.lifestyle.backend.workout.dto.HttpRefCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
-import healthy.lifestyle.backend.workout.dto.UpdateHttpRefRequestDto;
+import healthy.lifestyle.backend.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -35,8 +35,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -74,11 +72,6 @@ class HttpRefControllerTest {
 
     @Autowired
     DataUtil dataUtil;
-
-    @Autowired
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 
     @BeforeEach
     void beforeEach() {
@@ -207,7 +200,7 @@ class HttpRefControllerTest {
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, null, 20);
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
 
         // When
         mockMvc.perform(post(URL)
@@ -234,7 +227,7 @@ class HttpRefControllerTest {
 
         HttpRef httpRef = dataHelper.createHttpRef(1, true);
         dataHelper.httpRefAddUser(httpRef, user);
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
 
         // When
         mockMvc.perform(post(URL)
@@ -256,7 +249,7 @@ class HttpRefControllerTest {
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, null, 20);
 
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
         String wrongValue = "abc";
         createHttpRequestDto.setName(wrongValue);
 
@@ -279,7 +272,7 @@ class HttpRefControllerTest {
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, null, 20);
 
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
         String wrongValue = "abc@def#";
         createHttpRequestDto.setName(wrongValue);
 
@@ -302,7 +295,7 @@ class HttpRefControllerTest {
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, null, 20);
 
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
         String wrongValue = "abc@def#";
         createHttpRequestDto.setDescription(wrongValue);
 
@@ -325,7 +318,7 @@ class HttpRefControllerTest {
         Country country = dataHelper.createCountry(1);
         User user = dataHelper.createUser("one", role, country, null, 20);
 
-        CreateHttpRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
         String wrongValue = "abc@def#";
         createHttpRequestDto.setRef(wrongValue);
 
@@ -350,7 +343,7 @@ class HttpRefControllerTest {
         HttpRef httpRef = dataHelper.createHttpRef(1, true);
         dataHelper.httpRefAddUser(httpRef, user);
 
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
 
         String REQUEST_URL = URL + "/{httpRefId}";
 
@@ -379,7 +372,7 @@ class HttpRefControllerTest {
         HttpRef httpRef = dataHelper.createHttpRef(1, true);
         dataHelper.httpRefAddUser(httpRef, user);
 
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
         requestDto.setUpdatedDescription(null);
         requestDto.setUpdatedRef(null);
 
@@ -411,7 +404,7 @@ class HttpRefControllerTest {
         HttpRef httpRef = dataHelper.createHttpRef(1, true);
         dataHelper.httpRefAddUser(httpRef, user);
 
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
         requestDto.setUpdatedName(null);
 
         String REQUEST_URL = URL + "/{httpRefId}";
@@ -441,7 +434,7 @@ class HttpRefControllerTest {
         HttpRef httpRef = dataHelper.createHttpRef(1, true);
         dataHelper.httpRefAddUser(httpRef, user);
 
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
 
         long wrongHttpRefId = httpRef.getId() + 1;
 
@@ -468,7 +461,7 @@ class HttpRefControllerTest {
 
         HttpRef httpRef = dataHelper.createHttpRef(1, false);
 
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
 
         String REQUEST_URL = URL + "/{httpRefId}";
 
@@ -495,7 +488,7 @@ class HttpRefControllerTest {
         HttpRef httpRef = dataHelper.createHttpRef(1, true);
         dataHelper.httpRefAddUser(httpRef, userMismatch);
 
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
 
         String REQUEST_URL = URL + "/{httpRefId}";
 
@@ -522,7 +515,7 @@ class HttpRefControllerTest {
         HttpRef httpRef = dataHelper.createHttpRef(1, true);
         dataHelper.httpRefAddUser(httpRef, userMismatch);
 
-        UpdateHttpRefRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
+        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(2);
         requestDto.setUpdatedName(null);
         requestDto.setUpdatedDescription(null);
         requestDto.setUpdatedRef(null);

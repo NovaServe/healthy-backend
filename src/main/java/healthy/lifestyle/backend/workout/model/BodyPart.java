@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.workout.model;
 
+import healthy.lifestyle.backend.exception.ExceptionGeneric;
 import jakarta.persistence.*;
 import java.util.Set;
 import lombok.*;
@@ -15,7 +16,7 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class BodyPart {
+public class BodyPart implements ExceptionGeneric {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

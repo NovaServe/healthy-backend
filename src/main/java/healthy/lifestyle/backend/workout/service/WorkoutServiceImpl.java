@@ -120,7 +120,7 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     @Transactional
-    public WorkoutResponseDto createCustomWorkout(long userId, CreateWorkoutRequestDto requestDto) {
+    public WorkoutResponseDto createCustomWorkout(long userId, WorkoutCreateRequestDto requestDto) {
         List<Workout> workouts = workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), userId);
         if (workouts.size() > 0) throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
 
@@ -184,7 +184,7 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     @Transactional
-    public WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, UpdateWorkoutRequestDto requestDto) {
+    public WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, WorkoutUpdateRequestDto requestDto) {
         if (isNull(requestDto.getTitle())
                 && isNull(requestDto.getDescription())
                 && requestDto.getExerciseIds().size() == 0)
@@ -213,17 +213,22 @@ public class WorkoutServiceImpl implements WorkoutService {
         Set<BodyPart> workoutBodyParts = new HashSet<>();
 
         if (requestDto.getExerciseIds().size() > 0) {
-            Set<Long> exerciseIdsToAdd = new HashSet<>(requestDto.getExerciseIds());
+            Set<Long> idsToAdd = new HashSet<>(requestDto.getExerciseIds());
+            Set<Long> idsToRemove = new HashSet<>();
 
             for (Exercise exercise : workout.getExercises()) {
-                exerciseIdsToAdd.remove(exercise.getId());
+                idsToAdd.remove(exercise.getId());
+
+                if (!requestDto.getExerciseIds().contains(exercise.getId())) {
+                    idsToRemove.add(exercise.getId());
+                }
 
                 if (exercise.isNeedsEquipment()) workoutNeedsEquipment = true;
                 workoutBodyParts.addAll(exercise.getBodyParts());
             }
 
-            for (long exerciseId : exerciseIdsToAdd) {
-                Optional<Exercise> exerciseOptional = exerciseRepository.findById(exerciseId);
+            for (long id : idsToAdd) {
+                Optional<Exercise> exerciseOptional = exerciseRepository.findById(id);
                 if (exerciseOptional.isEmpty())
                     throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
 
@@ -234,6 +239,13 @@ public class WorkoutServiceImpl implements WorkoutService {
                 workout.getExercises().add(exercise);
                 if (exercise.isNeedsEquipment()) workoutNeedsEquipment = true;
                 workoutBodyParts.addAll(exercise.getBodyParts());
+            }
+
+            for (long id : idsToRemove) {
+                Optional<Exercise> exerciseOptional = exerciseRepository.findById(id);
+                Exercise exercise = exerciseOptional.get();
+                workout.getExercises().remove(exercise);
+                workoutBodyParts.removeAll(exercise.getBodyParts());
             }
         }
 

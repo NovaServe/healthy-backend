@@ -1,10 +1,10 @@
 package healthy.lifestyle.backend.workout.dto;
 
 import healthy.lifestyle.backend.validation.DescriptionValidation;
-import healthy.lifestyle.backend.validation.HttpValidation;
 import healthy.lifestyle.backend.validation.TitleValidation;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import lombok.*;
 
 @NoArgsConstructor
@@ -12,16 +12,14 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class CreateHttpRequestDto {
-    @NotBlank
-    @Size(min = 5, max = 255, message = "Size should be from 5 to 255 characters long")
+public class WorkoutCreateRequestDto {
     @TitleValidation
-    private String name;
+    @Size(min = 5, max = 255, message = "Size should be from 5 to 255 characters long")
+    private String title;
 
     @DescriptionValidation
     private String description;
 
-    @NotBlank
-    @HttpValidation
-    private String ref;
+    @NotEmpty
+    private List<Long> exerciseIds;
 }

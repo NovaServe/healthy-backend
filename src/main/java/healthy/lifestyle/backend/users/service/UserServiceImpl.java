@@ -1,7 +1,6 @@
 package healthy.lifestyle.backend.users.service;
 
 import static java.util.Objects.nonNull;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
@@ -136,15 +135,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        boolean usernameDiffers;
-        boolean emailDiffers;
-        boolean fullNameDiffers;
-        boolean ageDiffers;
-        boolean countryDiffers;
-        boolean passwordDiffers;
-
-        if (nonNull(requestDto.getCountryId())) {
-            Optional<Country> countryOptional = countryRepository.findById(requestDto.getCountryId());
+        if (nonNull(requestDto.getUpdatedCountryId())) {
+            Optional<Country> countryOptional = countryRepository.findById(requestDto.getUpdatedCountryId());
             if (countryOptional.isEmpty())
                 throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
             user.setCountry(countryOptional.get());
@@ -202,5 +194,15 @@ public class UserServiceImpl implements UserService {
         if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
 
         return modelMapper.map(userOptional.get(), UserResponseDto.class);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void deleteUserExercise(long userId, Exercise exercise) {
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
+        user.getExercises().remove(exercise);
+        userRepository.save(user);
     }
 }

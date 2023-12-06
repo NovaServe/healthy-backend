@@ -11,8 +11,8 @@ import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupResponseDto;
-import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
 import healthy.lifestyle.backend.users.dto.UserResponseDto;
+import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -61,7 +61,7 @@ class UserServiceTest {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
 
-        Role role = new Role.Builder().id(1L).name("ROLE_USER").build();
+        Role role = Role.builder().id(1L).name("ROLE_USER").build();
         when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.ofNullable(role));
         Country country = Country.builder().id(1L).name("Country").build();
         when(countryRepository.getReferenceById(1L)).thenReturn(country);
@@ -88,7 +88,7 @@ class UserServiceTest {
         User user = dataUtil.createUserEntity(1);
         user.setCountry(country);
 
-        UpdateUserRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one", 1L, 25);
+        UserUpdateRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one", 1L, 25);
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(countryRepository.findById(updateUserRequestDto.getCountryId()))

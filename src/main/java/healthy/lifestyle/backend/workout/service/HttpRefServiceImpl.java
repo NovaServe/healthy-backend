@@ -7,9 +7,9 @@ import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
-import healthy.lifestyle.backend.workout.dto.CreateHttpRequestDto;
+import healthy.lifestyle.backend.workout.dto.HttpRefCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
-import healthy.lifestyle.backend.workout.dto.UpdateHttpRefRequestDto;
+import healthy.lifestyle.backend.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.List;
@@ -52,7 +52,7 @@ public class HttpRefServiceImpl implements HttpRefService {
 
     @Transactional
     @Override
-    public HttpRefResponseDto createCustomHttpRef(long userId, CreateHttpRequestDto createHttpRequestDto) {
+    public HttpRefResponseDto createCustomHttpRef(long userId, HttpRefCreateRequestDto createHttpRequestDto) {
         User user = userService.getUserById(userId);
         if (isNull(user)) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.BAD_REQUEST);
 
@@ -75,7 +75,7 @@ public class HttpRefServiceImpl implements HttpRefService {
     }
 
     @Override
-    public HttpRefResponseDto updateCustomHttpRef(long userId, long httpRefId, UpdateHttpRefRequestDto requestDto) {
+    public HttpRefResponseDto updateCustomHttpRef(long userId, long httpRefId, HttpRefUpdateRequestDto requestDto) {
         if (isNull(requestDto.getUpdatedName())
                 && isNull(requestDto.getUpdatedDescription())
                 && isNull(requestDto.getUpdatedRef()))

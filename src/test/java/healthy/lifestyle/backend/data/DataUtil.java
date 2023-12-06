@@ -21,6 +21,10 @@ import org.modelmapper.ModelMapper;
 public class DataUtil {
     private final ModelMapper modelMapper = new ModelMapper();
 
+    public BodyPart createBodyPart(int seed) {
+        return BodyPart.builder().id((long) seed).name("Body part " + seed).build();
+    }
+
     public List<BodyPart> createBodyParts(int start, int endInclusive) {
         return LongStream.rangeClosed(start, endInclusive)
                 .mapToObj(
@@ -39,8 +43,8 @@ public class DataUtil {
                 .build();
     }
 
-    public UpdateHttpRefRequestDto createUpdateHttpRefRequestDto(int seed) {
-        return UpdateHttpRefRequestDto.builder()
+    public HttpRefUpdateRequestDto createUpdateHttpRefRequestDto(int seed) {
+        return HttpRefUpdateRequestDto.builder()
                 .updatedName("Update Name " + seed)
                 .updatedRef("https://ref-updated-" + seed)
                 .updatedDescription("Updated Description " + seed)
@@ -70,6 +74,19 @@ public class DataUtil {
             int end2) {
         List<HttpRef> httpRefs = createHttpRefs(start1, end1, isCustomRefs);
         List<BodyPart> bodyParts = createBodyParts(start2, end2);
+        return Exercise.builder()
+                .id(id)
+                .title("Title " + id)
+                .description("Desc " + id)
+                .bodyParts(new HashSet<>(bodyParts))
+                .httpRefs(new HashSet<>(httpRefs))
+                .isCustom(isCustom)
+                .needsEquipment(needsEquipment)
+                .build();
+    }
+
+    public Exercise createExercise(
+            long id, boolean isCustom, boolean needsEquipment, Set<BodyPart> bodyParts, Set<HttpRef> httpRefs) {
         return Exercise.builder()
                 .id(id)
                 .title("Title " + id)
@@ -156,31 +173,42 @@ public class DataUtil {
                 .build();
     }
 
-    public UpdateUserRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
-        return UpdateUserRequestDto.builder()
-                .username("username-" + seed)
-                .email("username-" + seed + "@email.com")
-                .password("password-" + seed)
-                .confirmPassword("password-" + seed)
-                .fullName("Full Name " + seed)
-                .countryId(countryId)
+    public UserUpdateRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
+        return UserUpdateRequestDto.builder()
+                .updatedUsername("username-" + seed)
+                .updatedEmail("username-" + seed + "@email.com")
+                .updatedPassword("password-" + seed)
+                .updatedConfirmPassword("password-" + seed)
+                .updatedFullName("Full Name " + seed)
+                .updatedCountryId(countryId)
                 .updatedAge(age)
                 .build();
     }
 
-    public CreateWorkoutRequestDto createWorkoutRequestDto(int seed, List<Long> exerciseIds) {
-        return CreateWorkoutRequestDto.builder()
+    public WorkoutCreateRequestDto createWorkoutRequestDto(int seed, List<Long> exerciseIds) {
+        return WorkoutCreateRequestDto.builder()
                 .title("Title-" + seed)
                 .description("Description-" + seed)
                 .exerciseIds(exerciseIds)
                 .build();
     }
 
-    public UpdateWorkoutRequestDto updateWorkoutRequestDto(int seed, List<Long> exerciseIds) {
-        return UpdateWorkoutRequestDto.builder()
+    public WorkoutUpdateRequestDto updateWorkoutRequestDto(int seed, List<Long> exerciseIds) {
+        return WorkoutUpdateRequestDto.builder()
                 .title("Title-" + seed)
                 .description("Description-" + seed)
                 .exerciseIds(exerciseIds)
+                .build();
+    }
+
+    public ExerciseUpdateRequestDto exerciseUpdateRequestDto(
+            int seed, boolean needsEquipment, List<Long> bodyPartIds, List<Long> httpRefIds) {
+        return ExerciseUpdateRequestDto.builder()
+                .title("Updated Title-" + seed)
+                .description("Updated Description-" + seed)
+                .needsEquipment(needsEquipment)
+                .bodyPartIds(bodyPartIds)
+                .httpRefIds(httpRefIds)
                 .build();
     }
 }

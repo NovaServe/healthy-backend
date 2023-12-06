@@ -14,8 +14,8 @@ import healthy.lifestyle.backend.data.DataConfiguration;
 import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
-import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
 import healthy.lifestyle.backend.users.dto.UserResponseDto;
+import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -125,7 +125,7 @@ public class UserControllerTest {
         Integer age = 20;
         User user = dataHelper.createUser("one", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
-        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        UserUpdateRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
 
         String REQUEST_URL = URL + "/{userId}";
         // When
@@ -157,7 +157,7 @@ public class UserControllerTest {
         User user = dataHelper.createUser("one", role, country, null, age);
         User user2 = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
-        UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
+        UserUpdateRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
 
         String REQUEST_URL = URL + "/{userId}";
 

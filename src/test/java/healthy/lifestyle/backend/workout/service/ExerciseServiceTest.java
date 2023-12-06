@@ -5,9 +5,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.data.*;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
@@ -57,7 +58,7 @@ class ExerciseServiceTest {
     @Test
     void createExerciseTest_shouldReturnNewExercise() {
         // Given
-        CreateExerciseRequestDto requestDto =
+        ExerciseCreateRequestDto requestDto =
                 dataUtil.createExerciseRequestDto(1, false, new Long[] {1L, 2L}, new Long[] {1L, 2L});
 
         List<BodyPart> bodyPartsMock = dataUtil.createBodyParts(1, 2);

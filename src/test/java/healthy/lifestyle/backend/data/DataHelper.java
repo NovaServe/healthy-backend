@@ -189,14 +189,14 @@ public class DataHelper {
         userRepository.save(user);
     }
 
-    public UpdateUserRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
-        return UpdateUserRequestDto.builder()
-                .username("username-" + seed)
-                .email("username-" + seed + "@email.com")
-                .password("password-" + seed)
-                .confirmPassword("password-" + seed)
-                .fullName("Full Name " + seed)
-                .countryId(countryId)
+    public UserUpdateRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
+        return UserUpdateRequestDto.builder()
+                .updatedUsername("username-" + seed)
+                .updatedEmail("username-" + seed + "@email.com")
+                .updatedPassword("password-" + seed)
+                .updatedConfirmPassword("password-" + seed)
+                .updatedFullName("Full Name " + seed)
+                .updatedCountryId(countryId)
                 .updatedAge(age)
                 .build();
     }

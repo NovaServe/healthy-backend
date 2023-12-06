@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.workout.model;
 
+import healthy.lifestyle.backend.exception.ExceptionGeneric;
 import healthy.lifestyle.backend.users.model.User;
 import jakarta.persistence.*;
 import java.util.Set;
@@ -12,7 +13,7 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class HttpRef {
+public class HttpRef implements ExceptionGeneric {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

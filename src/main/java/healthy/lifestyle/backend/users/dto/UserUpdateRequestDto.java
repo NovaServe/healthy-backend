@@ -15,7 +15,7 @@ import lombok.*;
             confirmPassword = "confirmPassword",
             message = "Passwords must match")
 })
-public class UpdateUserRequestDto {
+public class UserUpdateRequestDto {
     @Size(min = 6, max = 20)
     @UsernameValidation
     private String username;
