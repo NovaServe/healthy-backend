@@ -133,31 +133,37 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDto updateUser(Long userId, UpdateUserRequestDto requestDto) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
-        User user = userOptional.get();
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        if (nonNull(requestDto.getUpdatedCountryId())) {
-            Optional<Country> countryOptional = countryRepository.findById(requestDto.getUpdatedCountryId());
+        boolean usernameDiffers;
+        boolean emailDiffers;
+        boolean fullNameDiffers;
+        boolean ageDiffers;
+        boolean countryDiffers;
+        boolean passwordDiffers;
+
+        if (nonNull(requestDto.getCountryId())) {
+            Optional<Country> countryOptional = countryRepository.findById(requestDto.getCountryId());
             if (countryOptional.isEmpty())
                 throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
             user.setCountry(countryOptional.get());
         }
 
-        if (isNotBlank(requestDto.getUpdatedUsername())) {
-            user.setUsername(requestDto.getUpdatedUsername());
+        if (isNotBlank(requestDto.getUsername())) {
+            user.setUsername(requestDto.getUsername());
         }
 
-        if (isNotBlank(requestDto.getUpdatedEmail())) {
-            user.setEmail(requestDto.getUpdatedEmail());
+        if (isNotBlank(requestDto.getEmail())) {
+            user.setEmail(requestDto.getEmail());
         }
 
-        if (isNotBlank(requestDto.getUpdatedPassword())) {
-            user.setPassword(passwordEncoder.encode(requestDto.getUpdatedPassword()));
+        if (isNotBlank(requestDto.getPassword())) {
+            user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
         }
 
-        if (isNotBlank(requestDto.getUpdatedFullName())) {
-            user.setFullName(requestDto.getUpdatedFullName());
+        if (isNotBlank(requestDto.getFullName())) {
+            user.setFullName(requestDto.getFullName());
         }
 
         if (nonNull(requestDto.getUpdatedAge())) {
@@ -165,6 +171,17 @@ public class UserServiceImpl implements UserService {
         }
 
         return modelMapper.map(userRepository.save(user), UserResponseDto.class);
+    }
+
+    private void updateUserCheckIfFieldsAreDifferent(UpdateUserRequestDto requestDto) {
+        boolean usernameDiffers;
+        boolean emailDiffers;
+        boolean fullNameDiffers;
+        boolean ageDiffers;
+        boolean countryDiffers;
+        boolean passwordDiffers;
+
+        StringBuilder errorMessage = new StringBuilder();
     }
 
     @Override

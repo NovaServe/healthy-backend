@@ -135,9 +135,9 @@ public class UserControllerTest {
                 // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(user.getId().intValue())))
-                .andExpect(jsonPath("$.username", is(requestDto.getUpdatedUsername())))
-                .andExpect(jsonPath("$.email", is(requestDto.getUpdatedEmail())))
-                .andExpect(jsonPath("$.fullName", is(requestDto.getUpdatedFullName())))
+                .andExpect(jsonPath("$.username", is(requestDto.getUsername())))
+                .andExpect(jsonPath("$.email", is(requestDto.getEmail())))
+                .andExpect(jsonPath("$.fullName", is(requestDto.getFullName())))
                 .andExpect(jsonPath("$.age", is(requestDto.getUpdatedAge())))
                 .andExpect(jsonPath("$.countryId", is(updatedCountry.getId().intValue())))
                 .andDo(print())
@@ -185,7 +185,7 @@ public class UserControllerTest {
         User user = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-        requestDto.setUpdatedUsername("two2/&%*)_-=+!@");
+        requestDto.setUsername("two2/&%*)_-=+!@");
 
         String REQUEST_URL = URL + "/{userId}";
 
@@ -212,7 +212,7 @@ public class UserControllerTest {
         User user = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-        requestDto.setUpdatedUsername("two");
+        requestDto.setUsername("two");
 
         String REQUEST_URL = URL + "/{userId}";
 
@@ -239,7 +239,7 @@ public class UserControllerTest {
         User user = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-        requestDto.setUpdatedEmail("!@gmail.com");
+        requestDto.setEmail("!@gmail.com");
 
         String REQUEST_URL = URL + "/{userId}";
 
@@ -266,7 +266,7 @@ public class UserControllerTest {
         User user = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-        requestDto.setUpdatedEmail("secondUser");
+        requestDto.setEmail("secondUser");
 
         String REQUEST_URL = URL + "/{userId}";
 
@@ -293,7 +293,7 @@ public class UserControllerTest {
         User user = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-        requestDto.setUpdatedFullName("two2/*&");
+        requestDto.setFullName("two2/*&");
 
         String REQUEST_URL = URL + "/{userId}";
 
@@ -320,7 +320,7 @@ public class UserControllerTest {
         User user = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-        requestDto.setUpdatedPassword(" ");
+        requestDto.setPassword(" ");
 
         String REQUEST_URL = URL + "/{userId}";
 
@@ -347,7 +347,7 @@ public class UserControllerTest {
         User user = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-        requestDto.setUpdatedPassword("   ???//////// ");
+        requestDto.setPassword("   ???//////// ");
 
         String REQUEST_URL = URL + "/{userId}";
 
@@ -374,8 +374,8 @@ public class UserControllerTest {
         User user = dataHelper.createUser("two", role, country, null, age);
         Country updatedCountry = dataHelper.createCountry(2);
         UpdateUserRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-        requestDto.setUpdatedPassword("PasswordConfirm");
-        requestDto.setUpdatedConfirmPassword("PasswordNotConfirm");
+        requestDto.setPassword("PasswordConfirm");
+        requestDto.setConfirmPassword("PasswordNotConfirm");
 
         String REQUEST_URL = URL + "/{userId}";
 
@@ -387,7 +387,7 @@ public class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andDo(print());
 
-        assertNotEquals(requestDto.getUpdatedPassword(), requestDto.getUpdatedConfirmPassword());
+        assertNotEquals(requestDto.getPassword(), requestDto.getConfirmPassword());
     }
 
     @Test

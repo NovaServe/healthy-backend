@@ -158,12 +158,12 @@ public class DataUtil {
 
     public UpdateUserRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
         return UpdateUserRequestDto.builder()
-                .updatedUsername("username-" + seed)
-                .updatedEmail("username-" + seed + "@email.com")
-                .updatedPassword("password-" + seed)
-                .updatedConfirmPassword("password-" + seed)
-                .updatedFullName("Full Name " + seed)
-                .updatedCountryId(countryId)
+                .username("username-" + seed)
+                .email("username-" + seed + "@email.com")
+                .password("password-" + seed)
+                .confirmPassword("password-" + seed)
+                .fullName("Full Name " + seed)
+                .countryId(countryId)
                 .updatedAge(age)
                 .build();
     }

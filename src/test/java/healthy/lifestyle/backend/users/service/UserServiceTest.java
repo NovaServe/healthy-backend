@@ -91,7 +91,7 @@ class UserServiceTest {
         UpdateUserRequestDto updateUserRequestDto = dataUtil.createUpdateUserRequestDto("one", 1L, 25);
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(countryRepository.findById(updateUserRequestDto.getUpdatedCountryId()))
+        when(countryRepository.findById(updateUserRequestDto.getCountryId()))
                 .thenReturn(Optional.of(country));
         when(userRepository.save(user)).thenReturn(user);
 
@@ -99,9 +99,9 @@ class UserServiceTest {
         UserResponseDto updatedUserResponse = userService.updateUser(user.getId(), updateUserRequestDto);
 
         // Then
-        assertEquals(updatedUserResponse.getUsername(), updateUserRequestDto.getUpdatedUsername());
-        assertEquals(updatedUserResponse.getEmail(), updateUserRequestDto.getUpdatedEmail());
-        assertEquals(updatedUserResponse.getFullName(), updateUserRequestDto.getUpdatedFullName());
+        assertEquals(updatedUserResponse.getUsername(), updateUserRequestDto.getUsername());
+        assertEquals(updatedUserResponse.getEmail(), updateUserRequestDto.getEmail());
+        assertEquals(updatedUserResponse.getFullName(), updateUserRequestDto.getFullName());
         assertEquals(25, updatedUserResponse.getAge());
         assertEquals(1L, updatedUserResponse.getCountryId());
         assertEquals(user.getId(), updatedUserResponse.getId());
