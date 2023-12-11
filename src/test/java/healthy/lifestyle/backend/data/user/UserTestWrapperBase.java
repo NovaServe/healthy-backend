@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.data.user;
 
+import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -9,6 +10,8 @@ import java.util.Set;
 
 public interface UserTestWrapperBase {
     UserTestWrapperBase setUserIdOrSeed(int userId);
+
+    UserTestWrapperBase setCountryIdOrSeed(int countryIdOrSeed);
 
     UserTestWrapperBase setUserRole();
 
@@ -41,6 +44,10 @@ public interface UserTestWrapperBase {
     User getUser();
 
     long getUserId();
+
+    Country getCountry();
+
+    long getCountryId();
 
     UserTestWrapperBase addCustomExercises(List<Exercise> exercises);
 
@@ -91,4 +98,8 @@ public interface UserTestWrapperBase {
     Set<HttpRef> getDistinctHttpRefsFromExerciseList();
 
     List<HttpRef> getDistinctSortedHttpRefsFromExerciseList();
+
+    void setFieldValue(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException;
+
+    Object getFieldValue(String fieldName) throws NoSuchFieldException, IllegalAccessException;
 }

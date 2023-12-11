@@ -33,11 +33,6 @@ public class UserController {
         this.authService = authService;
     }
 
-    @GetMapping("/countries")
-    public ResponseEntity<List<CountryResponseDto>> getCountries() {
-        return ResponseEntity.ok(countryService.getAllCountries());
-    }
-
     @PatchMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<UserResponseDto> updateUser(
@@ -65,5 +60,10 @@ public class UserController {
         Long authenticatedUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         return ResponseEntity.ok(userService.getUserDetailsById(authenticatedUserId));
+    }
+
+    @GetMapping("/countries")
+    public ResponseEntity<List<CountryResponseDto>> getCountries() {
+        return ResponseEntity.ok(countryService.getAllCountries());
     }
 }

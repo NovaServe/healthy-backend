@@ -35,6 +35,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<ExceptionDto>(exceptionDto, exception.getHttpStatus());
     }
 
+    @ExceptionHandler(ApiExceptionCustomMessage.class)
+    public ResponseEntity<ExceptionDto> handleApiExceptionCustomMessage(
+            ApiExceptionCustomMessage exception, WebRequest webRequest) {
+        logger.error(
+                "GlobalExceptionHandler.handleApiException(): {}, {}, {}",
+                webRequest.getDescription(false),
+                exception.getHttpStatus(),
+                exception.getStackTrace());
+
+        ExceptionDto exceptionDto = new ExceptionDto(
+                exception.getMessage(), exception.getHttpStatus().value());
+        return new ResponseEntity<ExceptionDto>(exceptionDto, exception.getHttpStatus());
+    }
+
     /**
      * @see FieldError
      * @see org.springframework.validation.ObjectError

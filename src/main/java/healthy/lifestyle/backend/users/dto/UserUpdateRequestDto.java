@@ -1,8 +1,7 @@
 package healthy.lifestyle.backend.users.dto;
 
 import healthy.lifestyle.backend.validation.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 @NoArgsConstructor
@@ -10,36 +9,35 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-@FieldsValueMatch.List({
-    @FieldsValueMatch(
-            field = "updatedPassword",
-            fieldMatch = "updatedConfirmPassword",
-            message = "Passwords don't match")
+@PasswordsMatchValidation.List({
+    @PasswordsMatchValidation(
+            password = "password",
+            confirmPassword = "confirmPassword",
+            message = "Passwords must match")
 })
 public class UserUpdateRequestDto {
     @Size(min = 6, max = 20)
     @UsernameValidation
-    private String updatedUsername;
+    private String username;
 
     @Email
     @Size(min = 6, max = 64)
-    @EmailValidation
-    private String updatedEmail;
+    private String email;
 
     @Size(min = 10, max = 64)
     @PasswordValidation
-    private String updatedPassword;
+    private String password;
 
     @Size(min = 10, max = 64)
     @PasswordValidation
-    private String updatedConfirmPassword;
+    private String confirmPassword;
 
     @Size(min = 4, max = 64)
     @FullnameValidation
-    private String updatedFullName;
+    private String fullName;
 
-    private Long updatedCountryId;
+    @NotNull private Long countryId;
 
     @AgeValidation
-    private Integer updatedAge;
+    private Integer age;
 }
