@@ -41,7 +41,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
-public class ExerciseServiceUpdateTest {
+public class ExerciseUpdateServiceTest {
     @Mock
     private ExerciseRepository exerciseRepository;
 
@@ -82,6 +82,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(1)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(1)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(1)
                 .setIsExerciseNeedsEquipment(true)
@@ -229,6 +230,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(1)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(1)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(1)
                 .setIsExerciseNeedsEquipment(true)
@@ -297,6 +299,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(1)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(1)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(1)
                 .setIsExerciseNeedsEquipment(true)
@@ -368,6 +371,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(1)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(1)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(1)
                 .setIsExerciseNeedsEquipment(true)
@@ -381,6 +385,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(2)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(2)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(2)
                 .setIsExerciseNeedsEquipment(true)
@@ -423,6 +428,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(1)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(1)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(1)
                 .setIsExerciseNeedsEquipment(true)
@@ -486,6 +492,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(1)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(1)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(1)
                 .setIsExerciseNeedsEquipment(true)
@@ -537,6 +544,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(1)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(1)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(1)
                 .setIsExerciseNeedsEquipment(true)
@@ -550,6 +558,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(2)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(2)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(2)
                 .setIsExerciseNeedsEquipment(true)
@@ -604,6 +613,7 @@ public class ExerciseServiceUpdateTest {
                 .setUserIdOrSeed(1)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(1)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(1)
                 .setIsExerciseNeedsEquipment(true)

@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.data;
 
-import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
+import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -135,7 +135,7 @@ public class DataHelper {
     }
 
     public Role createRole(String name) {
-        return roleRepository.save(new Role(name));
+        return roleRepository.save(Role.builder().name(name).build());
     }
 
     public User createUser(String seed, Role role, Country country, Set<Exercise> exercises, Integer age) {
@@ -191,13 +191,13 @@ public class DataHelper {
 
     public UserUpdateRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
         return UserUpdateRequestDto.builder()
-                .updatedUsername("username-" + seed)
-                .updatedEmail("username-" + seed + "@email.com")
-                .updatedPassword("password-" + seed)
-                .updatedConfirmPassword("password-" + seed)
-                .updatedFullName("Full Name " + seed)
-                .updatedCountryId(countryId)
-                .updatedAge(age)
+                .username("username-" + seed)
+                .email("username-" + seed + "@email.com")
+                .password("password-" + seed)
+                .confirmPassword("password-" + seed)
+                .fullName("Full Name " + seed)
+                .countryId(countryId)
+                .age(age)
                 .build();
     }
 }

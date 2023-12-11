@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.data.user.UserTestBuilder;
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.service.UserServiceImpl;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
@@ -18,9 +19,10 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
-public class ExerciseServiceDeleteTest {
+public class ExerciseDeleteServiceTest {
     @Mock
     private ExerciseRepository exerciseRepository;
 
@@ -43,6 +45,7 @@ public class ExerciseServiceDeleteTest {
                 .setUserIdOrSeed(1)
                 .setUserRole()
                 .setRoleId(1)
+                .setCountryIdOrSeed(1)
                 .setIsExerciseCustom(true)
                 .setExerciseIdOrSeed(1)
                 .setIsExerciseNeedsEquipment(true)
@@ -85,5 +88,7 @@ public class ExerciseServiceDeleteTest {
         // Then
         verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(wrongExerciseId, wrongUserId);
         verify(exerciseRepository, times(0)).delete(any(Exercise.class));
+        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
     }
 }

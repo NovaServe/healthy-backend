@@ -22,7 +22,6 @@ public class UserUpdateRequestDto {
 
     @Email
     @Size(min = 6, max = 64)
-    @EmailValidation
     private String email;
 
     @Size(min = 10, max = 64)
@@ -37,9 +36,8 @@ public class UserUpdateRequestDto {
     @FullnameValidation
     private String fullName;
 
-    @NotNull
-    private Long countryId;
+    @NotNull private Long countryId;
 
     @AgeValidation
-    private Integer updatedAge;
+    private Integer age;
 }

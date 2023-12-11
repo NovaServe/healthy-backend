@@ -9,8 +9,11 @@ import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 public class UserTestBuilder {
     public UserWrapper getWrapper() {
@@ -20,7 +23,11 @@ public class UserTestBuilder {
     public static class UserWrapper implements UserTestWrapperBase {
         private final ExerciseTestBuilder.ExerciseWrapper exerciseWrapper;
 
+        private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
         private Integer userIdOrSeed;
+
+        private Integer countryIdOrSeed;
 
         private String role;
 
@@ -52,6 +59,12 @@ public class UserTestBuilder {
         public UserWrapper setUserIdOrSeed(int userIdOrSeed) {
             if (userIdOrSeed < 0) throw new IllegalArgumentException("Must be >= 0");
             this.userIdOrSeed = userIdOrSeed;
+            return this;
+        }
+
+        @Override
+        public UserTestWrapperBase setCountryIdOrSeed(int countryIdOrSeed) {
+            this.countryIdOrSeed = countryIdOrSeed;
             return this;
         }
 
@@ -130,17 +143,18 @@ public class UserTestBuilder {
         public User buildUser() {
             if (this.userIdOrSeed == null || this.role == null)
                 throw new IllegalStateException("Not all required parameters are set");
+
             this.user = User.builder()
                     .id((long) this.userIdOrSeed)
                     .fullName("Full name " + this.userIdOrSeed)
                     .age(ThreadLocalRandom.current().nextInt(18, 100))
                     .username("Username-" + this.userIdOrSeed)
                     .email("email-" + this.userIdOrSeed + "@email.com")
-                    .password("Password-" + this.userIdOrSeed)
+                    .password(passwordEncoder.encode("Password-" + this.userIdOrSeed))
                     .role(Role.builder().id((long) this.roleId).name(this.role).build())
                     .country(Country.builder()
-                            .id((long) this.userIdOrSeed)
-                            .name("Country-" + ThreadLocalRandom.current().nextInt(1, 100))
+                            .id((long) this.countryIdOrSeed)
+                            .name("Country-" + this.countryIdOrSeed)
                             .build())
                     .httpRefs(new HashSet<>())
                     .exercises(new HashSet<>())
@@ -195,6 +209,16 @@ public class UserTestBuilder {
         public long getUserId() {
             if (isNull(this.user)) throw new IllegalStateException("Not all required parameters are set");
             return this.user.getId();
+        }
+
+        @Override
+        public Country getCountry() {
+            return this.user.getCountry();
+        }
+
+        @Override
+        public long getCountryId() {
+            return this.user.getCountry().getId();
         }
 
         @Override
@@ -411,6 +435,20 @@ public class UserTestBuilder {
         @Override
         public List<HttpRef> getDistinctSortedHttpRefsFromExerciseList() {
             return exerciseWrapper.getDistinctHttpRefsSortedFromList();
+        }
+
+        @Override
+        public void setFieldValue(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
+            Field field = this.user.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(this.user, value);
+        }
+
+        @Override
+        public Object getFieldValue(String fieldName) throws NoSuchFieldException, IllegalAccessException {
+            Field field = this.user.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(this.user);
         }
     }
 }

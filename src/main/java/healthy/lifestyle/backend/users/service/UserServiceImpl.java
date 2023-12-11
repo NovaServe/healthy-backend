@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.users.service;
 import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.security.JwtTokenProvider;
 import healthy.lifestyle.backend.users.dto.*;
@@ -131,49 +132,61 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDto updateUser(Long userId, UpdateUserRequestDto requestDto) {
-        User user = userRepository.findById(userId).orElseThrow(() ->
-                new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+    public UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto) {
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        if (nonNull(requestDto.getUpdatedCountryId())) {
-            Optional<Country> countryOptional = countryRepository.findById(requestDto.getUpdatedCountryId());
-            if (countryOptional.isEmpty())
-                throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
-            user.setCountry(countryOptional.get());
+        updateUserCheckIfFieldsAreDifferent(requestDto, user);
+
+        if (nonNull(requestDto.getUsername())) user.setUsername(requestDto.getUsername());
+        if (nonNull(requestDto.getEmail())) user.setEmail(requestDto.getEmail());
+        if (nonNull(requestDto.getPassword())) user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
+        if (nonNull(requestDto.getFullName())) user.setFullName(requestDto.getFullName());
+        if (nonNull(requestDto.getAge())) user.setAge(requestDto.getAge());
+        if (nonNull(requestDto.getCountryId())
+                && requestDto.getCountryId() != user.getCountry().getId()) {
+            Country country = countryRepository
+                    .findById(requestDto.getCountryId())
+                    .orElseThrow(
+                            () -> new ApiException(ErrorMessage.COUNTRY_NOT_FOUND, HttpStatus.INTERNAL_SERVER_ERROR));
+            user.setCountry(country);
         }
 
-        if (isNotBlank(requestDto.getUsername())) {
-            user.setUsername(requestDto.getUsername());
-        }
-
-        if (isNotBlank(requestDto.getEmail())) {
-            user.setEmail(requestDto.getEmail());
-        }
-
-        if (isNotBlank(requestDto.getPassword())) {
-            user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
-        }
-
-        if (isNotBlank(requestDto.getFullName())) {
-            user.setFullName(requestDto.getFullName());
-        }
-
-        if (nonNull(requestDto.getUpdatedAge())) {
-            user.setAge(requestDto.getUpdatedAge());
-        }
-
-        return modelMapper.map(userRepository.save(user), UserResponseDto.class);
+        User savedUser = userRepository.save(user);
+        UserResponseDto responseDto = modelMapper.map(savedUser, UserResponseDto.class);
+        return responseDto;
     }
 
-    private void updateUserCheckIfFieldsAreDifferent(UpdateUserRequestDto requestDto) {
-        boolean usernameDiffers;
-        boolean emailDiffers;
-        boolean fullNameDiffers;
-        boolean ageDiffers;
-        boolean countryDiffers;
-        boolean passwordDiffers;
-
+    private void updateUserCheckIfFieldsAreDifferent(UserUpdateRequestDto requestDto, User user) {
         StringBuilder errorMessage = new StringBuilder();
+
+        if (nonNull(requestDto.getUsername()) && user.getUsername().equals(requestDto.getUsername()))
+            errorMessage.append(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName());
+
+        if (nonNull(requestDto.getEmail()) && user.getEmail().equals(requestDto.getEmail())) {
+            if (!errorMessage.isEmpty()) errorMessage.append(" ");
+            errorMessage.append(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName());
+        }
+
+        if (nonNull(requestDto.getFullName()) && user.getFullName().equals(requestDto.getFullName())) {
+            if (!errorMessage.isEmpty()) errorMessage.append(" ");
+            errorMessage.append(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName());
+        }
+
+        if (nonNull(requestDto.getAge()) && user.getAge() == requestDto.getAge()) {
+            if (!errorMessage.isEmpty()) errorMessage.append(" ");
+            errorMessage.append(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName());
+        }
+
+        if (nonNull(requestDto.getPassword())
+                && passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
+            if (!errorMessage.isEmpty()) errorMessage.append(" ");
+            errorMessage.append(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName());
+        }
+
+        if (!errorMessage.isEmpty())
+            throw new ApiExceptionCustomMessage(errorMessage.toString(), HttpStatus.BAD_REQUEST);
     }
 
     @Override

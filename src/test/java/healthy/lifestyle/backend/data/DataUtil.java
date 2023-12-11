@@ -2,7 +2,7 @@ package healthy.lifestyle.backend.data;
 
 import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
-import healthy.lifestyle.backend.users.dto.UpdateUserRequestDto;
+import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.dto.*;
@@ -110,10 +110,10 @@ public class DataUtil {
                 .collect(Collectors.toList());
     }
 
-    public CreateExerciseRequestDto createExerciseRequestDto(
+    public ExerciseCreateRequestDto createExerciseRequestDto(
             int seed, boolean needsEquipment, Long[] bodyPartIds, Long[] httpRefIds) {
 
-        return CreateExerciseRequestDto.builder()
+        return ExerciseCreateRequestDto.builder()
                 .title("Title " + seed)
                 .description("Desc " + seed)
                 .needsEquipment(needsEquipment)
@@ -156,8 +156,8 @@ public class DataUtil {
                 .build();
     }
 
-    public CreateHttpRequestDto createHttpRequestDto(int seed) {
-        return CreateHttpRequestDto.builder()
+    public HttpRefCreateRequestDto createHttpRequestDto(int seed) {
+        return HttpRefCreateRequestDto.builder()
                 .name("Name " + seed)
                 .description("Description " + seed)
                 .ref("http://ref-" + seed)
@@ -175,13 +175,13 @@ public class DataUtil {
 
     public UserUpdateRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
         return UserUpdateRequestDto.builder()
-                .updatedUsername("username-" + seed)
-                .updatedEmail("username-" + seed + "@email.com")
-                .updatedPassword("password-" + seed)
-                .updatedConfirmPassword("password-" + seed)
-                .updatedFullName("Full Name " + seed)
-                .updatedCountryId(countryId)
-                .updatedAge(age)
+                .username("username-" + seed)
+                .email("username-" + seed + "@email.com")
+                .password("password-" + seed)
+                .confirmPassword("password-" + seed)
+                .fullName("Full Name " + seed)
+                .countryId(countryId)
+                .age(age)
                 .build();
     }
 
