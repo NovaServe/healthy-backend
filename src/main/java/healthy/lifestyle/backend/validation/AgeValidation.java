@@ -6,7 +6,7 @@ import java.lang.annotation.*;
 
 @Documented
 @Constraint(validatedBy = AgeValidator.class)
-@Target({ElementType.METHOD, ElementType.FIELD})
+@Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AgeValidation {
     String message() default "Not allowed age, should be in 5-200";
