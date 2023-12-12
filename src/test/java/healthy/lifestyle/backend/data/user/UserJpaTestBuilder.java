@@ -17,6 +17,7 @@ import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,8 @@ public class UserJpaTestBuilder {
 
         private Integer userIdOrSeed;
 
+        private Integer countryIdOrSeed;
+
         private String role;
 
         private Integer roleId;
@@ -112,6 +115,12 @@ public class UserJpaTestBuilder {
         public UserWrapper setUserIdOrSeed(int userIdOrSeed) {
             if (userIdOrSeed < 0) throw new IllegalArgumentException("Must be >= 0");
             this.userIdOrSeed = userIdOrSeed;
+            return this;
+        }
+
+        @Override
+        public UserTestWrapperBase setCountryIdOrSeed(int countryIdOrSeed) {
+            this.countryIdOrSeed = countryIdOrSeed;
             return this;
         }
 
@@ -201,18 +210,31 @@ public class UserJpaTestBuilder {
                 role = roleRepository.save(roleBuilt);
             }
 
-            Country country =
-                    Country.builder().name("Country-" + this.userIdOrSeed).build();
-            Country countrySaved = countryRepository.save(country);
+            Country country = countryRepository
+                    .findByName("Country-" + this.countryIdOrSeed)
+                    .orElseGet(() -> countryRepository.save(Country.builder()
+                            .name("Country-" + this.countryIdOrSeed)
+                            .build()));
+
+            Map<Integer, String> numbers = new HashMap<>() {
+                {
+                    put(0, "zero");
+                    put(1, "one");
+                    put(2, "two");
+                    put(3, "three");
+                    put(4, "four");
+                    put(5, "five");
+                }
+            };
 
             User user = User.builder()
-                    .fullName("Full name " + this.userIdOrSeed)
+                    .fullName("Full name " + numbers.get(this.userIdOrSeed))
                     .age(ThreadLocalRandom.current().nextInt(18, 100))
                     .username("Username-" + this.userIdOrSeed)
                     .email("email-" + this.userIdOrSeed + "@email.com")
-                    .password(this.passwordEncoder.encode("password-" + this.userIdOrSeed))
+                    .password(this.passwordEncoder.encode("Password-" + this.userIdOrSeed))
                     .role(role)
-                    .country(countrySaved)
+                    .country(country)
                     .httpRefs(new HashSet<>())
                     .exercises(new HashSet<>())
                     .workouts(new HashSet<>())
@@ -290,6 +312,16 @@ public class UserJpaTestBuilder {
         public long getUserId() {
             if (isNull(this.user)) throw new IllegalStateException("Not all required parameters are set");
             return this.user.getId();
+        }
+
+        @Override
+        public Country getCountry() {
+            return this.user.getCountry();
+        }
+
+        @Override
+        public long getCountryId() {
+            return this.user.getCountry().getId();
         }
 
         @Override
@@ -509,6 +541,21 @@ public class UserJpaTestBuilder {
         @Override
         public List<HttpRef> getDistinctSortedHttpRefsFromExerciseList() {
             return exerciseWrapper.getDistinctHttpRefsSortedFromList();
+        }
+
+        @Override
+        public void setFieldValue(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
+            Field field = this.user.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(this.user, value);
+            this.user = userRepository.save(this.user);
+        }
+
+        @Override
+        public Object getFieldValue(String fieldName) throws NoSuchFieldException, IllegalAccessException {
+            Field field = this.user.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(this.user);
         }
 
         public User getUserById(long userId) {

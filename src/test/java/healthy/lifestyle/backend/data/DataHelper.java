@@ -191,13 +191,13 @@ public class DataHelper {
 
     public UserUpdateRequestDto createUpdateUserRequestDto(String seed, Long countryId, Integer age) {
         return UserUpdateRequestDto.builder()
-                .updatedUsername("username-" + seed)
-                .updatedEmail("username-" + seed + "@email.com")
-                .updatedPassword("password-" + seed)
-                .updatedConfirmPassword("password-" + seed)
-                .updatedFullName("Full Name " + seed)
-                .updatedCountryId(countryId)
-                .updatedAge(age)
+                .username("username-" + seed)
+                .email("username-" + seed + "@email.com")
+                .password("password-" + seed)
+                .confirmPassword("password-" + seed)
+                .fullName("Full Name " + seed)
+                .countryId(countryId)
+                .age(age)
                 .build();
     }
 }

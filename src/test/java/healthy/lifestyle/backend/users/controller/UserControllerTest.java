@@ -2,8 +2,7 @@ package healthy.lifestyle.backend.users.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -16,7 +15,6 @@ import healthy.lifestyle.backend.data.DataHelper;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
 import healthy.lifestyle.backend.users.dto.UserResponseDto;
-import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -77,103 +75,6 @@ public class UserControllerTest {
     }
 
     @Test
-    void getAllCountriesTest_shouldReturnListOfCountriesAndStatusOk() throws Exception {
-        // Given
-        Country country1 = dataHelper.createCountry(1);
-        Country country2 = dataHelper.createCountry(2);
-
-        String REQUEST_URL = URL + "/countries";
-
-        // When
-        MvcResult mvcResult = mockMvc.perform(get(REQUEST_URL).contentType(MediaType.APPLICATION_JSON))
-                // Then
-                .andExpect(status().isOk())
-                .andDo(print())
-                .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        List<CountryResponseDto> responseDto =
-                objectMapper.readValue(responseContent, new TypeReference<List<CountryResponseDto>>() {});
-
-        assertEquals(2, responseDto.size());
-        assertEquals(country1.getId(), responseDto.get(0).getId());
-        assertEquals(country1.getName(), responseDto.get(0).getName());
-        assertEquals(country2.getId(), responseDto.get(1).getId());
-        assertEquals(country2.getName(), responseDto.get(1).getName());
-    }
-
-    @Test
-    void getCountriesTest_shouldReturnErrorMessageAndStatusInternalServerError_whenNoCountries() throws Exception {
-        String REQUEST_URL = URL + "/countries";
-
-        // When
-        mockMvc.perform(get(REQUEST_URL).contentType(MediaType.APPLICATION_JSON))
-                // Then
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message", is("Server error")))
-                .andDo(print());
-    }
-
-    @Test
-    @WithMockUser(
-            username = "username-one",
-            password = "password-one",
-            authorities = {"ROLE_USER"})
-    void updateUserTest_shouldReturnUpdatedUserAndStatusOk() throws Exception {
-        // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
-        Country updatedCountry = dataHelper.createCountry(2);
-        UserUpdateRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-
-        String REQUEST_URL = URL + "/{userId}";
-        // When
-        mockMvc.perform(patch(REQUEST_URL, user.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                // Then
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(user.getId().intValue())))
-                .andExpect(jsonPath("$.username", is(requestDto.getUpdatedUsername())))
-                .andExpect(jsonPath("$.email", is(requestDto.getUpdatedEmail())))
-                .andExpect(jsonPath("$.fullName", is(requestDto.getUpdatedFullName())))
-                .andExpect(jsonPath("$.age", is(requestDto.getUpdatedAge())))
-                .andExpect(jsonPath("$.countryId", is(updatedCountry.getId().intValue())))
-                .andDo(print())
-                .andReturn();
-    }
-
-    @Test
-    @WithMockUser(
-            username = "username-one",
-            password = "password-one",
-            authorities = {"ROLE_USER"})
-    void updateUserTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() throws Exception {
-        // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
-        User user2 = dataHelper.createUser("two", role, country, null, age);
-        Country updatedCountry = dataHelper.createCountry(2);
-        UserUpdateRequestDto requestDto = dataHelper.createUpdateUserRequestDto("two", updatedCountry.getId(), 35);
-
-        String REQUEST_URL = URL + "/{userId}";
-
-        // When
-        mockMvc.perform(patch(REQUEST_URL, user2.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
-                .andDo(print());
-    }
-
-    @Test
     @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
     void deleteUserTest_shouldReturnDeletedUserIdAnd204() throws Exception {
         // Given
@@ -222,7 +123,7 @@ public class UserControllerTest {
             username = "username-one",
             password = "password-one",
             authorities = {"ROLE_USER"})
-    void getUserDetailsTest_shouldReturnUserDetailsAnd200Ok_whenUserAuthorized() throws Exception {
+    void getUserDetailsTest_shouldReturnUserDetailsAnd200() throws Exception {
         // Given
         Role role = dataHelper.createRole("ROLE_USER");
         Country country = dataHelper.createCountry(1);
@@ -248,5 +149,43 @@ public class UserControllerTest {
                 () -> assertThat(responseDto.getCountryId())
                         .isEqualTo(user.getCountry().getId()),
                 () -> assertThat(responseDto.getAge()).isEqualTo(user.getAge()));
+    }
+
+    @Test
+    void getCountriesTest_shouldReturnListOfCountriesAnd200() throws Exception {
+        // Given
+        Country country1 = dataHelper.createCountry(1);
+        Country country2 = dataHelper.createCountry(2);
+
+        String REQUEST_URL = URL + "/countries";
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(REQUEST_URL).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        List<CountryResponseDto> responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<List<CountryResponseDto>>() {});
+
+        assertEquals(2, responseDto.size());
+        assertEquals(country1.getId(), responseDto.get(0).getId());
+        assertEquals(country1.getName(), responseDto.get(0).getName());
+        assertEquals(country2.getId(), responseDto.get(1).getId());
+        assertEquals(country2.getName(), responseDto.get(1).getName());
+    }
+
+    @Test
+    void getCountriesTest_shouldReturnErrorMessageAnd500_whenNoCountries() throws Exception {
+        String REQUEST_URL = URL + "/countries";
+
+        // When
+        mockMvc.perform(get(REQUEST_URL).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message", is("Server error")))
+                .andDo(print());
     }
 }
