@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface UserAdminRepository extends JpaRepository<User, Long> {
-    @Query("SELECT u FROM User u WHERE " + " u.role = :role AND "
+    @Query("SELECT u FROM User u WHERE u.role = :role AND "
             + "(:username IS NULL OR u.username = :username) AND "
             + "(:email IS NULL OR u.email = :email) AND "
             + "(:fullName IS NULL OR u.fullName = :fullName) AND "
