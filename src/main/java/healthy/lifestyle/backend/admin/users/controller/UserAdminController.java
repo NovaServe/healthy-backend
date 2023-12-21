@@ -5,7 +5,6 @@ import healthy.lifestyle.backend.users.dto.UserResponseDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.validation.*;
-import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,7 +25,7 @@ public class UserAdminController {
     @GetMapping("/users")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<UserResponseDto>> getAllUsers(
-            @RequestParam(name = "role", required = false) @NotEmpty Role role,
+            @RequestParam(name = "role", required = false) Role role,
             @RequestParam(name = "username", required = false) @UsernameValidation String username,
             @RequestParam(name = "email", required = false) @EmailValidation String email,
             @RequestParam(name = "fullName", required = false) @FullnameValidation String fullName,
