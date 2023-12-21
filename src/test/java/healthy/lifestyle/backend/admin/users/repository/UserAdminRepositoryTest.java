@@ -123,7 +123,7 @@ public class UserAdminRepositoryTest {
                 Arguments.of("ROLE_USER", "NonExistentValue", null, null, null, null, Collections.emptyList()),
                 Arguments.of("ROLE_USER", null, "NonExistentValue", null, null, null, Collections.emptyList()),
                 Arguments.of("ROLE_USER", null, null, "NonExistentValue", null, null, Collections.emptyList()),
-//                Arguments.of("ROLE_USER", null, null, null, "Country 100", null, Collections.emptyList()),
+                // Arguments.of("ROLE_USER", null, null, null, "Country 100", null, Collections.emptyList()),
                 Arguments.of("ROLE_USER", null, null, null, null, 100, Collections.emptyList()),
 
                 // Positive cases for ROLE_ADMIN
@@ -148,7 +148,7 @@ public class UserAdminRepositoryTest {
                 Arguments.of("ROLE_ADMIN", "NonExistentValue", null, null, null, null, Collections.emptyList()),
                 Arguments.of("ROLE_ADMIN", null, "NonExistentValue", null, null, null, Collections.emptyList()),
                 Arguments.of("ROLE_ADMIN", null, null, "NonExistentValue", null, null, Collections.emptyList()),
-//                Arguments.of("ROLE_ADMIN", null, null, null, "Country 100", null, Collections.emptyList()),
+                // Arguments.of("ROLE_ADMIN", null, null, null, "Country 100", null, Collections.emptyList()),
                 Arguments.of("ROLE_ADMIN", null, null, null, null, 100, Collections.emptyList()),
 
                 // Positive cases for all roles
@@ -172,7 +172,7 @@ public class UserAdminRepositoryTest {
                 Arguments.of(null, "NonExistentValue", null, null, null, null, Collections.emptyList()),
                 Arguments.of(null, null, "NonExistentValue", null, null, null, Collections.emptyList()),
                 Arguments.of(null, null, null, "NonExistentValue", null, null, Collections.emptyList()),
-//                Arguments.of(null, null, null, null, "Country 100", null, Collections.emptyList()),
+                // Arguments.of(null, null, null, null, "Country 100", null, Collections.emptyList()),
                 Arguments.of(null, null, null, null, null, 100, Collections.emptyList()));
     }
 }
