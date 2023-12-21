@@ -5,11 +5,12 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.data.DataUtil;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
+import healthy.lifestyle.backend.util.DtoUtil;
+import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.workout.dto.HttpRefCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefUpdateRequestDto;
@@ -43,58 +44,18 @@ class HttpRefServiceTest {
     @Spy
     ModelMapper modelMapper;
 
-    DataUtil dataUtil = new DataUtil();
+    TestUtil testUtil = new TestUtil();
 
-    @Test
-    void getCustomHttpRefsTest_shouldReturnCustomRefs_whenValidUserIdAndSortByProvided() {
-        // Given
-        List<HttpRef> httpRefs = dataUtil.createHttpRefs(1, 4, true);
-        long userId = 1L;
-        String sortBy = "id";
-        Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
-        when(httpRefRepository.findCustomByUserId(userId, sort)).thenReturn(httpRefs);
-
-        // When
-        List<HttpRefResponseDto> httpRefsActual = httpRefService.getCustomHttpRefs(userId, "id");
-
-        // Then
-        verify(httpRefRepository, times(1)).findCustomByUserId(userId, sort);
-
-        org.hamcrest.MatcherAssert.assertThat(httpRefsActual, hasSize(httpRefs.size()));
-
-        assertThat(httpRefs)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                .isEqualTo(httpRefsActual);
-    }
-
-    @Test
-    void getDefaultHttpRefsTest_shouldReturnDefaultHttpRefs() {
-        // Given
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        List<HttpRef> httpRefsDefault = dataUtil.createHttpRefs(1, 2, false);
-        when(httpRefRepository.findAllDefault(sort)).thenReturn(httpRefsDefault);
-
-        // When
-        List<HttpRefResponseDto> httpRefsActual = httpRefService.getDefaultHttpRefs(sort);
-
-        // Then
-        verify(httpRefRepository, times(1)).findAllDefault(sort);
-
-        org.hamcrest.MatcherAssert.assertThat(httpRefsActual, hasSize(httpRefsDefault.size()));
-
-        Assertions.assertThat(httpRefsDefault)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                .isEqualTo(httpRefsActual);
-    }
+    DtoUtil dtoUtil = new DtoUtil();
 
     @Test
     void createCustomHttpRefTest_shouldReturnHttpRefResponseDto() {
         // Given
-        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
-        long userId = 1L;
-        User user = dataUtil.createUserEntity(userId);
+        User user = testUtil.createUser(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
+
         when(userService.getUserById(user.getId())).thenReturn(user);
-        when(httpRefRepository.findCustomByNameAndUserId(createHttpRequestDto.getName(), userId))
+        when(httpRefRepository.findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId()))
                 .thenReturn(Optional.empty());
         when(httpRefRepository.save(org.mockito.ArgumentMatchers.any(HttpRef.class)))
                 .thenAnswer(invocation -> {
@@ -108,8 +69,8 @@ class HttpRefServiceTest {
         HttpRefResponseDto httpRefResponseDto = httpRefService.createCustomHttpRef(user.getId(), createHttpRequestDto);
 
         // Then
-        verify(userService, times(1)).getUserById(userId);
-        verify(httpRefRepository, times(1)).findCustomByNameAndUserId(createHttpRequestDto.getName(), userId);
+        verify(userService, times(1)).getUserById(user.getId());
+        verify(httpRefRepository, times(1)).findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId());
         verify(httpRefRepository, times(1)).save(org.mockito.ArgumentMatchers.any(HttpRef.class));
 
         assertThat(httpRefResponseDto)
@@ -124,7 +85,7 @@ class HttpRefServiceTest {
     @Test
     void createCustomHttpRefTest_shouldReturnUserNotFoundAndBadRequest_whenInvalidUserIdProvided() {
         // Given
-        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
+        HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
         long userId = 1L;
         when(userService.getUserById(userId)).thenReturn(null);
 
@@ -144,13 +105,12 @@ class HttpRefServiceTest {
     @Test
     void createCustomHttpRefTest_shouldReturnAlreadyExistsAndBadRequest_whenNameDuplicated() {
         // Given
-        HttpRefCreateRequestDto createHttpRequestDto = dataUtil.createHttpRequestDto(1);
-        long userId = 1L;
-        User user = dataUtil.createUserEntity(userId);
+        HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
+        User user = testUtil.createUser(1);
         when(userService.getUserById(user.getId())).thenReturn(user);
 
-        HttpRef httpRef = dataUtil.createHttpRef(1, true, null);
-        when(httpRefRepository.findCustomByNameAndUserId(createHttpRequestDto.getName(), userId))
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
+        when(httpRefRepository.findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId()))
                 .thenReturn(Optional.of(httpRef));
 
         // When
@@ -158,8 +118,8 @@ class HttpRefServiceTest {
                 ApiException.class, () -> httpRefService.createCustomHttpRef(user.getId(), createHttpRequestDto));
 
         // Then
-        verify(userService, times(1)).getUserById(userId);
-        verify(httpRefRepository, times(1)).findCustomByNameAndUserId(createHttpRequestDto.getName(), userId);
+        verify(userService, times(1)).getUserById(user.getId());
+        verify(httpRefRepository, times(1)).findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId());
         verify(httpRefRepository, times(0)).save(org.mockito.ArgumentMatchers.any(HttpRef.class));
 
         assertEquals(ErrorMessage.ALREADY_EXISTS.getName(), exception.getMessage());
@@ -167,11 +127,60 @@ class HttpRefServiceTest {
     }
 
     @Test
+    void getDefaultHttpRefsTest_shouldReturnDefaultHttpRefs() {
+        // Given
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        HttpRef httpRef1 = testUtil.createDefaultHttpRef(1);
+        HttpRef httpRef2 = testUtil.createDefaultHttpRef(2);
+        List<HttpRef> httpRefsDefault = List.of(httpRef1, httpRef2);
+        when(httpRefRepository.findAllDefault(sort)).thenReturn(httpRefsDefault);
+
+        // When
+        List<HttpRefResponseDto> httpRefsActual = httpRefService.getDefaultHttpRefs(sort);
+
+        // Then
+        verify(httpRefRepository, times(1)).findAllDefault(sort);
+
+        org.hamcrest.MatcherAssert.assertThat(httpRefsActual, hasSize(httpRefsDefault.size()));
+
+        Assertions.assertThat(httpRefsDefault)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(httpRefsActual);
+    }
+
+    @Test
+    void getCustomHttpRefsTest_shouldReturnCustomHttpRefs_whenValidUserIdAndSortByProvided() {
+        // Given
+        HttpRef httpRef1 = testUtil.createDefaultHttpRef(1);
+        HttpRef httpRef2 = testUtil.createDefaultHttpRef(2);
+        HttpRef httpRef3 = testUtil.createDefaultHttpRef(3);
+        HttpRef httpRef4 = testUtil.createDefaultHttpRef(4);
+        List<HttpRef> httpRefs = List.of(httpRef1, httpRef2, httpRef3, httpRef4);
+        long userId = 1L;
+        String sortBy = "id";
+        Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
+        when(httpRefRepository.findCustomByUserId(userId, sort)).thenReturn(httpRefs);
+
+        // When
+        List<HttpRefResponseDto> httpRefsActual = httpRefService.getCustomHttpRefs(userId, "id");
+
+        // Then
+        verify(httpRefRepository, times(1)).findCustomByUserId(userId, sort);
+
+        org.hamcrest.MatcherAssert.assertThat(httpRefsActual, hasSize(httpRefs.size()));
+
+        assertThat(httpRefs)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(httpRefsActual);
+    }
+
+    @Test
     void updateCustomHttpRefTest_shouldReturnHttpRefResponseDto_whenValidUpdateDtoProvided() {
         // Given
-        User user = dataUtil.createUserEntity(1);
-        HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
-        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
+        HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
+
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
         when(httpRefRepository.save(httpRef)).thenReturn(httpRef);
 
@@ -182,16 +191,16 @@ class HttpRefServiceTest {
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
         verify(httpRefRepository, times(1)).save(httpRef);
 
-        assertEquals(requestDto.getUpdatedName(), responseDto.getName());
-        assertEquals(requestDto.getUpdatedDescription(), responseDto.getDescription());
-        assertEquals(requestDto.getUpdatedRef(), responseDto.getRef());
+        assertEquals(requestDto.getName(), responseDto.getName());
+        assertEquals(requestDto.getDescription(), responseDto.getDescription());
+        assertEquals(requestDto.getRef(), responseDto.getRef());
         assertEquals(httpRef.getId(), responseDto.getId());
     }
 
     @Test
     void updateCustomHttpRefTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() {
         // Given
-        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
         when(httpRefRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // When
@@ -209,9 +218,9 @@ class HttpRefServiceTest {
     @Test
     void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultMediaIsRequestedToUpdate() {
         // Given
-        User user = dataUtil.createUserEntity(1);
-        HttpRef httpRef = dataUtil.createHttpRef(1, false, user);
-        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createDefaultHttpRef(1);
+        HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
@@ -230,9 +239,9 @@ class HttpRefServiceTest {
     @Test
     void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() {
         // Given
-        User user = dataUtil.createUserEntity(1);
-        HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
-        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
+        HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
         long wrongUserId = user.getId() + 1;
 
@@ -251,10 +260,10 @@ class HttpRefServiceTest {
     @Test
     void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenEmptyDtoProvided() {
         // Given
-        HttpRefUpdateRequestDto requestDto = dataUtil.createUpdateHttpRefRequestDto(1);
-        requestDto.setUpdatedName(null);
-        requestDto.setUpdatedDescription(null);
-        requestDto.setUpdatedRef(null);
+        HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
+        requestDto.setName(null);
+        requestDto.setDescription(null);
+        requestDto.setRef(null);
 
         // When
         ApiException exception =
@@ -271,8 +280,8 @@ class HttpRefServiceTest {
     @Test
     void deleteCustomHttpRefTest_shouldReturnDeletedHttpRefId() {
         // Given
-        User user = dataUtil.createUserEntity(1);
-        HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
@@ -300,10 +309,10 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void deleteCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultMediaIsRequestedToDelete() {
+    void deleteCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefIsRequestedToDelete() {
         // Given
-        User user = dataUtil.createUserEntity(1);
-        HttpRef httpRef = dataUtil.createHttpRef(1, false, user);
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createDefaultHttpRef(1);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
@@ -320,8 +329,8 @@ class HttpRefServiceTest {
     @Test
     void deleteCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() {
         // Given
-        User user = dataUtil.createUserEntity(1);
-        HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
         long wrongUserId = user.getId() + 1;
 
@@ -339,8 +348,8 @@ class HttpRefServiceTest {
     @Test
     void getCustomHttpRefByIdTest_shouldReturnHttpRefResponseDto() {
         // Given
-        User user = dataUtil.createUserEntity(1);
-        HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
@@ -373,8 +382,8 @@ class HttpRefServiceTest {
     @Test
     void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenDefaultMediaIsRequestedToDelete() {
         // Given
-        User user = dataUtil.createUserEntity(1);
-        HttpRef httpRef = dataUtil.createHttpRef(1, false, user);
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createDefaultHttpRef(1);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
@@ -391,8 +400,8 @@ class HttpRefServiceTest {
     @Test
     void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() {
         // Given
-        User user = dataUtil.createUserEntity(1);
-        HttpRef httpRef = dataUtil.createHttpRef(1, true, user);
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
         long wrongUserId = user.getId() + 1;
 

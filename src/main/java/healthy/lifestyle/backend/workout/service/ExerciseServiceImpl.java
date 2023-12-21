@@ -147,6 +147,39 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     @Transactional
+    public ExerciseResponseDto getExerciseById(long exerciseId, boolean requiredDefault, Long userId) {
+        Optional<Exercise> exerciseOptional = exerciseRepository.findById(exerciseId);
+        if (exerciseOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND);
+
+        Exercise exercise = exerciseOptional.get();
+        if ((exercise.isCustom() && requiredDefault) || (!exercise.isCustom() && !requiredDefault))
+            throw new ApiException(ErrorMessage.DEFAULT_CUSTOM_MISMATCH, HttpStatus.BAD_REQUEST);
+
+        if (nonNull(userId)) {
+            User user = userService.getUserById(userId);
+            if (exercise.isCustom()
+                    && (user.getExercises() == null || !user.getExercises().contains(exercise)))
+                throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+        }
+
+        ExerciseResponseDto exerciseRespondDto = modelMapper.map(exercise, ExerciseResponseDto.class);
+
+        List<BodyPartResponseDto> bodyPartsSorted = exerciseRespondDto.getBodyParts().stream()
+                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
+                .toList();
+
+        List<HttpRefResponseDto> httpRefsSorted = exerciseRespondDto.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                .toList();
+
+        exerciseRespondDto.setBodyParts(bodyPartsSorted);
+        exerciseRespondDto.setHttpRefs(httpRefsSorted);
+
+        return exerciseRespondDto;
+    }
+
+    @Override
+    @Transactional
     public List<ExerciseResponseDto> getCustomExercises(long userId) {
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
         List<Exercise> exercises = exerciseRepository.findCustomByUserId(userId, sort);
@@ -193,38 +226,6 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     @Transactional
-    public ExerciseResponseDto getExerciseById(long exerciseId, boolean requiredDefault, Long userId) {
-        Optional<Exercise> exerciseOptional = exerciseRepository.findById(exerciseId);
-        if (exerciseOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND);
-
-        Exercise exercise = exerciseOptional.get();
-        if ((exercise.isCustom() && requiredDefault) || (!exercise.isCustom() && !requiredDefault))
-            throw new ApiException(ErrorMessage.DEFAULT_CUSTOM_MISMATCH, HttpStatus.BAD_REQUEST);
-
-        if (nonNull(userId)) {
-            User user = userService.getUserById(userId);
-            if (exercise.isCustom() && !user.getExercises().contains(exercise))
-                throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
-        }
-
-        ExerciseResponseDto exerciseRespondDto = modelMapper.map(exercise, ExerciseResponseDto.class);
-
-        List<BodyPartResponseDto> bodyPartsSorted = exerciseRespondDto.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
-                .toList();
-
-        List<HttpRefResponseDto> httpRefsSorted = exerciseRespondDto.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
-                .toList();
-
-        exerciseRespondDto.setBodyParts(bodyPartsSorted);
-        exerciseRespondDto.setHttpRefs(httpRefsSorted);
-
-        return exerciseRespondDto;
-    }
-
-    @Override
-    @Transactional
     public ExerciseResponseDto updateCustomExercise(long exerciseId, long userId, ExerciseUpdateRequestDto requestDto) {
         Exercise exercise = exerciseRepository
                 .findCustomByExerciseIdAndUserId(exerciseId, userId)
@@ -247,9 +248,9 @@ public class ExerciseServiceImpl implements ExerciseService {
 
         User user = userService.getUserById(userId);
 
-        boolean userDoesntHaveExercise =
-                isNull(user.getExercises()) || !user.getExercises().contains(exercise);
-        if (userDoesntHaveExercise) throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+        boolean userHasCustomExercise =
+                user.getExercises() != null && user.getExercises().contains(exercise);
+        if (!userHasCustomExercise) throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
 
         if (nonNull(requestDto.getTitle())) {
             boolean titlesAreDifferent = !requestDto.getTitle().equals(exercise.getTitle());
@@ -336,10 +337,13 @@ public class ExerciseServiceImpl implements ExerciseService {
                     .findById(id)
                     .orElseThrow(() -> new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST));
 
-            boolean userDoesntHaveCustomHttpRef =
-                    httpRef.isCustom() && !user.getHttpRefs().contains(httpRef);
-            if (userDoesntHaveCustomHttpRef)
-                throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+            if (httpRef.isCustom()) {
+                boolean userHasCustomHttpRef =
+                        user.getHttpRefs() != null && user.getHttpRefs().contains(httpRef);
+                if (!userHasCustomHttpRef)
+                    throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+            }
+
             exercise.getHttpRefs().add(httpRef);
         }
 
@@ -371,12 +375,11 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     @Transactional
-    public Long deleteCustomExercise(long exerciseId, long userId) {
+    public void deleteCustomExercise(long exerciseId, long userId) {
         Exercise exercise = exerciseRepository
                 .findCustomByExerciseIdAndUserId(exerciseId, userId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
         userService.deleteUserExercise(userId, exercise);
         exerciseRepository.delete(exercise);
-        return exerciseId;
     }
 }

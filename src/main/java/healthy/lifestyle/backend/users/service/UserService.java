@@ -6,23 +6,23 @@ import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.Workout;
 
 public interface UserService {
-    SignupResponseDto createUser(SignupRequestDto requestDto);
-
-    LoginResponseDto login(LoginRequestDto requestDto);
-
-    void addExercise(long userId, Exercise exercise);
-
-    void addWorkout(User user, Workout workout);
-
-    User getUserById(long userId);
-
-    void removeWorkout(User user, Workout workout);
-
-    UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto);
-
-    long deleteUser(Long userId);
+    void createUser(SignupRequestDto requestDto);
 
     UserResponseDto getUserDetailsById(long userId);
 
+    UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto);
+
+    void deleteUser(long userId);
+
+    LoginResponseDto login(LoginRequestDto requestDto);
+
+    User getUserById(long userId);
+
+    void addExercise(long userId, Exercise exercise);
+
     void deleteUserExercise(long userId, Exercise exercise);
+
+    void addWorkout(User user, Workout workout);
+
+    void removeWorkout(User user, Workout workout);
 }

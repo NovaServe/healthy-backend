@@ -11,13 +11,17 @@ import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.users.service.CountryService;
 import healthy.lifestyle.backend.users.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+@Validated
 @RestController
 @RequestMapping("${api.basePath}/${api.version}/users")
 public class UserController {
@@ -33,6 +37,14 @@ public class UserController {
         this.authService = authService;
     }
 
+    @GetMapping
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<UserResponseDto> getUserDetails() {
+        Long authenticatedUserId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        return ResponseEntity.ok(userService.getUserDetailsById(authenticatedUserId));
+    }
+
     @PatchMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<UserResponseDto> updateUser(
@@ -46,20 +58,13 @@ public class UserController {
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<Long> deleteUser(@PathVariable("userId") Long userId) {
+    public ResponseEntity<?> deleteUser(@PathVariable("userId") @NotNull @PositiveOrZero Long userId) {
         Long authenticatedUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
             throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
-        return new ResponseEntity<>(userService.deleteUser(userId), HttpStatus.NO_CONTENT);
-    }
-
-    @GetMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<UserResponseDto> getUserDetails() {
-        Long authenticatedUserId = authService.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        return ResponseEntity.ok(userService.getUserDetailsById(authenticatedUserId));
+        userService.deleteUser(userId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/countries")

@@ -6,13 +6,13 @@ import healthy.lifestyle.backend.workout.dto.WorkoutUpdateRequestDto;
 import java.util.List;
 
 public interface WorkoutService {
-    List<WorkoutResponseDto> getDefaultWorkouts(String sortFieldName);
+    WorkoutResponseDto createCustomWorkout(long userId, WorkoutCreateRequestDto requestDto);
 
     WorkoutResponseDto getWorkoutById(long workoutId, boolean customRequired);
 
-    WorkoutResponseDto createCustomWorkout(long userId, WorkoutCreateRequestDto requestDto);
+    List<WorkoutResponseDto> getDefaultWorkouts(String sortFieldName);
 
     WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, WorkoutUpdateRequestDto requestDto);
 
-    long deleteCustomWorkout(long userId, long workoutId);
+    void deleteCustomWorkout(long userId, long workoutId);
 }

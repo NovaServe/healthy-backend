@@ -1,10 +1,11 @@
 package healthy.lifestyle.backend.users.model;
 
+import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.model.Workout;
 import jakarta.persistence.*;
-import java.util.Set;
+import java.util.*;
 import lombok.*;
 
 @Entity
@@ -42,20 +43,48 @@ public class User {
     @Column(name = "age", nullable = true, unique = false)
     private Integer age;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "users_exercises",
-            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "exercise_id", referencedColumnName = "id"))
+    @OneToMany(mappedBy = "user")
     private Set<Exercise> exercises;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "users_workouts",
-            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "workout_id", referencedColumnName = "id"))
+    @OneToMany(mappedBy = "user")
     private Set<Workout> workouts;
 
     @OneToMany(mappedBy = "user")
     private Set<HttpRef> httpRefs;
+
+    public List<Exercise> getExercisesSortedById() {
+        return this.getExercises().stream()
+                .sorted(Comparator.comparingLong(Exercise::getId))
+                .toList();
+    }
+
+    public List<Long> getExercisesIdsSorted() {
+        return this.getExercisesSortedById().stream().map(Exercise::getId).toList();
+    }
+
+    public List<Workout> getWorkoutsSortedById() {
+        return this.getWorkouts().stream()
+                .sorted(Comparator.comparingLong(Workout::getId))
+                .toList();
+    }
+
+    public List<Long> getWorkoutsIdsSorted() {
+        return this.getWorkoutsSortedById().stream().map(Workout::getId).toList();
+    }
+
+    public List<HttpRef> getCustomHttpRefsSortedById() {
+        return this.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRef::getId))
+                .toList();
+    }
+
+    public List<Long> getCustomHttpRefsIdsSorted() {
+        return this.getCustomHttpRefsSortedById().stream().map(HttpRef::getId).toList();
+    }
+
+    public List<BodyPart> getDistinctBodyPartsSortedById() {
+        Set<BodyPart> bodyParts = new HashSet<>();
+        this.getExercises().forEach(elt -> bodyParts.addAll(elt.getBodyParts()));
+        return bodyParts.stream().toList();
+    }
 }
