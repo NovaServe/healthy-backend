@@ -3,14 +3,14 @@ package healthy.lifestyle.backend.workout.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-import healthy.lifestyle.backend.data.DataConfiguration;
-import healthy.lifestyle.backend.data.DataHelper;
+import healthy.lifestyle.backend.config.BeanConfig;
+import healthy.lifestyle.backend.config.ContainerConfig;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.List;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,11 +26,11 @@ import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest
 @Testcontainers
-@Import(DataConfiguration.class)
+@Import(BeanConfig.class)
 class HttpRefRepositoryTest {
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
-            new PostgreSQLContainer<>(DockerImageName.parse("postgres:12.15"));
+            new PostgreSQLContainer<>(DockerImageName.parse(ContainerConfig.POSTGRES));
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
@@ -43,28 +43,27 @@ class HttpRefRepositoryTest {
     HttpRefRepository httpRefRepository;
 
     @Autowired
-    DataHelper dataHelper;
+    DbUtil dbUtil;
 
     @BeforeEach
     void beforeEach() {
-        dataHelper.deleteAll();
+        dbUtil.deleteAll();
     }
 
     @Test
-    void postgresqlContainerTest() {
-        assertThat(postgresqlContainer.isRunning()).isTrue();
-    }
-
-    @Test
-    void findAllDefaultTest_shouldReturnAllDefaultHttpRefs() {
+    void findAllDefaultTest_shouldReturnDefaultHttpRefList() {
         // Given
-        List<HttpRef> httpRefsDefault = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> dataHelper.createHttpRef(id, false))
-                .toList();
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
 
-        List<HttpRef> httpRefsCustom = IntStream.rangeClosed(3, 4)
-                .mapToObj(id -> dataHelper.createHttpRef(id, true))
-                .toList();
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+
+        User user1 = dbUtil.createUser(1, role, country);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user1);
+
+        User user2 = dbUtil.createUser(2, role, country);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user2);
 
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
 
@@ -72,34 +71,28 @@ class HttpRefRepositoryTest {
         List<HttpRef> httpRefsActual = httpRefRepository.findAllDefault(sort);
 
         // Then
-        assertEquals(httpRefsDefault.size(), httpRefsActual.size());
+        assertEquals(2, httpRefsActual.size());
 
-        assertThat(httpRefsDefault)
+        assertThat(httpRefsActual)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(httpRefsActual);
+                .isEqualTo(List.of(defaultHttpRef1, defaultHttpRef2));
     }
 
     @Test
-    void findCustomByUserIdTest_shouldReturnUserCustomHttpRefs_whenValidUserIdProvided() {
+    void findCustomByUserIdTest_shouldReturnUserCustomHttpRefList() {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
 
-        Country country1 = dataHelper.createCountry(1);
-        User user1 = dataHelper.createUser("one", role, country1, null, 20);
-        HttpRef httpRef1 = dataHelper.createHttpRef(1, true);
-        dataHelper.httpRefAddUser(httpRef1, user1);
-        HttpRef httpRef2 = dataHelper.createHttpRef(2, true);
-        dataHelper.httpRefAddUser(httpRef2, user1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
 
-        Country country2 = dataHelper.createCountry(2);
-        User user2 = dataHelper.createUser("two", role, country2, null, 20);
-        HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
-        dataHelper.httpRefAddUser(httpRef3, user2);
-        HttpRef httpRef4 = dataHelper.createHttpRef(4, true);
-        dataHelper.httpRefAddUser(httpRef4, user2);
+        User user1 = dbUtil.createUser(1, role, country);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user1);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user1);
 
-        HttpRef defaultHttpRef1 = dataHelper.createHttpRef(5, false);
-        HttpRef defaultHttpRef2 = dataHelper.createHttpRef(6, false);
+        User user2 = dbUtil.createUser(2, role, country);
+        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(5, user2);
 
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
 
@@ -109,28 +102,24 @@ class HttpRefRepositoryTest {
         // Then
         assertEquals(2, httpRefsActual.size());
 
-        assertThat(List.of(httpRef1, httpRef2))
+        assertThat(httpRefsActual)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                .isEqualTo(httpRefsActual);
+                .isEqualTo(List.of(customHttpRef1, customHttpRef2));
     }
 
     @Test
     void findCustomByUserIdTest_shouldReturnEmptyList_whenNoHttpRefsFound() {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
 
-        Country country1 = dataHelper.createCountry(1);
-        User user1 = dataHelper.createUser("one", role, country1, null, 20);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
 
-        Country country2 = dataHelper.createCountry(2);
-        User user2 = dataHelper.createUser("two", role, country2, null, 20);
-        HttpRef httpRef3 = dataHelper.createHttpRef(3, true);
-        dataHelper.httpRefAddUser(httpRef3, user2);
-        HttpRef httpRef4 = dataHelper.createHttpRef(4, true);
-        dataHelper.httpRefAddUser(httpRef4, user2);
+        User user1 = dbUtil.createUser(1, role, country);
 
-        HttpRef defaultHttpRef1 = dataHelper.createHttpRef(5, false);
-        HttpRef defaultHttpRef2 = dataHelper.createHttpRef(6, false);
+        User user2 = dbUtil.createUser(2, role, country);
+        HttpRef customHttpRef = dbUtil.createCustomHttpRef(3, user2);
 
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
 

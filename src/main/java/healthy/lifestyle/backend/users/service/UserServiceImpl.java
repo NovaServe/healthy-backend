@@ -15,6 +15,7 @@ import healthy.lifestyle.backend.users.repository.RoleRepository;
 import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.Workout;
+import healthy.lifestyle.backend.workout.service.RemovalService;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Optional;
 import org.modelmapper.ModelMapper;
@@ -37,6 +38,7 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final ModelMapper modelMapper;
+    private final RemovalService removalService;
 
     public UserServiceImpl(
             UserRepository userRepository,
@@ -45,7 +47,8 @@ public class UserServiceImpl implements UserService {
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
             JwtTokenProvider jwtTokenProvider,
-            ModelMapper modelMapper) {
+            ModelMapper modelMapper,
+            RemovalService removalService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.countryRepository = countryRepository;
@@ -53,10 +56,11 @@ public class UserServiceImpl implements UserService {
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
         this.modelMapper = modelMapper;
+        this.removalService = removalService;
     }
 
     @Override
-    public SignupResponseDto createUser(SignupRequestDto requestDto) {
+    public void createUser(SignupRequestDto requestDto) {
         if (userRepository.existsByEmail(requestDto.getEmail())
                 || userRepository.existsByUsername(requestDto.getUsername())) {
             throw new ApiException(ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
@@ -85,50 +89,15 @@ public class UserServiceImpl implements UserService {
                 .country(country)
                 .age(requestDto.getAge())
                 .build();
-
-        User saved = userRepository.save(user);
-        return new SignupResponseDto.Builder().id(saved.getId()).build();
-    }
-
-    @Override
-    public LoginResponseDto login(LoginRequestDto requestDto) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(requestDto.getUsernameOrEmail(), requestDto.getPassword()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String token = jwtTokenProvider.generateToken(authentication);
-            return new LoginResponseDto(token);
-        } catch (Exception e) {
-            throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
-        }
-    }
-
-    @Override
-    @Transactional(propagation = Propagation.MANDATORY)
-    public void addExercise(long userId, Exercise exercise) {
-        User user = userRepository.getReferenceById(userId);
-        user.getExercises().add(exercise);
         userRepository.save(user);
     }
 
     @Override
-    @Transactional(propagation = Propagation.MANDATORY)
-    public void addWorkout(User user, Workout workout) {
-        user.getWorkouts().add(workout);
-        userRepository.save(user);
-    }
-
-    @Override
-    @Transactional(propagation = Propagation.MANDATORY)
-    public User getUserById(long userId) {
+    public UserResponseDto getUserDetailsById(long userId) {
         Optional<User> userOptional = userRepository.findById(userId);
-        return userOptional.orElse(null);
-    }
+        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
 
-    @Override
-    @Transactional(propagation = Propagation.MANDATORY)
-    public void removeWorkout(User user, Workout workout) {
-        user.getWorkouts().remove(workout);
+        return modelMapper.map(userOptional.get(), UserResponseDto.class);
     }
 
     @Override
@@ -154,8 +123,7 @@ public class UserServiceImpl implements UserService {
         }
 
         User savedUser = userRepository.save(user);
-        UserResponseDto responseDto = modelMapper.map(savedUser, UserResponseDto.class);
-        return responseDto;
+        return modelMapper.map(savedUser, UserResponseDto.class);
     }
 
     private void updateUserCheckIfFieldsAreDifferent(UserUpdateRequestDto requestDto, User user) {
@@ -190,23 +158,43 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public long deleteUser(Long userId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-
-        User user = userOptional.get();
-
+    @Transactional
+    public void deleteUser(long userId) {
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+        removalService.deleteCustomWorkouts(user.getWorkoutsIdsSorted());
+        removalService.deleteCustomExercises(user.getExercisesIdsSorted());
+        removalService.deleteCustomHttpRefs(user.getCustomHttpRefsIdsSorted());
         userRepository.delete(user);
-
-        return userId;
     }
 
     @Override
-    public UserResponseDto getUserDetailsById(long userId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    public LoginResponseDto login(LoginRequestDto requestDto) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(requestDto.getUsernameOrEmail(), requestDto.getPassword()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = jwtTokenProvider.generateToken(authentication);
+            return new LoginResponseDto(token);
+        } catch (Exception e) {
+            throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
+        }
+    }
 
-        return modelMapper.map(userOptional.get(), UserResponseDto.class);
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public User getUserById(long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        return userOptional.orElse(null);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void addExercise(long userId, Exercise exercise) {
+        User user = userRepository.getReferenceById(userId);
+        user.getExercises().add(exercise);
+        userRepository.save(user);
     }
 
     @Override
@@ -217,5 +205,18 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
         user.getExercises().remove(exercise);
         userRepository.save(user);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void addWorkout(User user, Workout workout) {
+        user.getWorkouts().add(workout);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void removeWorkout(User user, Workout workout) {
+        user.getWorkouts().remove(workout);
     }
 }
