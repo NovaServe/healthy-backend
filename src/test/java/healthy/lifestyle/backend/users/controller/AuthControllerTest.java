@@ -1,6 +1,5 @@
 package healthy.lifestyle.backend.users.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -10,16 +9,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.data.DataConfiguration;
-import healthy.lifestyle.backend.data.DataHelper;
-import healthy.lifestyle.backend.data.DataUtil;
+import healthy.lifestyle.backend.config.BeanConfig;
+import healthy.lifestyle.backend.config.ContainerConfig;
 import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.LoginResponseDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
-import healthy.lifestyle.backend.users.dto.SignupResponseDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.util.DbUtil;
+import healthy.lifestyle.backend.util.DtoUtil;
+import healthy.lifestyle.backend.util.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,11 +40,11 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
-@Import(DataConfiguration.class)
+@Import(BeanConfig.class)
 class AuthControllerTest {
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
-            new PostgreSQLContainer<>(DockerImageName.parse("postgres:12.15"));
+            new PostgreSQLContainer<>(DockerImageName.parse(ContainerConfig.POSTGRES));
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
@@ -60,62 +60,47 @@ class AuthControllerTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    DataHelper dataHelper;
+    DbUtil dbUtil;
 
     @Autowired
-    DataUtil dataUtil;
+    DtoUtil dtoUtil;
 
     @BeforeEach
     void beforeEach() {
-        dataHelper.deleteAll();
-    }
-
-    private static final String URL = "/api/v1/users/auth";
-
-    @Test
-    void postgresqlContainerTest() {
-        assertThat(postgresqlContainer.isRunning()).isTrue();
+        dbUtil.deleteAll();
     }
 
     @Test
-    void signupTest_shouldReturn201Created() throws Exception {
+    void signupTest_shouldReturnVoidWith201_whenValidRequest() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
 
         // When
-        MvcResult result = mockMvc.perform(post(URL + "/signup")
+        mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
                 // Then
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id", is(notNullValue())))
-                .andDo(print())
-                .andReturn();
-
-        String responseContent = result.getResponse().getContentAsString();
-        SignupResponseDto signupResponseDto = objectMapper.readValue(responseContent, SignupResponseDto.class);
-        User user = dataHelper.getUserById(signupResponseDto.getId());
-
-        assertThat(user.getCountry().getId()).isEqualTo(country.getId());
-        assertThat(user.getAge()).isEqualTo(age);
+                .andExpect(jsonPath("$").doesNotExist())
+                .andDo(print());
     }
 
     @Test
-    void signupTest_shouldReturn400BadRequest_whenUserAlreadyExists() throws Exception {
+    void signupTest_shouldReturnErrorMessageWith400_whenUserAlreadyExists() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        User alreayExistedUser = dbUtil.createUser(1, role, country);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
 
         // When
-        mockMvc.perform(post(URL + "/signup")
+        mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Already exists")))
@@ -123,16 +108,16 @@ class AuthControllerTest {
     }
 
     @Test
-    void signupTest_shouldReturn400BadRequest_whenInvalidUsername() throws Exception {
+    void signupTest_shouldReturnErrorMessageWith400_whenInvalidUsername() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
         Integer age = 20;
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
+        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
         signupRequestDto.setUsername("username 123 $");
 
         // When
-        mockMvc.perform(post(URL + "/signup")
+        mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signupRequestDto)))
                 // Then
@@ -144,14 +129,14 @@ class AuthControllerTest {
     @Test
     void signupTest_shouldReturn400BadRequest_whenInvalidEmail() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
         Integer age = 20;
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
+        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
         signupRequestDto.setEmail("invalid-email-123-$@email.com");
 
         // When
-        mockMvc.perform(post(URL + "/signup")
+        mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signupRequestDto)))
                 // Then
@@ -161,17 +146,17 @@ class AuthControllerTest {
     }
 
     @Test
-    void signupTest_shouldReturn400BadRequest_whenInvalidPassword() throws Exception {
+    void signupTest_shouldReturnErrorMessageWith400_whenInvalidPassword() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
         Integer age = 20;
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
+        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
         signupRequestDto.setPassword("Invalid password with space");
         signupRequestDto.setConfirmPassword("Invalid password with space");
 
         // When
-        mockMvc.perform(post(URL + "/signup")
+        mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signupRequestDto)))
                 // Then
@@ -182,16 +167,16 @@ class AuthControllerTest {
     }
 
     @Test
-    void signupTest_shouldReturn400BadRequest_whenPasswordsMismatch() throws Exception {
+    void signupTest_shouldReturnErrorMessageWith400_whenPasswordsMismatch() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
         Integer age = 20;
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
+        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
         signupRequestDto.setConfirmPassword("Password mismatch");
 
         // When
-        mockMvc.perform(post(URL + "/signup")
+        mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signupRequestDto)))
                 // Then
@@ -201,16 +186,16 @@ class AuthControllerTest {
     }
 
     @Test
-    void signupTest_shouldReturn400BadRequest_whenInvalidFullName() throws Exception {
+    void signupTest_shouldReturnErrorMessageWith400_whenInvalidFullName() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
         Integer age = 20;
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
+        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
         signupRequestDto.setFullName("Invalid Full Name &");
 
         // When
-        mockMvc.perform(post(URL + "/signup")
+        mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signupRequestDto)))
                 // Then
@@ -220,15 +205,15 @@ class AuthControllerTest {
     }
 
     @Test
-    void signupTest_shouldReturn400BadRequest_whenInvalidAge() throws Exception {
+    void signupTest_shouldReturnErrorMessageWith400_whenInvalidAge() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
         Integer age = 3;
-        SignupRequestDto signupRequestDto = dataUtil.createSignupRequestDto("one", country.getId(), age);
+        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
 
         // When
-        mockMvc.perform(post(URL + "/signup")
+        mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signupRequestDto)))
                 // Then
@@ -238,19 +223,16 @@ class AuthControllerTest {
     }
 
     @Test
-    void loginTest_shouldReturnTokenAnd200Ok() throws Exception {
+    void loginTest_shouldReturnTokenWith200_whenValidRequest() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
-        Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
+        User user = dbUtil.createUser(1);
 
-        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        LoginRequestDto requestDto = dtoUtil.loginRequestDto(1);
 
         // When
-        MvcResult mvcResult = mockMvc.perform(post(URL + "/login")
+        MvcResult mvcResult = mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
                 // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token", is(notNullValue())))
@@ -268,12 +250,12 @@ class AuthControllerTest {
     }
 
     @Test
-    void loginTest_shouldReturn401Unauthorized_whenUserNotFound() throws Exception {
+    void loginTest_shouldReturnErrorMessageWith401_whenUserNotFound() throws Exception {
         // Given
-        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
 
         // When
-        mockMvc.perform(post(URL + "/login")
+        mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequestDto)))
                 // Then
@@ -283,19 +265,19 @@ class AuthControllerTest {
     }
 
     @Test
-    void loginTest_shouldReturn401Unauthorized_whenWrongPassword() throws Exception {
+    void loginTest_shouldReturnErrorMessageWith401_whenWrongPassword() throws Exception {
         // Given
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
         Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
+        User user = dbUtil.createUser(1, role, country);
 
-        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
         loginRequestDto.setPassword("Wrong-password");
         loginRequestDto.setConfirmPassword("Wrong-password");
 
         // When
-        mockMvc.perform(post(URL + "/login")
+        mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequestDto)))
                 // Then
@@ -305,13 +287,13 @@ class AuthControllerTest {
     }
 
     @Test
-    void loginTest_shouldReturn401Unauthorized_whenInvalidUsername() throws Exception {
+    void loginTest_shouldReturnErrorMessageWith401_whenInvalidUsername() throws Exception {
         // Given
-        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
         loginRequestDto.setUsernameOrEmail("Invalid username 123 $");
 
         // When
-        mockMvc.perform(post(URL + "/login")
+        mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequestDto)))
                 // Then
@@ -321,13 +303,13 @@ class AuthControllerTest {
     }
 
     @Test
-    void loginTest_shouldReturn401Unauthorized_whenInvalidPassword() throws Exception {
+    void loginTest_shouldReturnErrorMessageWith401_whenInvalidPassword() throws Exception {
         // Given
-        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
         loginRequestDto.setPassword("Invalid password with spaces");
 
         // When
-        mockMvc.perform(post(URL + "/login")
+        mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequestDto)))
                 // Then
@@ -337,13 +319,13 @@ class AuthControllerTest {
     }
 
     @Test
-    void loginTest_shouldReturn401Unauthorized_whenPasswordsMismatch() throws Exception {
+    void loginTest_shouldReturnErrorMessageWith401_whenPasswordsMismatch() throws Exception {
         // Given
-        LoginRequestDto loginRequestDto = dataUtil.createLoginRequestDto("one");
+        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
         loginRequestDto.setConfirmPassword("Password mismatch");
 
         // When
-        mockMvc.perform(post(URL + "/login")
+        mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequestDto)))
                 // Then
@@ -354,28 +336,26 @@ class AuthControllerTest {
 
     @Test
     @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
-    void validateTokenTest_shouldReturn200Ok_whenTokenIsValid() throws Exception {
+    void validateTokenTest_shouldReturnVoidWith200_whenTokenIsValid() throws Exception {
         // Given
-        String URL_POSTFIX = "/validate";
-        Role role = dataHelper.createRole("ROLE_USER");
-        Country country = dataHelper.createCountry(1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
         Integer age = 20;
-        User user = dataHelper.createUser("one", role, country, null, age);
+        User user = dbUtil.createUser(1, role, country);
 
         // When
-        mockMvc.perform(get(URL + URL_POSTFIX).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get(URL.VALIDATE).contentType(MediaType.APPLICATION_JSON))
+
                 // Then
                 .andExpect(status().isOk())
                 .andDo(print());
     }
 
     @Test
-    void validateTokenTest_shouldReturn401Unauthorized_whenUnauthorized() throws Exception {
-        // Given
-        String URL_POSTFIX = "/validate";
-
+    void validateTokenTest_shouldReturnErrorMessageWith401_whenUnauthorized() throws Exception {
         // When
-        mockMvc.perform(get(URL + URL_POSTFIX).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get(URL.VALIDATE).contentType(MediaType.APPLICATION_JSON))
+
                 // Then
                 .andExpect(status().isUnauthorized())
                 .andDo(print());

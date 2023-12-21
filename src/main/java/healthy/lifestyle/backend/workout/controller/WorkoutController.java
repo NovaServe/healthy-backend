@@ -66,10 +66,10 @@ public class WorkoutController {
 
     @DeleteMapping("/{workoutId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<Long> deleteCustomWorkout(@PathVariable("workoutId") Long workoutId) {
+    public ResponseEntity<?> deleteCustomWorkout(@PathVariable("workoutId") Long workoutId) {
         Long authenticatedUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return new ResponseEntity<>(
-                workoutService.deleteCustomWorkout(authenticatedUserId, workoutId), HttpStatus.NO_CONTENT);
+        workoutService.deleteCustomWorkout(authenticatedUserId, workoutId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

@@ -7,16 +7,16 @@ import java.util.List;
 import org.springframework.data.domain.Sort;
 
 public interface HttpRefService {
+    HttpRefResponseDto createCustomHttpRef(long userId, HttpRefCreateRequestDto createHttpRequestDto);
+
+    HttpRefResponseDto getCustomHttpRefById(long userId, long httpRefId);
+
     List<HttpRefResponseDto> getDefaultHttpRefs(Sort sort);
 
     List<HttpRefResponseDto> getCustomHttpRefs(long userId, String sortBy);
-
-    HttpRefResponseDto createCustomHttpRef(long userId, HttpRefCreateRequestDto createHttpRequestDto);
 
     HttpRefResponseDto updateCustomHttpRef(
             long userId, long httpRefId, HttpRefUpdateRequestDto updateHttpRefRequestDto);
 
     long deleteCustomHttpRef(long userId, long httpRefId);
-
-    HttpRefResponseDto getCustomHttpRefById(long userId, long httpRefId);
 }

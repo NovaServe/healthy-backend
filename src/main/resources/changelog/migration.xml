@@ -54,11 +54,15 @@
             <column name="description" type="varchar">
                 <constraints nullable="true" unique="false"/>
             </column>
+            <column name="needs_equipment" type="boolean">
+                <constraints nullable="false" unique="false"/>
+            </column>
             <column name="is_custom" type="boolean">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="needs_equipment" type="boolean">
-                <constraints nullable="false" unique="false"/>
+            <column name="user_id" type="bigint">
+                <constraints nullable="true" unique="false" foreignKeyName="fk_user_id"
+                             references="users(id)"/>
             </column>
         </createTable>
 
@@ -124,20 +128,6 @@
 
         <sqlFile path="sql/default_exercises.sql" relativeToChangelogFile="true" endDelimiter=";"
                  splitStatements="true"/>
-
-        <createTable tableName="users_exercises">
-            <column name="id" type="bigint" autoIncrement="true">
-                <constraints primaryKey="true"/>
-            </column>
-            <column name="user_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_user_id"
-                             references="users(id)"/>
-            </column>
-            <column name="exercise_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_exercise_id"
-                             references="exercises(id)"/>
-            </column>
-        </createTable>
     </changeSet>
 
     <changeSet id="workouts" author="Oleg Kucherenko" context="structure">
@@ -155,6 +145,10 @@
             </column>
             <column name="is_custom" type="boolean">
                 <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="true" unique="false" foreignKeyName="fk_user_id"
+                             references="users(id)"/>
             </column>
         </createTable>
 
@@ -218,23 +212,5 @@
                 <constraints nullable="true" foreignKeyName="fk_user_id" references="users(id)"/>
             </column>
         </addColumn>
-    </changeSet>
-
-    <changeSet id="users_workouts" author="Oleg Kucherenko">
-        <comment>users_workouts</comment>
-
-        <createTable tableName="users_workouts">
-            <column name="id" type="bigint" autoIncrement="true">
-                <constraints primaryKey="true"/>
-            </column>
-            <column name="user_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_user_id"
-                             references="users(id)"/>
-            </column>
-            <column name="workout_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_workout_id"
-                             references="workouts(id)"/>
-            </column>
-        </createTable>
     </changeSet>
 </databaseChangeLog>

@@ -1,6 +1,5 @@
 package healthy.lifestyle.backend.workout.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -10,9 +9,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.data.DataConfiguration;
-import healthy.lifestyle.backend.data.DataHelper;
-import healthy.lifestyle.backend.data.bodypart.BodyPartJpaTestBuilder;
+import healthy.lifestyle.backend.config.BeanConfig;
+import healthy.lifestyle.backend.config.ContainerConfig;
+import healthy.lifestyle.backend.util.DbUtil;
+import healthy.lifestyle.backend.util.URL;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import java.util.List;
@@ -35,7 +35,7 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
-@Import(DataConfiguration.class)
+@Import(BeanConfig.class)
 class BodyPartControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -44,14 +44,11 @@ class BodyPartControllerTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    DataHelper dataHelper;
-
-    @Autowired
-    BodyPartJpaTestBuilder bodyPartJpaTestBuilder;
+    DbUtil dbUtil;
 
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
-            new PostgreSQLContainer<>(DockerImageName.parse("postgres:12.15"));
+            new PostgreSQLContainer<>(DockerImageName.parse(ContainerConfig.POSTGRES));
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
@@ -60,26 +57,20 @@ class BodyPartControllerTest {
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
     }
 
-    private static final String URL = "/api/v1/workouts/bodyParts";
-
     @BeforeEach
     void beforeEach() {
-        dataHelper.deleteAll();
+        dbUtil.deleteAll();
     }
 
     @Test
-    void postgresqlContainerTest() {
-        assertThat(postgresqlContainer.isRunning()).isTrue();
-    }
-
-    @Test
-    void getBodyPartsTest_shouldReturnBodyPartsAndStatusOk() throws Exception {
+    void getBodyPartsTest_shouldReturnBodyPartDtoListWith200_whenValidRequest() throws Exception {
         // Given
-        BodyPart bodyPart1 = dataHelper.createBodyPart(1);
-        BodyPart bodyPart2 = dataHelper.createBodyPart(2);
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
 
         // When
-        MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
+        MvcResult mvcResult = mockMvc.perform(get(URL.BODY_PARTS).contentType(MediaType.APPLICATION_JSON))
+
                 // Then
                 .andExpect(status().isOk())
                 .andDo(print())
@@ -97,30 +88,9 @@ class BodyPartControllerTest {
     }
 
     @Test
-    void getBodyPartsTest_shouldReturnBodyPartsDtoListAnd200_whenAllBodyPartsRequested() throws Exception {
-        // Given
-        BodyPartJpaTestBuilder.BodyPartWrapper bodyPartsWrapper = bodyPartJpaTestBuilder.getWrapper();
-        bodyPartsWrapper.setIdOrSeed(1).setAmountOfEntities(2).buildList();
-
+    void getBodyPartsTest_shouldReturnErrorMessageWith500_whenNoBodyPartsFound() throws Exception {
         // When
-        MvcResult mvcResult = mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
-                // Then
-                .andExpect(status().isOk())
-                .andDo(print())
-                .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        List<BodyPartResponseDto> responseDto =
-                objectMapper.readValue(responseContent, new TypeReference<List<BodyPartResponseDto>>() {});
-
-        assertEquals(bodyPartsWrapper.size(), responseDto.size());
-        assertThat(responseDto).usingRecursiveComparison().isEqualTo(bodyPartsWrapper.getAll());
-    }
-
-    @Test
-    void getBodyPartsTest_shouldReturnErrorMessageAndStatusInternalServerError_whenNoBodyParts() throws Exception {
-        // When
-        mockMvc.perform(get(URL).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get(URL.BODY_PARTS).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message", is("Server error")))

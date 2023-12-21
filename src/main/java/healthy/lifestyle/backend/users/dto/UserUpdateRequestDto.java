@@ -36,7 +36,8 @@ public class UserUpdateRequestDto {
     @FullnameValidation
     private String fullName;
 
-    @NotNull private Long countryId;
+    @NotNull @PositiveOrZero
+    private Long countryId;
 
     @AgeValidation
     private Integer age;
