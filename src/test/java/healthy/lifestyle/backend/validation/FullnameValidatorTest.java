@@ -10,7 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class FullnameValidatorTest {
     @InjectMocks
-    FullnameValidator fullnameValidator;
+    FullNameValidator fullnameValidator;
 
     @Test
     void validationTest_shouldReturnTrue() {

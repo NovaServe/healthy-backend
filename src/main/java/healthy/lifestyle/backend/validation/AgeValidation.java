@@ -9,7 +9,7 @@ import java.lang.annotation.*;
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AgeValidation {
-    String message() default "Not allowed age, should be in 5-200";
+    String message() default "Age should be in range from 16 to 120";
 
     Class<?>[] groups() default {};
 

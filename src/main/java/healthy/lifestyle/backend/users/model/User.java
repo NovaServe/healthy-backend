@@ -72,14 +72,14 @@ public class User {
         return this.getWorkoutsSortedById().stream().map(Workout::getId).toList();
     }
 
-    public List<HttpRef> getCustomHttpRefsSortedById() {
+    public List<HttpRef> getHttpRefsSortedById() {
         return this.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
     }
 
-    public List<Long> getCustomHttpRefsIdsSorted() {
-        return this.getCustomHttpRefsSortedById().stream().map(HttpRef::getId).toList();
+    public List<Long> getHttpRefsIdsSorted() {
+        return this.getHttpRefsSortedById().stream().map(HttpRef::getId).toList();
     }
 
     public List<BodyPart> getDistinctBodyPartsSortedById() {
