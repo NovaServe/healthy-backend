@@ -1,13 +1,11 @@
 package healthy.lifestyle.backend.validation;
 
-import static java.util.Objects.nonNull;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-public class FullnameValidator implements ConstraintValidator<FullnameValidation, String> {
+public class FullNameValidator implements ConstraintValidator<FullNameValidation, String> {
     @Override
-    public void initialize(FullnameValidation constraintAnnotation) {
+    public void initialize(FullNameValidation constraintAnnotation) {
         ConstraintValidator.super.initialize(constraintAnnotation);
     }
 
@@ -17,7 +15,7 @@ public class FullnameValidator implements ConstraintValidator<FullnameValidation
     }
 
     public boolean validation(String input) {
-        if (nonNull(input)) {
+        if (input != null) {
             String trim = input.trim();
             char[] notAllowed = new char[] {
                 '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '1', '2', '3', '4', '5', '6', '7', '8', '9',

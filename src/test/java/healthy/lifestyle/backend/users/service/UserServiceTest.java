@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.users.service;
 
-import static java.util.Objects.nonNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -74,16 +74,14 @@ class UserServiceTest {
     @Test
     void createUserTest_shouldReturnUserDto() {
         // Given
-        Integer age = 20;
-        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, 1L, age);
+        Role role = testUtil.createUserRole();
+        Country country = testUtil.createCountry(1);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, 1L);
+
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
-
-        Role role = Role.builder().id(1L).name("ROLE_USER").build();
-        when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.ofNullable(role));
-        Country country = Country.builder().id(1L).name("Country").build();
-        when(countryRepository.getReferenceById(1L)).thenReturn(country);
-
+        when(roleRepository.findByName(role.getName())).thenReturn(Optional.of(role));
+        when(countryRepository.findById(country.getId())).thenReturn(Optional.of(country));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             Object[] args = invocation.getArguments();
             User saved = (User) args[0];
@@ -92,28 +90,32 @@ class UserServiceTest {
         });
 
         // When
-        userService.createUser(signupRequestDto);
+        userService.createUser(requestDto);
 
         // Then
+        verify(userRepository, times(1)).existsByEmail(requestDto.getEmail());
+        verify(userRepository, times(1)).existsByUsername(requestDto.getUsername());
+        verify(roleRepository, times(1)).findByName(role.getName());
+        verify(countryRepository, times(1)).findById(country.getId());
+        verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test
     void getUserDetailsByIdTest_shouldReturnUserDto() {
         // Given
         User user = testUtil.createUser(1);
-        UserResponseDto expectedDto =
-                new UserResponseDto(1L, "username-1", "Full Name 1", "username-1@email.com", 1L, 30);
-
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(modelMapper.map(user, UserResponseDto.class)).thenReturn(expectedDto);
 
         // When
-        UserResponseDto actualDto = userService.getUserDetailsById(user.getId());
+        UserResponseDto responseDto = userService.getUserDetailsById(user.getId());
 
         // Then
         verify(userRepository, times(1)).findById(user.getId());
-        verify(modelMapper, times(1)).map(user, UserResponseDto.class);
-        assertEquals(expectedDto, actualDto);
+        assertThat(responseDto)
+                .usingRecursiveComparison()
+                .ignoringFields("countryId")
+                .isEqualTo(user);
+        assertEquals(user.getCountry().getId(), responseDto.getCountryId());
     }
 
     @Test
@@ -127,7 +129,6 @@ class UserServiceTest {
 
         // Then
         verify(userRepository, times(1)).findById(user.getId());
-        verify(modelMapper, never()).map(any(), eq(UserResponseDto.class));
         assertEquals(ErrorMessage.USER_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
     }
@@ -162,9 +163,8 @@ class UserServiceTest {
         requestDto.setPassword(password);
         requestDto.setConfirmPassword(confirmPassword);
 
-        // Mocking
-        when(userRepository.findById(user.getId())).thenReturn(Optional.ofNullable(user));
-        if (countryId == 2L) when(countryRepository.findById(countryId)).thenReturn(Optional.ofNullable(newCountry));
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        if (countryId == 2L) when(countryRepository.findById(countryId)).thenReturn(Optional.of(newCountry));
         when(userRepository.save(any(User.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
 
@@ -179,22 +179,22 @@ class UserServiceTest {
 
         verify(userRepository, times(1)).save(any(User.class));
 
-        if (nonNull(username)) assertEquals(requestDto.getUsername(), responseDto.getUsername());
+        if (username != null) assertEquals(requestDto.getUsername(), responseDto.getUsername());
         else assertEquals(initialUsername, responseDto.getUsername());
 
-        if (nonNull(email)) assertEquals(requestDto.getEmail(), responseDto.getEmail());
+        if (email != null) assertEquals(requestDto.getEmail(), responseDto.getEmail());
         else assertEquals(initialEmail, responseDto.getEmail());
 
-        if (nonNull(fullName)) assertEquals(requestDto.getFullName(), responseDto.getFullName());
+        if (fullName != null) assertEquals(requestDto.getFullName(), responseDto.getFullName());
         else assertEquals(initialFullName, responseDto.getFullName());
 
         if (countryId == 2L) assertEquals(requestDto.getCountryId(), responseDto.getCountryId());
         else assertEquals(initialCountryId, responseDto.getCountryId());
 
-        if (nonNull(age)) assertEquals(requestDto.getAge(), responseDto.getAge());
+        if (age != null) assertEquals(requestDto.getAge(), responseDto.getAge());
         else assertEquals(initialAge, responseDto.getAge());
 
-        if (nonNull(password) && nonNull(confirmPassword))
+        if (password != null && confirmPassword != null)
             assertTrue(passwordEncoder.matches(requestDto.getPassword(), user.getPassword()));
         else assertTrue(passwordEncoder.matches(initialPassword, user.getPassword()));
     }
@@ -215,9 +215,8 @@ class UserServiceTest {
             String username, String email, String fullName, Integer age, String password, String confirmPassword) {
         // Given
         User user = testUtil.createUser(1);
-
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
-        if (nonNull(age)) {
+        if (age != null) {
             user.setAge(age);
             requestDto.setAge(age);
         }
@@ -228,8 +227,7 @@ class UserServiceTest {
         requestDto.setPassword(password);
         requestDto.setConfirmPassword(confirmPassword);
 
-        // Mocking
-        when(userRepository.findById(user.getId())).thenReturn(Optional.ofNullable(user));
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
         // When
         ApiExceptionCustomMessage exception =
@@ -242,12 +240,12 @@ class UserServiceTest {
 
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
 
-        boolean allFieldsAreNotDifferent = nonNull(username)
-                && nonNull(email)
-                && nonNull(fullName)
-                && nonNull(age)
-                && nonNull(password)
-                && nonNull(confirmPassword);
+        boolean allFieldsAreNotDifferent = username != null
+                && email != null
+                && fullName != null
+                && age != null
+                && password != null
+                && confirmPassword != null;
         if (allFieldsAreNotDifferent) {
             StringBuilder errorMessage = new StringBuilder();
             errorMessage.append(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName());
@@ -261,13 +259,13 @@ class UserServiceTest {
             errorMessage.append(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName());
             assertEquals(errorMessage.toString(), exception.getMessage());
         } else {
-            if (nonNull(username))
+            if (username != null)
                 assertEquals(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName(), exception.getMessage());
-            if (nonNull(email)) assertEquals(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName(), exception.getMessage());
-            if (nonNull(fullName))
+            if (email != null) assertEquals(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName(), exception.getMessage());
+            if (fullName != null)
                 assertEquals(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName(), exception.getMessage());
-            if (nonNull(age)) assertEquals(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName(), exception.getMessage());
-            if (nonNull(password) && nonNull(confirmPassword))
+            if (age != null) assertEquals(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName(), exception.getMessage());
+            if (password != null && confirmPassword != null)
                 assertEquals(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName(), exception.getMessage());
         }
     }
@@ -286,21 +284,19 @@ class UserServiceTest {
     void updateUserTest_shouldThrowErrorWith404_whenUserNotFound() {
         // Given
         User user = testUtil.createUser(1);
-        long wrongUserId = user.getId() + 1;
-
+        long nonExistentUserId = 1000L;
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
         requestDto.setCountryId(user.getId());
         requestDto.setUsername("New-username");
 
-        // Mocking
-        when(userRepository.findById(wrongUserId)).thenReturn(Optional.empty());
+        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
 
         // When
         ApiException exception =
-                assertThrows(ApiException.class, () -> userService.updateUser(wrongUserId, requestDto));
+                assertThrows(ApiException.class, () -> userService.updateUser(nonExistentUserId, requestDto));
 
         // Then
-        verify(userRepository, times(1)).findById(wrongUserId);
+        verify(userRepository, times(1)).findById(nonExistentUserId);
         verify(countryRepository, times(0)).findById(anyLong());
         verify(userRepository, times(0)).save(any(User.class));
 
@@ -311,18 +307,15 @@ class UserServiceTest {
     @Test
     void updateUserTest_shouldThrowErrorWith500_whenCountryNotFound() {
         // Given
-        Role role = testUtil.createUserRole(1);
-        Country country = testUtil.createCountry(1);
-        User user = testUtil.createUser(1, role, country);
-        long wrongCountryId = user.getCountry().getId() + 1;
-
+        User user = testUtil.createUser(1);
+        long nonExistentCountryId = 1000L;
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
         requestDto.setUsername("New-username");
-        requestDto.setCountryId(wrongCountryId);
+        requestDto.setCountryId(nonExistentCountryId);
 
         // Mocking
-        when(userRepository.findById(user.getId())).thenReturn(Optional.ofNullable(user));
-        when(countryRepository.findById(wrongCountryId)).thenReturn(Optional.empty());
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(countryRepository.findById(nonExistentCountryId)).thenReturn(Optional.empty());
 
         // When
         ApiException exception =
@@ -330,7 +323,7 @@ class UserServiceTest {
 
         // Then
         verify(userRepository, times(1)).findById(user.getId());
-        verify(countryRepository, times(1)).findById(wrongCountryId);
+        verify(countryRepository, times(1)).findById(nonExistentCountryId);
         verify(userRepository, times(0)).save(any(User.class));
 
         assertEquals(
@@ -342,69 +335,41 @@ class UserServiceTest {
     @Test
     void deleteUserTest_shouldReturnVoid() {
         // Given
-        User user = User.builder().id(1L).build();
+        User user = testUtil.createUser(1);
 
-        BodyPart bodyPart1 = BodyPart.builder().id(1L).name("Body part 1").build();
-        HttpRef customHttpRef =
-                HttpRef.builder().id(1L).name("Ref 1").isCustom(true).user(user).build();
-        Exercise customExercise = Exercise.builder()
-                .id(1L)
-                .title("Exercise 1")
-                .description("Desc 1")
-                .isCustom(true)
-                .user(user)
-                .bodyParts(Set.of(bodyPart1))
-                .httpRefs(Set.of(customHttpRef))
-                .build();
+        BodyPart bodyPart1 = testUtil.createBodyPart(1);
+        BodyPart bodyPart2 = testUtil.createBodyPart(2);
+        HttpRef customHttRef1 = testUtil.createCustomHttpRef(1, user);
+        HttpRef customHttRef2 = testUtil.createCustomHttpRef(2, user);
+        HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(2);
+        boolean needsEquipment = true;
 
-        BodyPart bodyPart2 = BodyPart.builder().id(2L).name("Body part 2").build();
-        HttpRef defaultHttpRef =
-                HttpRef.builder().id(2L).isCustom(false).name("Ref 2").build();
-        Exercise defaultExercise = Exercise.builder()
-                .id(2L)
-                .title("Exercise 2")
-                .description("Desc 2")
-                .isCustom(false)
-                .bodyParts(Set.of(bodyPart2))
-                .httpRefs(Set.of(defaultHttpRef))
-                .build();
+        Exercise customExercise1 = testUtil.createCustomExercise(
+                1, needsEquipment, List.of(bodyPart1, bodyPart2), List.of(customHttRef1, customHttRef2), user);
+        Exercise customExercise2 = testUtil.createCustomExercise(
+                2, needsEquipment, List.of(bodyPart1, bodyPart2), List.of(customHttRef1, defaultHttpRef), user);
+        Exercise defaultExercise = testUtil.createDefaultExercise(
+                1, needsEquipment, List.of(bodyPart1, bodyPart2), List.of(defaultHttpRef));
 
-        Workout customWorkout = Workout.builder()
-                .id(1L)
-                .title("Workout 1")
-                .description("Workout Desc 1")
-                .isCustom(true)
-                .user(user)
-                .exercises(Set.of(customExercise, defaultExercise))
-                .build();
-
-        user.setHttpRefs(new HashSet<>(List.of(customHttpRef)));
-        user.setExercises(new HashSet<>(List.of(customExercise)));
-        user.setWorkouts(new HashSet<>(List.of(customWorkout)));
-
-        Workout defaultWorkout = Workout.builder()
-                .id(2L)
-                .title("Workout 2")
-                .description("Workout Desc 2")
-                .isCustom(false)
-                .exercises(Set.of(defaultExercise))
-                .build();
+        Workout customWorkout1 = testUtil.createCustomWorkout(1, List.of(customExercise1, customExercise2), user);
+        Workout customWorkout2 = testUtil.createCustomWorkout(2, List.of(customExercise1, defaultExercise), user);
+        Workout defaultWorkout = testUtil.createDefaultWorkout(3, List.of(defaultExercise));
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        doNothing().when(userRepository).delete(any(User.class));
         doNothing().when(removalService).deleteCustomWorkouts(anyList());
         doNothing().when(removalService).deleteCustomExercises(anyList());
         doNothing().when(removalService).deleteCustomHttpRefs(anyList());
+        doNothing().when(userRepository).delete(any(User.class));
 
         // When
         userService.deleteUser(user.getId());
 
         // Then
         verify(userRepository, times(1)).findById(user.getId());
+        verify(removalService, times(1)).deleteCustomWorkouts(user.getWorkoutsIdsSorted());
+        verify(removalService, times(1)).deleteCustomExercises(user.getExercisesIdsSorted());
+        verify(removalService, times(1)).deleteCustomHttpRefs(user.getHttpRefsIdsSorted());
         verify(userRepository, times(1)).delete(any(User.class));
-        verify(removalService, times(1)).deleteCustomWorkouts(anyList());
-        verify(removalService, times(1)).deleteCustomExercises(anyList());
-        verify(removalService, times(1)).deleteCustomHttpRefs(anyList());
     }
 
     @Test

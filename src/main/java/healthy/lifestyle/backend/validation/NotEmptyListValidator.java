@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.validation;
 
-import static java.util.Objects.nonNull;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
@@ -18,7 +16,7 @@ public class NotEmptyListValidator implements ConstraintValidator<NotEmptyList, 
     }
 
     public boolean validation(List<Long> input) {
-        if (nonNull(input)) return !input.isEmpty();
+        if (input != null) return !input.isEmpty();
         return true;
     }
 }

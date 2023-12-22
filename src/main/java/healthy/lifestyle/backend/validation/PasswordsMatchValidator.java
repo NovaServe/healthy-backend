@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.validation;
 
-import static java.util.Objects.isNull;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.springframework.beans.BeanWrapperImpl;
@@ -22,9 +20,7 @@ public class PasswordsMatchValidator implements ConstraintValidator<PasswordsMat
     public boolean isValid(Object value, ConstraintValidatorContext context) {
         Object passwordValue = new BeanWrapperImpl(value).getPropertyValue(updatedPassword);
         Object confirmPasswordValue = new BeanWrapperImpl(value).getPropertyValue(updatedConfirmPassword);
-        if (isNull(passwordValue) && isNull(confirmPasswordValue)) {
-            return true;
-        }
+        if (passwordValue == null && confirmPasswordValue == null) return true;
         return passwordValue != null && passwordValue.equals(confirmPasswordValue);
     }
 }

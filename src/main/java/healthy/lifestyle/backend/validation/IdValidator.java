@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.validation;
 
-import static java.util.Objects.isNull;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -17,7 +15,7 @@ public class IdValidator implements ConstraintValidator<IdValidation, Long> {
     }
 
     public boolean validation(Long id) {
-        if (isNull(id)) return false;
+        if (id == null) return false;
         return id >= 0;
     }
 }

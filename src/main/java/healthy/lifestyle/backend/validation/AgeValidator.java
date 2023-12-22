@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.validation;
 
-import static java.util.Objects.nonNull;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -17,9 +15,7 @@ public class AgeValidator implements ConstraintValidator<AgeValidation, Integer>
     }
 
     public boolean validation(Integer input) {
-        if (nonNull(input)) {
-            return input >= 5 && input <= 200;
-        }
+        if (input != null) return input >= 16 && input <= 120;
         return true;
     }
 }

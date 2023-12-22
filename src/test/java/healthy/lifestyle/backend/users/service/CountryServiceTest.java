@@ -1,7 +1,7 @@
 package healthy.lifestyle.backend.users.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
@@ -9,7 +9,6 @@ import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.repository.CountryRepository;
 import healthy.lifestyle.backend.util.TestUtil;
 import java.util.List;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,9 +33,9 @@ public class CountryServiceTest {
     @Test
     public void getCountriesTest_shouldReturnAllCountries() {
         // Given
-        List<Country> countries = IntStream.rangeClosed(1, 2)
-                .mapToObj(id -> testUtil.createCountry(id))
-                .toList();
+        Country country1 = testUtil.createCountry(1);
+        Country country2 = testUtil.createCountry(2);
+        List<Country> countries = List.of(country1, country2);
         when(countryRepository.findAll()).thenReturn(countries);
 
         // When
@@ -45,10 +44,10 @@ public class CountryServiceTest {
         // Then
         verify(countryRepository, times(1)).findAll();
 
-        org.hamcrest.MatcherAssert.assertThat(countryResponseDto, hasSize(countries.size()));
+        assertEquals(2, countryResponseDto.size());
 
-        assertThat(countries)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("users")
-                .isEqualTo(countryResponseDto);
+        assertThat(countryResponseDto)
+                .usingRecursiveFieldByFieldElementComparator()
+                .isEqualTo(countries);
     }
 }

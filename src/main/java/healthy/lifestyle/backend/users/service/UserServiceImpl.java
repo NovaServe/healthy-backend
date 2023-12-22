@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.users.service;
 
-import static java.util.Objects.nonNull;
-
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
@@ -16,8 +14,7 @@ import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.Workout;
 import healthy.lifestyle.backend.workout.service.RemovalService;
-import jakarta.persistence.EntityNotFoundException;
-import java.util.Optional;
+import java.util.HashSet;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -61,26 +58,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void createUser(SignupRequestDto requestDto) {
-        if (userRepository.existsByEmail(requestDto.getEmail())
-                || userRepository.existsByUsername(requestDto.getUsername())) {
+        if (userRepository.existsByEmail(requestDto.getEmail()))
             throw new ApiException(ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
-        }
 
-        Optional<Role> roleOpt = roleRepository.findByName("ROLE_USER");
+        if (userRepository.existsByUsername(requestDto.getUsername()))
+            throw new ApiException(ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
 
-        Country country;
-        try {
-            country = countryRepository.getReferenceById(requestDto.getCountryId());
-        } catch (EntityNotFoundException e) {
-            throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        Role role = roleRepository
+                .findByName("ROLE_USER")
+                .orElseThrow(() -> new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
 
-        if (roleOpt.isEmpty()) {
-            throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        Country country = countryRepository
+                .findById(requestDto.getCountryId())
+                .orElseThrow(() -> new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
 
-        Role role = roleOpt.get();
-        User user = User.builder()
+        userRepository.save(User.builder()
                 .username(requestDto.getUsername())
                 .email(requestDto.getEmail())
                 .password(passwordEncoder.encode(requestDto.getPassword()))
@@ -88,16 +80,15 @@ public class UserServiceImpl implements UserService {
                 .role(role)
                 .country(country)
                 .age(requestDto.getAge())
-                .build();
-        userRepository.save(user);
+                .build());
     }
 
     @Override
     public UserResponseDto getUserDetailsById(long userId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()) throw new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-
-        return modelMapper.map(userOptional.get(), UserResponseDto.class);
+        return userRepository
+                .findById(userId)
+                .map(user -> modelMapper.map(user, UserResponseDto.class))
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
     @Override
@@ -106,15 +97,15 @@ public class UserServiceImpl implements UserService {
                 .findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        updateUserCheckIfFieldsAreDifferent(requestDto, user);
+        checkIfFieldsAreDifferent(requestDto, user);
 
-        if (nonNull(requestDto.getUsername())) user.setUsername(requestDto.getUsername());
-        if (nonNull(requestDto.getEmail())) user.setEmail(requestDto.getEmail());
-        if (nonNull(requestDto.getPassword())) user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
-        if (nonNull(requestDto.getFullName())) user.setFullName(requestDto.getFullName());
-        if (nonNull(requestDto.getAge())) user.setAge(requestDto.getAge());
-        if (nonNull(requestDto.getCountryId())
-                && requestDto.getCountryId() != user.getCountry().getId()) {
+        if (requestDto.getUsername() != null) user.setUsername(requestDto.getUsername());
+        if (requestDto.getEmail() != null) user.setEmail(requestDto.getEmail());
+        if (requestDto.getPassword() != null) user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
+        if (requestDto.getFullName() != null) user.setFullName(requestDto.getFullName());
+        if (requestDto.getAge() != null) user.setAge(requestDto.getAge());
+        if (requestDto.getCountryId() != null
+                && !requestDto.getCountryId().equals(user.getCountry().getId())) {
             Country country = countryRepository
                     .findById(requestDto.getCountryId())
                     .orElseThrow(
@@ -122,33 +113,31 @@ public class UserServiceImpl implements UserService {
             user.setCountry(country);
         }
 
-        User savedUser = userRepository.save(user);
-        return modelMapper.map(savedUser, UserResponseDto.class);
+        return modelMapper.map(userRepository.save(user), UserResponseDto.class);
     }
 
-    private void updateUserCheckIfFieldsAreDifferent(UserUpdateRequestDto requestDto, User user) {
+    private void checkIfFieldsAreDifferent(UserUpdateRequestDto requestDto, User user) {
         StringBuilder errorMessage = new StringBuilder();
 
-        if (nonNull(requestDto.getUsername()) && user.getUsername().equals(requestDto.getUsername()))
+        if (requestDto.getUsername() != null && user.getUsername().equals(requestDto.getUsername()))
             errorMessage.append(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName());
 
-        if (nonNull(requestDto.getEmail()) && user.getEmail().equals(requestDto.getEmail())) {
+        if (requestDto.getEmail() != null && user.getEmail().equals(requestDto.getEmail())) {
             if (!errorMessage.isEmpty()) errorMessage.append(" ");
             errorMessage.append(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName());
         }
 
-        if (nonNull(requestDto.getFullName()) && user.getFullName().equals(requestDto.getFullName())) {
+        if (requestDto.getFullName() != null && user.getFullName().equals(requestDto.getFullName())) {
             if (!errorMessage.isEmpty()) errorMessage.append(" ");
             errorMessage.append(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName());
         }
 
-        if (nonNull(requestDto.getAge()) && user.getAge() == requestDto.getAge()) {
+        if (requestDto.getAge() != null && user.getAge() == requestDto.getAge()) {
             if (!errorMessage.isEmpty()) errorMessage.append(" ");
             errorMessage.append(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName());
         }
 
-        if (nonNull(requestDto.getPassword())
-                && passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
+        if (requestDto.getPassword() != null && passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
             if (!errorMessage.isEmpty()) errorMessage.append(" ");
             errorMessage.append(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName());
         }
@@ -165,7 +154,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
         removalService.deleteCustomWorkouts(user.getWorkoutsIdsSorted());
         removalService.deleteCustomExercises(user.getExercisesIdsSorted());
-        removalService.deleteCustomHttpRefs(user.getCustomHttpRefsIdsSorted());
+        removalService.deleteCustomHttpRefs(user.getHttpRefsIdsSorted());
         userRepository.delete(user);
     }
 
@@ -185,14 +174,16 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public User getUserById(long userId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        return userOptional.orElse(null);
+        return userRepository.findById(userId).orElse(null);
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void addExercise(long userId, Exercise exercise) {
-        User user = userRepository.getReferenceById(userId);
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+        if (user.getExercises() == null) user.setExercises(new HashSet<>());
         user.getExercises().add(exercise);
         userRepository.save(user);
     }
@@ -202,14 +193,15 @@ public class UserServiceImpl implements UserService {
     public void deleteUserExercise(long userId, Exercise exercise) {
         User user = userRepository
                 .findById(userId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
-        user.getExercises().remove(exercise);
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+        if (user.getExercises() != null) user.getExercises().remove(exercise);
         userRepository.save(user);
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void addWorkout(User user, Workout workout) {
+        if (user.getWorkouts() == null) user.setWorkouts(new HashSet<>());
         user.getWorkouts().add(workout);
         userRepository.save(user);
     }
@@ -217,6 +209,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void removeWorkout(User user, Workout workout) {
-        user.getWorkouts().remove(workout);
+        if (user.getWorkouts() != null) user.getWorkouts().remove(workout);
+        userRepository.save(user);
     }
 }

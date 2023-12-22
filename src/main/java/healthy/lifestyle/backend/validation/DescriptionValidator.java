@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.validation;
 
-import static java.util.Objects.isNull;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -17,8 +15,7 @@ public class DescriptionValidator implements ConstraintValidator<DescriptionVali
     }
 
     public boolean validation(String input) {
-        if (isNull(input)) return true;
-
+        if (input == null) return true;
         String trim = input.trim();
         char[] notAllowed =
                 new char[] {'!', '@', '#', '$', '%', '^', '&', '*', '+', '=', '<', '>', '?', '\\', '/', '`', '~'};

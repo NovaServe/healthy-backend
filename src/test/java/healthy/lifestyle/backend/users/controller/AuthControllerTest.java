@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
@@ -20,8 +21,12 @@ import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.URL;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -70,12 +75,14 @@ class AuthControllerTest {
         dbUtil.deleteAll();
     }
 
-    @Test
-    void signupTest_shouldReturnVoidWith201_whenValidRequest() throws Exception {
+    @ParameterizedTest
+    @MethodSource("signupAgeIsOptional")
+    void signupTest_shouldReturnVoidWith201_whenValidRequest(Integer ageIsOptional) throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
         SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
+        requestDto.setAge(ageIsOptional);
 
         // When
         mockMvc.perform(post(URL.SIGNUP)
@@ -88,12 +95,16 @@ class AuthControllerTest {
                 .andDo(print());
     }
 
+    static Stream<Arguments> signupAgeIsOptional() {
+        return Stream.of(Arguments.of(20), Arguments.of((Object) null));
+    }
+
     @Test
     void signupTest_shouldReturnErrorMessageWith400_whenUserAlreadyExists() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User alreayExistedUser = dbUtil.createUser(1, role, country);
+        User alreayExistentUser = dbUtil.createUser(1, role, country);
         SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
 
         // When
@@ -107,119 +118,236 @@ class AuthControllerTest {
                 .andDo(print());
     }
 
-    @Test
-    void signupTest_shouldReturnErrorMessageWith400_whenInvalidUsername() throws Exception {
+    @ParameterizedTest
+    @MethodSource("signupOneInputFieldIsInvalid")
+    void signupTest_shouldReturnValidationMessageWith400_whenOneInputFieldIsInvalid(
+            String username,
+            String email,
+            String fullName,
+            Long countryId,
+            Integer age,
+            String password,
+            String confirmPassword,
+            String errorFieldName,
+            String errorMessage)
+            throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        Integer age = 20;
-        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
-        signupRequestDto.setUsername("username 123 $");
+
+        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
+        if (email != null) requestDto.setEmail(email);
+        if (username != null) requestDto.setUsername(username);
+        if (fullName != null) requestDto.setFullName(fullName);
+        if (password != null) requestDto.setPassword(password);
+        if (confirmPassword != null) requestDto.setConfirmPassword(confirmPassword);
+        if (countryId != null) requestDto.setCountryId(countryId);
+        if (age != null) requestDto.setAge(age);
 
         // When
         mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.username", is(equalTo("Not allowed symbols"))))
+                .andExpect(jsonPath(errorFieldName, is(errorMessage)))
                 .andDo(print());
     }
 
-    @Test
-    void signupTest_shouldReturn400BadRequest_whenInvalidEmail() throws Exception {
+    static Stream<Arguments> signupOneInputFieldIsInvalid() {
+        return Stream.of(
+                Arguments.of("Username%^&", null, null, null, null, null, null, "$.username", "Not allowed symbols"),
+                Arguments.of(
+                        null,
+                        "email()@email.com",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "$.email",
+                        "must be a well-formed email address"),
+                Arguments.of(null, null, "Full name !@#", null, null, null, null, "$.fullName", "Not allowed symbols"),
+                Arguments.of(
+                        null, null, null, -1L, null, null, null, "$.countryId", "must be greater than or equal to 0"),
+                Arguments.of(null, null, null, null, 15, null, null, "$.age", "Age should be in range from 16 to 120"),
+                Arguments.of(null, null, null, null, 121, null, null, "$.age", "Age should be in range from 16 to 120"),
+                Arguments.of(
+                        null, null, null, null, null, "Password 1", "Password 1", "$.password", "Not allowed symbols"),
+                Arguments.of(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "Password_1",
+                        "Password_2",
+                        "password,confirmPassword",
+                        "Passwords don't match"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("signupOneInputFieldIsNull")
+    void signupTest_shouldReturnValidationMessageWith400_whenOneInputFieldIsNull(
+            String username,
+            String email,
+            String fullName,
+            Long countryId,
+            String password,
+            String confirmPassword,
+            String errorFieldName,
+            String errorMessage)
+            throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        Integer age = 20;
-        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
-        signupRequestDto.setEmail("invalid-email-123-$@email.com");
+
+        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
+        if (email == null) requestDto.setEmail(email);
+        if (username == null) requestDto.setUsername(username);
+        if (fullName == null) requestDto.setFullName(fullName);
+        if (password == null) requestDto.setPassword(password);
+        if (confirmPassword == null) requestDto.setConfirmPassword(confirmPassword);
+        if (countryId == null) requestDto.setCountryId(countryId);
 
         // When
         mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.email", is(equalTo("Not allowed symbols"))))
+                .andExpect(jsonPath(errorFieldName, is(errorMessage)))
                 .andDo(print());
     }
 
-    @Test
-    void signupTest_shouldReturnErrorMessageWith400_whenInvalidPassword() throws Exception {
+    static Stream<Arguments> signupOneInputFieldIsNull() {
+        return Stream.of(
+                Arguments.of(
+                        null, "Not null", "Not null", 1L, "Not null", "Not null", "$.username", "must not be blank"),
+                Arguments.of("Not null", null, "Not null", 1L, "Not null", "Not null", "$.email", "must not be blank"),
+                Arguments.of(
+                        "Not null", "Not null", null, 1L, "Not null", "Not null", "$.fullName", "must not be blank"),
+                Arguments.of(
+                        "Not null",
+                        "Not null",
+                        "Not null",
+                        null,
+                        "Not null",
+                        "Not null",
+                        "$.countryId",
+                        "must not be null"),
+                Arguments.of(
+                        "Not null", "Not null", "Not null", 1L, null, "Not null", "$.password", "must not be blank"),
+                Arguments.of(
+                        "Not null",
+                        "Not null",
+                        "Not null",
+                        1L,
+                        "Not null",
+                        null,
+                        "$.confirmPassword",
+                        "must not be blank"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("signupAllInputsAreInvalid")
+    void signupTest_shouldReturnValidationMessageWith400_whenAllInputsAreInvalid(
+            String username,
+            String email,
+            String fullName,
+            Long countryId,
+            Integer age,
+            String password,
+            String confirmPassword)
+            throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        Integer age = 20;
-        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
-        signupRequestDto.setPassword("Invalid password with space");
-        signupRequestDto.setConfirmPassword("Invalid password with space");
+        SignupRequestDto requestDto = dtoUtil.signupRequestDtoEmpty();
+        requestDto.setEmail(email);
+        requestDto.setUsername(username);
+        requestDto.setFullName(fullName);
+        requestDto.setPassword(password);
+        requestDto.setConfirmPassword(confirmPassword);
+        requestDto.setCountryId(countryId);
+        requestDto.setAge(age);
+
+        // When
+        MvcResult mvcResult = mvcResult = mockMvc.perform(post(URL.SIGNUP)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode responseJson = objectMapper.readTree(responseContent);
+
+        assertEquals("Not allowed symbols", responseJson.get("username").asText());
+        assertEquals(
+                "must be a well-formed email address", responseJson.get("email").asText());
+        assertEquals("Not allowed symbols", responseJson.get("fullName").asText());
+        assertEquals(
+                "must be greater than or equal to 0",
+                responseJson.get("countryId").asText());
+        assertEquals(
+                "Age should be in range from 16 to 120", responseJson.get("age").asText());
+        assertEquals("Not allowed symbols", responseJson.get("password").asText());
+        assertEquals("Not allowed symbols", responseJson.get("confirmPassword").asText());
+    }
+
+    static Stream<Arguments> signupAllInputsAreInvalid() {
+        return Stream.of(
+                Arguments.of("Username%^&", "email()@email.com", "Full name !@#", -1L, 1, "Password 1", "Password 1"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("signupAllInputsAreNull")
+    void signupTest_shouldReturnValidationMessageWith400_whenAllInputsAreNull(
+            String username,
+            String email,
+            String fullName,
+            Long countryId,
+            Integer age,
+            String password,
+            String confirmPassword)
+            throws Exception {
+        // Given
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDtoEmpty();
+        requestDto.setEmail(email);
+        requestDto.setUsername(username);
+        requestDto.setFullName(fullName);
+        requestDto.setPassword(password);
+        requestDto.setConfirmPassword(confirmPassword);
+        requestDto.setCountryId(countryId);
+        requestDto.setAge(age);
 
         // When
         mockMvc.perform(post(URL.SIGNUP)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signupRequestDto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.password", is(equalTo("Not allowed symbols"))))
-                .andExpect(jsonPath("$.confirmPassword", is(equalTo("Not allowed symbols"))))
+                .andExpect(jsonPath("$.username", is("must not be blank")))
+                .andExpect(jsonPath("$.email", is("must not be blank")))
+                .andExpect(jsonPath("$.fullName", is("must not be blank")))
+                .andExpect(jsonPath("$.countryId", is("must not be null")))
+                .andExpect(jsonPath("$.age").doesNotExist())
+                .andExpect(jsonPath("$.password", is("must not be blank")))
+                .andExpect(jsonPath("$.confirmPassword", is("must not be blank")))
+                .andExpect(jsonPath("$.password,confirmPassword", is("Passwords don't match")))
                 .andDo(print());
     }
 
-    @Test
-    void signupTest_shouldReturnErrorMessageWith400_whenPasswordsMismatch() throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-        Integer age = 20;
-        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
-        signupRequestDto.setConfirmPassword("Password mismatch");
-
-        // When
-        mockMvc.perform(post(URL.SIGNUP)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signupRequestDto)))
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.password,confirmPassword", is(equalTo("Passwords don't match"))))
-                .andDo(print());
-    }
-
-    @Test
-    void signupTest_shouldReturnErrorMessageWith400_whenInvalidFullName() throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-        Integer age = 20;
-        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
-        signupRequestDto.setFullName("Invalid Full Name &");
-
-        // When
-        mockMvc.perform(post(URL.SIGNUP)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signupRequestDto)))
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fullName", is(equalTo("Not allowed symbols"))))
-                .andDo(print());
-    }
-
-    @Test
-    void signupTest_shouldReturnErrorMessageWith400_whenInvalidAge() throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-        Integer age = 3;
-        SignupRequestDto signupRequestDto = dtoUtil.signupRequestDto(1, country.getId(), age);
-
-        // When
-        mockMvc.perform(post(URL.SIGNUP)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signupRequestDto)))
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.age", is(equalTo("Not allowed age, should be in 5-200"))))
-                .andDo(print());
+    static Stream<Arguments> signupAllInputsAreNull() {
+        return Stream.of(Arguments.of(null, null, null, null, null, null, null));
     }
 
     @Test
@@ -233,6 +361,7 @@ class AuthControllerTest {
         MvcResult mvcResult = mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
+
                 // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token", is(notNullValue())))
@@ -264,74 +393,105 @@ class AuthControllerTest {
                 .andDo(print());
     }
 
-    @Test
-    void loginTest_shouldReturnErrorMessageWith401_whenWrongPassword() throws Exception {
+    @ParameterizedTest
+    @MethodSource("loginUsernamePasswordMismatch")
+    void loginTest_shouldReturnErrorMessageWith401_whenUsernamePasswordMismatch(
+            String usernameOrEmail, String password, String confirmPassword) throws Exception {
         // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-        Integer age = 20;
-        User user = dbUtil.createUser(1, role, country);
+        User user = dbUtil.createUser(1);
 
-        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
-        loginRequestDto.setPassword("Wrong-password");
-        loginRequestDto.setConfirmPassword("Wrong-password");
+        LoginRequestDto requestDto = dtoUtil.loginRequestDtoEmpty();
+        requestDto.setUsernameOrEmail(usernameOrEmail);
+        requestDto.setPassword(password);
+        requestDto.setConfirmPassword(confirmPassword);
 
         // When
         mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
                 // Then
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message", is("Authentication error")))
                 .andDo(print());
     }
 
-    @Test
-    void loginTest_shouldReturnErrorMessageWith401_whenInvalidUsername() throws Exception {
+    static Stream<Arguments> loginUsernamePasswordMismatch() {
+        return Stream.of(
+                Arguments.of("Username-1", "Password-2", "Password-2"),
+                Arguments.of("Username-2", "Password-1", "Password-1"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("loginOneFieldIsInvalid")
+    void loginTest_shouldReturnValidationMessageWith400_whenOneFieldIsInvalid(
+            String usernameOrEmail, String password, String confirmPassword, String errorFieldName, String errorMessage)
+            throws Exception {
         // Given
-        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
-        loginRequestDto.setUsernameOrEmail("Invalid username 123 $");
+        User user = dbUtil.createUser(1);
+
+        LoginRequestDto requestDto = dtoUtil.loginRequestDtoEmpty();
+        requestDto.setUsernameOrEmail(usernameOrEmail);
+        requestDto.setPassword(password);
+        requestDto.setConfirmPassword(confirmPassword);
 
         // When
         mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.usernameOrEmail", is("Not allowed symbols")))
+                .andExpect(jsonPath(errorFieldName, is(errorMessage)))
                 .andDo(print());
     }
 
-    @Test
-    void loginTest_shouldReturnErrorMessageWith401_whenInvalidPassword() throws Exception {
+    static Stream<Arguments> loginOneFieldIsInvalid() {
+        return Stream.of(
+                Arguments.of("Username%^&", "Password-1", "Password-1", "$.usernameOrEmail", "Not allowed symbols"),
+                Arguments.of(
+                        "email()@email.com", "Password-1", "Password-1", "$.usernameOrEmail", "Not allowed symbols"),
+                Arguments.of("Username-1", "Password 2", "Password 2", "$.password", "Not allowed symbols"),
+                Arguments.of("Username-1", "Password 2", "Password 2", "$.confirmPassword", "Not allowed symbols"),
+                Arguments.of(
+                        "Username-1",
+                        "Password-2",
+                        "Password-3",
+                        "$.password,confirmPassword",
+                        "Passwords don't match"));
+    }
+
+    //
+    @ParameterizedTest
+    @MethodSource("loginOneFieldIsNull")
+    void loginTest_shouldReturnValidationMessageWith400_whenOneFieldIsNull(
+            String usernameOrEmail, String password, String confirmPassword, String errorFieldName, String errorMessage)
+            throws Exception {
         // Given
-        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
-        loginRequestDto.setPassword("Invalid password with spaces");
+        User user = dbUtil.createUser(1);
+
+        LoginRequestDto requestDto = dtoUtil.loginRequestDtoEmpty();
+        requestDto.setUsernameOrEmail(usernameOrEmail);
+        requestDto.setPassword(password);
+        requestDto.setConfirmPassword(confirmPassword);
 
         // When
         mockMvc.perform(post(URL.LOGIN)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequestDto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.password", is("Not allowed symbols")))
+                .andExpect(jsonPath(errorFieldName, is(errorMessage)))
                 .andDo(print());
     }
 
-    @Test
-    void loginTest_shouldReturnErrorMessageWith401_whenPasswordsMismatch() throws Exception {
-        // Given
-        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
-        loginRequestDto.setConfirmPassword("Password mismatch");
-
-        // When
-        mockMvc.perform(post(URL.LOGIN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequestDto)))
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.password,confirmPassword", is("Passwords don't match")))
-                .andDo(print());
+    static Stream<Arguments> loginOneFieldIsNull() {
+        return Stream.of(
+                Arguments.of(null, "Password-1", "Password-1", "$.usernameOrEmail", "must not be blank"),
+                Arguments.of("Username-1", null, null, "$.password", "must not be blank"),
+                Arguments.of("Username-1", null, null, "$.confirmPassword", "must not be blank"),
+                Arguments.of("Username-1", null, null, "$.password,confirmPassword", "Passwords don't match"));
     }
 
     @Test
