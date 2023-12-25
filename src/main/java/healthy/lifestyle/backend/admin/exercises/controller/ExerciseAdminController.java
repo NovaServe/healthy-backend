@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.admin.exercises.controller;
 
 import healthy.lifestyle.backend.admin.exercises.service.ExerciseAdminService;
+import healthy.lifestyle.backend.validation.*;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +27,8 @@ public class ExerciseAdminController {
     @GetMapping("/exercises")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<ExerciseResponseDto>> getAllExercises(
-            @RequestParam(name = "title", required = false) String title,
-            @RequestParam(name = "description", required = false) String description,
+            @RequestParam(name = "title", required = false) @TitleValidation String title,
+            @RequestParam(name = "description", required = false) @DescriptionValidation String description,
             @RequestParam(name = "isCustom", required = false) boolean isCustom,
             @RequestParam(name = "needsEquipment", required = false) boolean needsEquipment) {
         return ResponseEntity.ok(
