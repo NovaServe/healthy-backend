@@ -5,10 +5,10 @@ import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
 @Documented
-@Constraint(validatedBy = FullnameValidator.class)
+@Constraint(validatedBy = FullNameValidator.class)
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface FullnameValidation {
+public @interface FullNameValidation {
     String message() default "Not allowed symbols";
 
     Class<?>[] groups() default {};

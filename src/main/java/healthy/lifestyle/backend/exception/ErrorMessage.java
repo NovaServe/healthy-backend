@@ -9,6 +9,7 @@ public enum ErrorMessage {
     INVALID_TOKEN("Invalid token"),
     AUTHENTICATION_ERROR("Authentication error"),
     USER_NOT_FOUND("User not found"),
+    COUNTRY_NOT_FOUND("Country not found"),
     NOT_FOUND("Not found"),
     UNAUTHORIZED_FOR_THIS_RESOURCE("Unauthorized for this resource"),
     DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY("Default media is not allowed to modify"),
@@ -21,7 +22,12 @@ public enum ErrorMessage {
     DEFAULT_CUSTOM_MISMATCH("Default-custom mismatch"),
     TITLES_ARE_NOT_DIFFERENT("Title are not different"),
     DESCRIPTIONS_ARE_NOT_DIFFERENT("Descriptions are not different"),
-    NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT("Needs equipment are not different");
+    NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT("Needs equipment are not different"),
+    USERNAME_IS_NOT_DIFFERENT("Username is not different"),
+    EMAIL_IS_NOT_DIFFERENT("Email is not different"),
+    FULLNAME_IS_NOT_DIFFERENT("Full name is not different"),
+    AGE_IS_NOT_DIFFERENT("Age is not different"),
+    PASSWORD_IS_NOT_DIFFERENT("Password is not different");
 
     private final String name;
 

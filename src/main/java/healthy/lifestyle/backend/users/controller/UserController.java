@@ -1,9 +1,5 @@
 package healthy.lifestyle.backend.users.controller;
 
-import static java.util.Objects.isNull;
-
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
 import healthy.lifestyle.backend.users.dto.UserResponseDto;
 import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
@@ -11,13 +7,17 @@ import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.users.service.CountryService;
 import healthy.lifestyle.backend.users.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+@Validated
 @RestController
 @RequestMapping("${api.basePath}/${api.version}/users")
 public class UserController {
@@ -33,37 +33,35 @@ public class UserController {
         this.authService = authService;
     }
 
-    @GetMapping("/countries")
-    public ResponseEntity<List<CountryResponseDto>> getCountries() {
-        return ResponseEntity.ok(countryService.getAllCountries());
+    @GetMapping
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<UserResponseDto> getUserDetails() {
+        Long authUserId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        return ResponseEntity.ok(userService.getUserDetailsById(authUserId));
     }
 
     @PatchMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<UserResponseDto> updateUser(
-            @PathVariable("userId") Long userId, @Valid @RequestBody UserUpdateRequestDto requestDto) {
-        Long authenticatedUserId = authService.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
-            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+            @PathVariable("userId") @NotNull @PositiveOrZero Long userId,
+            @Valid @RequestBody UserUpdateRequestDto requestDto) {
+        authService.checkAuthUserIdAndParamUserId(
+                SecurityContextHolder.getContext().getAuthentication(), userId);
         return ResponseEntity.ok(userService.updateUser(userId, requestDto));
     }
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<Long> deleteUser(@PathVariable("userId") Long userId) {
-        Long authenticatedUserId = authService.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
-            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
-        return new ResponseEntity<>(userService.deleteUser(userId), HttpStatus.NO_CONTENT);
+    public ResponseEntity<?> deleteUser(@PathVariable("userId") @NotNull @PositiveOrZero Long userId) {
+        authService.checkAuthUserIdAndParamUserId(
+                SecurityContextHolder.getContext().getAuthentication(), userId);
+        userService.deleteUser(userId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<UserResponseDto> getUserDetails() {
-        Long authenticatedUserId = authService.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        return ResponseEntity.ok(userService.getUserDetailsById(authenticatedUserId));
+    @GetMapping("/countries")
+    public ResponseEntity<List<CountryResponseDto>> getCountries() {
+        return ResponseEntity.ok(countryService.getAllCountries());
     }
 }

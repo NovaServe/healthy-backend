@@ -15,12 +15,14 @@ public class EmailValidator implements ConstraintValidator<EmailValidation, Stri
     }
 
     public boolean validation(String input) {
-        String trim = input.trim();
-        char[] notAllowed = new char[] {
-            '!', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', ',', '<', '>', '?', '\\', '/', '`', '~', ' '
-        };
-        for (char ch : notAllowed) {
-            if (trim.indexOf(ch) != -1) return false;
+        if (input != null) {
+            String trim = input.trim();
+            char[] notAllowed = new char[] {
+                '!', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', ',', '<', '>', '?', '\\', '/', '`', '~', ' '
+            };
+            for (char ch : notAllowed) {
+                if (trim.indexOf(ch) != -1) return false;
+            }
         }
         return true;
     }

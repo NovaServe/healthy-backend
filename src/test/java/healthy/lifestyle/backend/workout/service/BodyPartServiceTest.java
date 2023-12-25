@@ -5,11 +5,11 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.data.DataUtil;
-import healthy.lifestyle.backend.data.bodypart.BodyPartTestBuilder;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
+import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,47 +33,30 @@ class BodyPartServiceTest {
     @Spy
     ModelMapper modelMapper;
 
-    DataUtil dataUtil = new DataUtil();
-
-    BodyPartTestBuilder bodyPartTestBuilder = new BodyPartTestBuilder();
-
-    //    @Test
-    //    void getBodyPartsTest_shouldReturnAllBodyParts() {
-    //        // Given
-    //        List<BodyPart> bodyParts = dataUtil.createBodyParts(1, 3);
-    //        when(bodyPartRepository.findAll()).thenReturn(bodyParts);
-    //
-    //        // When
-    //        List<BodyPartResponseDto> bodyPartsActual = bodyPartService.getBodyParts();
-    //
-    //        // Then
-    //        verify(bodyPartRepository, times(1)).findAll();
-    //        org.hamcrest.MatcherAssert.assertThat(bodyPartsActual, hasSize(bodyParts.size()));
-    //        assertThat(bodyParts)
-    //                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-    //                .isEqualTo(bodyPartsActual);
-    //    }
+    TestUtil dataUtil = new TestUtil();
 
     @Test
     void getBodyPartsTest_shouldReturnAllBodyParts() {
         // Given
-        BodyPartTestBuilder.BodyPartWrapper bodyPartWrapper = bodyPartTestBuilder.getWrapper();
-        bodyPartWrapper.setAmountOfEntities(2).setIdOrSeed(1).buildList();
-        when(bodyPartRepository.findAll()).thenReturn(bodyPartWrapper.getAll());
+        BodyPart bodyPart1 = dataUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dataUtil.createBodyPart(2);
+        BodyPart bodyPart3 = dataUtil.createBodyPart(3);
+        List<BodyPart> bodyParts = List.of(bodyPart1, bodyPart2, bodyPart3);
+        when(bodyPartRepository.findAll()).thenReturn(bodyParts);
 
         // When
         List<BodyPartResponseDto> bodyPartsActual = bodyPartService.getBodyParts();
 
         // Then
         verify(bodyPartRepository, times(1)).findAll();
-        org.hamcrest.MatcherAssert.assertThat(bodyPartsActual, hasSize(bodyPartWrapper.size()));
-        assertThat(bodyPartWrapper.getAll())
+        org.hamcrest.MatcherAssert.assertThat(bodyPartsActual, hasSize(bodyParts.size()));
+        assertThat(bodyParts)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
                 .isEqualTo(bodyPartsActual);
     }
 
     @Test
-    void getBodyPartsTest_shouldThrowException_whenNoRefs_null() {
+    void getBodyPartsTest_shouldThrowException_whenNullHttpRefs() {
         // Given
         when(bodyPartRepository.findAll()).thenReturn(null);
 
@@ -87,7 +70,7 @@ class BodyPartServiceTest {
     }
 
     @Test
-    void getBodyPartsTest_shouldThrowException_whenNoRefs_emptyList() {
+    void getBodyPartsTest_shouldThrowException_whenEmptyListHttpRefs() {
         // Given
         when(bodyPartRepository.findAll()).thenReturn(new ArrayList<>());
 

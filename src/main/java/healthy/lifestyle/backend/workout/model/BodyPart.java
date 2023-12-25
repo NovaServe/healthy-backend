@@ -1,12 +1,11 @@
 package healthy.lifestyle.backend.workout.model;
 
-import healthy.lifestyle.backend.exception.ExceptionGeneric;
 import jakarta.persistence.*;
 import java.util.Set;
 import lombok.*;
 
 /**
- * body_parts table contains default values only.
+ * body_parts table preserves default values only.
  * Users cannot change values in this table.
  */
 @Entity
@@ -16,7 +15,7 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-public class BodyPart implements ExceptionGeneric {
+public class BodyPart {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

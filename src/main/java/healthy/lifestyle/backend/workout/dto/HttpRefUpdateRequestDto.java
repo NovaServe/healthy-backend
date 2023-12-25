@@ -14,11 +14,11 @@ import lombok.*;
 public class HttpRefUpdateRequestDto {
     @Size(min = 5, max = 255, message = "Size should be from 5 to 255 characters long")
     @TitleValidation
-    private String updatedName;
+    private String name;
 
     @DescriptionValidation
-    private String updatedDescription;
+    private String description;
 
     @HttpValidation
-    private String updatedRef;
+    private String ref;
 }
