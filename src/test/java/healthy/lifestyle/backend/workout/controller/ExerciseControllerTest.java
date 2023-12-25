@@ -312,7 +312,7 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.NOT_FOUND.value())))
                 .andDo(print());
     }
@@ -452,7 +452,7 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.NOT_FOUND.value())))
                 .andDo(print());
     }
@@ -808,7 +808,7 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andDo(print());
     }
 
@@ -841,7 +841,7 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andDo(print());
     }
 
@@ -958,10 +958,10 @@ class ExerciseControllerTest {
         requestDto.setNeedsEquipment(updateNeedsEquipment);
 
         String errorMessage = nonNull(updateTitle)
-                ? ErrorMessage.TITLES_ARE_NOT_DIFFERENT.getName()
+                ? ErrorMessage.TITLE_IS_NOT_DIFFERENT.getName()
                 : nonNull(updateDescription)
-                        ? ErrorMessage.DESCRIPTIONS_ARE_NOT_DIFFERENT.getName()
-                        : ErrorMessage.NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT.getName();
+                        ? ErrorMessage.DESCRIPTION_IS_NOT_DIFFERENT.getName()
+                        : ErrorMessage.NEEDS_EQUIPMENT_IS_NOT_DIFFERENT.getName();
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_EXERCISE_ID, customExercise.getId())
@@ -1023,7 +1023,7 @@ class ExerciseControllerTest {
         mockMvc.perform(delete(URL.CUSTOM_EXERCISE_ID, wrongExerciseId).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andDo(print());
     }
 }

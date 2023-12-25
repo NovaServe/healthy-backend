@@ -258,7 +258,7 @@ class WorkoutServiceTest {
 
         // Then
         verify(workoutRepository, times(1)).findById(wrongWorkoutId);
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
     }
 
@@ -361,7 +361,7 @@ class WorkoutServiceTest {
 
         // Then
         verify(workoutRepository, times(1)).findById(defaultWorkout1.getId());
-        assertEquals(ErrorMessage.CUSTOM_WORKOUT_REQUIRED.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
@@ -474,7 +474,7 @@ class WorkoutServiceTest {
         verify(workoutRepository, times(0)).save(any(Workout.class));
         verify(exerciseRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
@@ -696,7 +696,7 @@ class WorkoutServiceTest {
 
         // Then
         verify(workoutRepository, times(1)).findCustomByWorkoutIdAndUserId(workoutId, userId);
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
     }
 }

@@ -234,7 +234,7 @@ public class UserControllerTest {
             errorMessage.append(" ");
             errorMessage.append(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName());
             errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName());
+            errorMessage.append(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName());
             errorMessage.append(" ");
             errorMessage.append(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName());
             errorMessage.append(" ");
@@ -245,7 +245,7 @@ public class UserControllerTest {
                 assertEquals(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
             if (email != null) assertEquals(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
             if (fullName != null)
-                assertEquals(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
+                assertEquals(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
             if (age != null) assertEquals(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
             if (password != null && confirmPassword != null)
                 assertEquals(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());

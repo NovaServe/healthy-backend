@@ -40,8 +40,7 @@ class BodyPartServiceTest {
         // Given
         BodyPart bodyPart1 = dataUtil.createBodyPart(1);
         BodyPart bodyPart2 = dataUtil.createBodyPart(2);
-        BodyPart bodyPart3 = dataUtil.createBodyPart(3);
-        List<BodyPart> bodyParts = List.of(bodyPart1, bodyPart2, bodyPart3);
+        List<BodyPart> bodyParts = List.of(bodyPart1, bodyPart2);
         when(bodyPartRepository.findAll()).thenReturn(bodyParts);
 
         // When
@@ -49,14 +48,14 @@ class BodyPartServiceTest {
 
         // Then
         verify(bodyPartRepository, times(1)).findAll();
-        org.hamcrest.MatcherAssert.assertThat(bodyPartsActual, hasSize(bodyParts.size()));
-        assertThat(bodyParts)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(bodyPartsActual);
+        assertEquals(2, bodyPartsActual.size());
+        assertThat(bodyPartsActual)
+                .usingRecursiveFieldByFieldElementComparator()
+                .isEqualTo(bodyParts);
     }
 
     @Test
-    void getBodyPartsTest_shouldThrowException_whenNullHttpRefs() {
+    void getBodyPartsTest_shouldThrowExceptionWith500_whenHttpRefsAreNull() {
         // Given
         when(bodyPartRepository.findAll()).thenReturn(null);
 
@@ -70,7 +69,7 @@ class BodyPartServiceTest {
     }
 
     @Test
-    void getBodyPartsTest_shouldThrowException_whenEmptyListHttpRefs() {
+    void getBodyPartsTest_shouldThrowExceptionWith500_whenHttpRefsAreEmptyList() {
         // Given
         when(bodyPartRepository.findAll()).thenReturn(new ArrayList<>());
 

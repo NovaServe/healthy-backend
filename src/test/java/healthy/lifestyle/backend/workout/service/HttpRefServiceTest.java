@@ -52,10 +52,10 @@ class HttpRefServiceTest {
     void createCustomHttpRefTest_shouldReturnHttpRefResponseDto() {
         // Given
         User user = testUtil.createUser(1);
-        HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
+        HttpRefCreateRequestDto requestDto = dtoUtil.httpRefCreateRequestDto(1);
 
         when(userService.getUserById(user.getId())).thenReturn(user);
-        when(httpRefRepository.findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId()))
+        when(httpRefRepository.findCustomByNameAndUserId(requestDto.getName(), user.getId()))
                 .thenReturn(Optional.empty());
         when(httpRefRepository.save(org.mockito.ArgumentMatchers.any(HttpRef.class)))
                 .thenAnswer(invocation -> {
@@ -66,20 +66,19 @@ class HttpRefServiceTest {
                 });
 
         // When
-        HttpRefResponseDto httpRefResponseDto = httpRefService.createCustomHttpRef(user.getId(), createHttpRequestDto);
+        HttpRefResponseDto responseDto = httpRefService.createCustomHttpRef(user.getId(), requestDto);
 
         // Then
         verify(userService, times(1)).getUserById(user.getId());
-        verify(httpRefRepository, times(1)).findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId());
+        verify(httpRefRepository, times(1)).findCustomByNameAndUserId(requestDto.getName(), user.getId());
         verify(httpRefRepository, times(1)).save(org.mockito.ArgumentMatchers.any(HttpRef.class));
 
-        assertThat(httpRefResponseDto)
+        assertThat(responseDto)
                 .usingRecursiveComparison()
                 .ignoringFields("id", "isCustom")
-                .isEqualTo(createHttpRequestDto);
-
-        assertTrue(httpRefResponseDto.isCustom());
-        assertEquals(1L, httpRefResponseDto.getId());
+                .isEqualTo(requestDto);
+        assertTrue(responseDto.isCustom());
+        assertEquals(1L, responseDto.getId());
     }
 
     @Test
@@ -98,7 +97,7 @@ class HttpRefServiceTest {
         verify(httpRefRepository, times(0)).findCustomByNameAndUserId(createHttpRequestDto.getName(), userId);
         verify(httpRefRepository, times(0)).save(org.mockito.ArgumentMatchers.any(HttpRef.class));
 
-        assertEquals(ErrorMessage.USER_NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.RELATED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
@@ -146,6 +145,77 @@ class HttpRefServiceTest {
         Assertions.assertThat(httpRefsDefault)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                 .isEqualTo(httpRefsActual);
+    }
+
+    @Test
+    void getCustomHttpRefByIdTest_shouldReturnHttpRefResponseDto() {
+        // Given
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
+        when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
+
+        // When
+        HttpRefResponseDto responseDto = httpRefService.getCustomHttpRefById(user.getId(), httpRef.getId());
+
+        // Then
+        verify(httpRefRepository, times(1)).findById(httpRef.getId());
+
+        assertThat(responseDto)
+                .usingRecursiveComparison()
+                .ignoringFields("exercises", "user")
+                .isEqualTo(httpRef);
+    }
+
+    @Test
+    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenHttpRefNotFound() {
+        // Given
+        when(httpRefRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // When
+        ApiException exception = assertThrows(ApiException.class, () -> httpRefService.getCustomHttpRefById(1L, 2L));
+
+        // Then
+        verify(httpRefRepository, times(1)).findById(anyLong());
+
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+    }
+
+    @Test
+    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefIsRequested() {
+        // Given
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createDefaultHttpRef(1);
+        when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
+
+        // When
+        ApiException exception = assertThrows(
+                ApiException.class, () -> httpRefService.getCustomHttpRefById(user.getId(), httpRef.getId()));
+
+        // Then
+        verify(httpRefRepository, times(1)).findById(httpRef.getId());
+
+        assertEquals(ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+    }
+
+    @Test
+    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() {
+        // Given
+        User user = testUtil.createUser(1);
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
+        when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
+        long wrongUserId = user.getId() + 1;
+
+        // When
+        ApiException exception = assertThrows(
+                ApiException.class, () -> httpRefService.getCustomHttpRefById(wrongUserId, httpRef.getId()));
+
+        // Then
+        verify(httpRefRepository, times(1)).findById(httpRef.getId());
+
+        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
     @Test
@@ -211,12 +281,12 @@ class HttpRefServiceTest {
         verify(httpRefRepository, times(1)).findById(anyLong());
         verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultMediaIsRequestedToUpdate() {
+    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefIsRequestedToUpdate() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createDefaultHttpRef(1);
@@ -232,7 +302,7 @@ class HttpRefServiceTest {
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
         verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
 
-        assertEquals(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.DEFAULT_HTTP_REF_IS_NOT_ALLOWED_TO_MODIFY.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
@@ -260,14 +330,13 @@ class HttpRefServiceTest {
     @Test
     void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenEmptyDtoProvided() {
         // Given
-        HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
-        requestDto.setName(null);
-        requestDto.setDescription(null);
-        requestDto.setRef(null);
+        HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDtoEmpty();
+        long randomUserId = 1000L;
+        long randomHttpRefId = 1000L;
 
         // When
         ApiException exception =
-                assertThrows(ApiException.class, () -> httpRefService.updateCustomHttpRef(1L, 2L, requestDto));
+                assertThrows(ApiException.class, () -> httpRefService.updateCustomHttpRef(randomUserId, randomHttpRefId, requestDto));
 
         // Then
         verify(httpRefRepository, times(0)).findById(anyLong());
@@ -285,12 +354,10 @@ class HttpRefServiceTest {
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
-        long deletedId = httpRefService.deleteCustomHttpRef(user.getId(), httpRef.getId());
+        httpRefService.deleteCustomHttpRef(user.getId(), httpRef.getId());
 
         // Then
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
-
-        assertEquals(httpRef.getId(), deletedId);
     }
 
     @Test
@@ -304,7 +371,7 @@ class HttpRefServiceTest {
         // Then
         verify(httpRefRepository, times(1)).findById(anyLong());
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
@@ -322,7 +389,7 @@ class HttpRefServiceTest {
         // Then
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
 
-        assertEquals(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.DEFAULT_HTTP_REF_IS_NOT_ALLOWED_TO_MODIFY.getName(), exception.getMessage());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
     }
 
@@ -337,77 +404,6 @@ class HttpRefServiceTest {
         // When
         ApiException exception = assertThrows(
                 ApiException.class, () -> httpRefService.deleteCustomHttpRef(wrongUserId, httpRef.getId()));
-
-        // Then
-        verify(httpRefRepository, times(1)).findById(httpRef.getId());
-
-        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
-    }
-
-    @Test
-    void getCustomHttpRefByIdTest_shouldReturnHttpRefResponseDto() {
-        // Given
-        User user = testUtil.createUser(1);
-        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
-        when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
-
-        // When
-        HttpRefResponseDto responseDto = httpRefService.getCustomHttpRefById(user.getId(), httpRef.getId());
-
-        // Then
-        verify(httpRefRepository, times(1)).findById(httpRef.getId());
-
-        assertThat(responseDto)
-                .usingRecursiveComparison()
-                .ignoringFields("exercises", "user")
-                .isEqualTo(httpRef);
-    }
-
-    @Test
-    void getCustomHttpRefByIdTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() {
-        // Given
-        when(httpRefRepository.findById(anyLong())).thenReturn(Optional.empty());
-
-        // When
-        ApiException exception = assertThrows(ApiException.class, () -> httpRefService.getCustomHttpRefById(1L, 2L));
-
-        // Then
-        verify(httpRefRepository, times(1)).findById(anyLong());
-
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
-    }
-
-    @Test
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenDefaultMediaIsRequestedToDelete() {
-        // Given
-        User user = testUtil.createUser(1);
-        HttpRef httpRef = testUtil.createDefaultHttpRef(1);
-        when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
-
-        // When
-        ApiException exception = assertThrows(
-                ApiException.class, () -> httpRefService.getCustomHttpRefById(user.getId(), httpRef.getId()));
-
-        // Then
-        verify(httpRefRepository, times(1)).findById(httpRef.getId());
-
-        assertEquals(ErrorMessage.DEFAULT_MEDIA_REQUESTED.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
-    }
-
-    @Test
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() {
-        // Given
-        User user = testUtil.createUser(1);
-        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
-        when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
-        long wrongUserId = user.getId() + 1;
-
-        // When
-        ApiException exception = assertThrows(
-                ApiException.class, () -> httpRefService.getCustomHttpRefById(wrongUserId, httpRef.getId()));
 
         // Then
         verify(httpRefRepository, times(1)).findById(httpRef.getId());

@@ -1,7 +1,6 @@
 package healthy.lifestyle.backend.workout.service;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
@@ -49,7 +48,11 @@ public class ExerciseServiceImpl implements ExerciseService {
     @Transactional
     @Override
     public ExerciseResponseDto createExercise(ExerciseCreateRequestDto requestDto, long userId) {
-        validateCreateExerciseRequestDto(requestDto, userId);
+        exerciseRepository
+                .findCustomByTitleAndUserId(requestDto.getTitle(), userId)
+                .ifPresent(alreadyExistentWithSameTitle -> {
+                    throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
+                });
 
         Exercise exercise = Exercise.builder()
                 .title(requestDto.getTitle())
@@ -59,103 +62,57 @@ public class ExerciseServiceImpl implements ExerciseService {
                 .httpRefs(new HashSet<>())
                 .build();
 
-        if (nonNull(requestDto.getDescription())) exercise.setDescription(requestDto.getDescription());
+        if (requestDto.getDescription() != null) exercise.setDescription(requestDto.getDescription());
 
-        if (nonNull(requestDto.getBodyParts()) && requestDto.getBodyParts().size() > 0) {
-            requestDto.getBodyParts().forEach(id -> exercise.getBodyParts()
-                    .add(bodyPartRepository.getReferenceById(id)));
-        }
+        if (requestDto.getBodyParts() != null && requestDto.getBodyParts().size() > 0)
+            requestDto.getBodyParts().forEach(id -> {
+                BodyPart bodyPart = bodyPartRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () -> new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST));
+                exercise.getBodyParts().add(bodyPart);
+            });
 
-        if (nonNull(requestDto.getHttpRefs()) && requestDto.getHttpRefs().size() > 0) {
-            requestDto.getHttpRefs().forEach(id -> exercise.getHttpRefs().add(httpRefRepository.getReferenceById(id)));
-        }
+        if (requestDto.getHttpRefs() != null && requestDto.getHttpRefs().size() > 0)
+            requestDto.getHttpRefs().forEach(id -> {
+                HttpRef httpRef = httpRefRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () -> new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST));
 
-        Exercise saved = exerciseRepository.save(exercise);
+                if (httpRef.getUser().getId() != userId)
+                    throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
 
-        userService.addExercise(userId, exercise);
+                exercise.getHttpRefs().add(httpRef);
+            });
 
-        ExerciseResponseDto exerciseResponseDto = modelMapper.map(saved, ExerciseResponseDto.class);
+        Exercise exerciseSaved = exerciseRepository.save(exercise);
+        userService.addExerciseToUser(userId, exerciseSaved);
+        ExerciseResponseDto exerciseResponseDto = modelMapper.map(exerciseSaved, ExerciseResponseDto.class);
 
         List<BodyPartResponseDto> bodyPartsSorted = exerciseResponseDto.getBodyParts().stream()
                 .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
                 .toList();
-
         List<HttpRefResponseDto> httpRefsSorted = exerciseResponseDto.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
                 .toList();
 
         exerciseResponseDto.setBodyParts(bodyPartsSorted);
         exerciseResponseDto.setHttpRefs(httpRefsSorted);
-
         return exerciseResponseDto;
-    }
-
-    private void validateCreateExerciseRequestDto(ExerciseCreateRequestDto requestDto, long userId) {
-        // Check is there duplicated exercise in the database for this particular user
-        if (exerciseTitleDuplicateExists(requestDto.getTitle(), userId))
-            throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
-
-        // Check if body parts exist in the database
-        if (nonNull(requestDto.getBodyParts()) && requestDto.getBodyParts().size() > 0) {
-            if (!bodyPartsExist(requestDto.getBodyParts()))
-                throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
-        } else throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
-
-        // Check if http refs exist in the database
-        if (nonNull(requestDto.getHttpRefs())) {
-            if (!httpRefExists(requestDto.getHttpRefs()))
-                throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    /**
-     * Checks if user already has an exercise with the given title.
-     * Returns true if there is no duplicates for this particular user, otherwise false.
-     * There may be duplicated exercises with same title in the database table,
-     * because user can have own exercise with same title as app's pre-defined exercise.
-     * However, user can have only one own exercise with certain title.<br>
-     * Example: there is, let say, app's pre-defined exercise "Push-up" which user can choose.
-     * At the same time, user can add own "Push-up" exercise with another description, refs and body parts.
-     * Therefore, there are two exercises in database with same title "Push-up". However, user can have
-     * only one own exercise "Push-up". Another user can have they own exercise "Push-up" in the same database table.
-     */
-    private boolean exerciseTitleDuplicateExists(String exerciseTitle, long userId) {
-        return exerciseRepository
-                .findCustomByTitleAndUserId(exerciseTitle, userId)
-                .isPresent();
-    }
-
-    /**
-     * Returns true if all objects exist, otherwise false.
-     */
-    private boolean bodyPartsExist(List<Long> bodyPartIds) {
-        for (long id : bodyPartIds) {
-            if (!bodyPartRepository.existsById(id)) return false;
-        }
-        return true;
-    }
-
-    /**
-     * Returns true if all objects exist, otherwise false.
-     */
-    private boolean httpRefExists(List<Long> httpRefIds) {
-        for (long id : httpRefIds) {
-            if (!httpRefRepository.existsById(id)) return false;
-        }
-        return true;
     }
 
     @Override
     @Transactional
     public ExerciseResponseDto getExerciseById(long exerciseId, boolean requiredDefault, Long userId) {
-        Optional<Exercise> exerciseOptional = exerciseRepository.findById(exerciseId);
-        if (exerciseOptional.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND);
+        Exercise exercise = exerciseRepository
+                .findById(exerciseId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        Exercise exercise = exerciseOptional.get();
         if ((exercise.isCustom() && requiredDefault) || (!exercise.isCustom() && !requiredDefault))
             throw new ApiException(ErrorMessage.DEFAULT_CUSTOM_MISMATCH, HttpStatus.BAD_REQUEST);
 
-        if (nonNull(userId)) {
+        if (userId != null) {
             User user = userService.getUserById(userId);
             if (exercise.isCustom()
                     && (user.getExercises() == null || !user.getExercises().contains(exercise)))
@@ -167,14 +124,12 @@ public class ExerciseServiceImpl implements ExerciseService {
         List<BodyPartResponseDto> bodyPartsSorted = exerciseRespondDto.getBodyParts().stream()
                 .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
                 .toList();
-
         List<HttpRefResponseDto> httpRefsSorted = exerciseRespondDto.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
                 .toList();
 
         exerciseRespondDto.setBodyParts(bodyPartsSorted);
         exerciseRespondDto.setHttpRefs(httpRefsSorted);
-
         return exerciseRespondDto;
     }
 
@@ -182,18 +137,12 @@ public class ExerciseServiceImpl implements ExerciseService {
     @Transactional
     public List<ExerciseResponseDto> getCustomExercises(long userId) {
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        List<Exercise> exercises = exerciseRepository.findCustomByUserId(userId, sort);
-
-        List<ExerciseResponseDto> exercisesResponseDto = exercises.stream()
+        return exerciseRepository.findCustomByUserId(userId, sort).stream()
                 .map(elt -> modelMapper.map(elt, ExerciseResponseDto.class))
-                .toList();
-
-        return exercisesResponseDto.stream()
                 .peek(elt -> {
                     List<BodyPartResponseDto> bodyPartsSorted = elt.getBodyParts().stream()
                             .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
                             .toList();
-
                     List<HttpRefResponseDto> httpRefsSorted = elt.getHttpRefs().stream()
                             .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
                             .toList();
@@ -207,7 +156,8 @@ public class ExerciseServiceImpl implements ExerciseService {
     @Override
     @Transactional
     public List<ExerciseResponseDto> getDefaultExercises() {
-        return exerciseRepository.findAllDefault(Sort.by(Sort.Direction.ASC, "id")).stream()
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        return exerciseRepository.findAllDefault(sort).stream()
                 .map(exercise -> modelMapper.map(exercise, ExerciseResponseDto.class))
                 .peek(elt -> {
                     List<BodyPartResponseDto> bodyPartsSorted = elt.getBodyParts().stream()
@@ -229,7 +179,7 @@ public class ExerciseServiceImpl implements ExerciseService {
     public ExerciseResponseDto updateCustomExercise(long exerciseId, long userId, ExerciseUpdateRequestDto requestDto) {
         Exercise exercise = exerciseRepository
                 .findCustomByExerciseIdAndUserId(exerciseId, userId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         boolean noUpdatesRequest = isNull(requestDto.getTitle())
                 && isNull(requestDto.getDescription())
@@ -247,12 +197,13 @@ public class ExerciseServiceImpl implements ExerciseService {
         if (noUpdatesRequest) throw new ApiException(ErrorMessage.NO_UPDATES_REQUEST, HttpStatus.BAD_REQUEST);
 
         User user = userService.getUserById(userId);
+        if (user == null) throw new ApiException(ErrorMessage.RELATED_RESOURCE_NOT_FOUND, HttpStatus.BAD_REQUEST);
 
         boolean userHasCustomExercise =
                 user.getExercises() != null && user.getExercises().contains(exercise);
         if (!userHasCustomExercise) throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
 
-        if (nonNull(requestDto.getTitle())) {
+        if (requestDto.getTitle() != null) {
             boolean titlesAreDifferent = !requestDto.getTitle().equals(exercise.getTitle());
             if (titlesAreDifferent) {
                 exerciseRepository
@@ -260,20 +211,21 @@ public class ExerciseServiceImpl implements ExerciseService {
                         .ifPresent(existingExercise -> {
                             throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
                         });
+
                 exercise.setTitle(requestDto.getTitle());
-            } else throw new ApiException(ErrorMessage.TITLES_ARE_NOT_DIFFERENT, HttpStatus.BAD_REQUEST);
+            } else throw new ApiException(ErrorMessage.TITLE_IS_NOT_DIFFERENT, HttpStatus.BAD_REQUEST);
         }
 
-        if (nonNull(requestDto.getDescription())) {
+        if (requestDto.getDescription() != null) {
             boolean descriptionsAreDifferent = !requestDto.getDescription().equals(exercise.getDescription());
             if (descriptionsAreDifferent) exercise.setDescription(requestDto.getDescription());
-            else throw new ApiException(ErrorMessage.DESCRIPTIONS_ARE_NOT_DIFFERENT, HttpStatus.BAD_REQUEST);
+            else throw new ApiException(ErrorMessage.DESCRIPTION_IS_NOT_DIFFERENT, HttpStatus.BAD_REQUEST);
         }
 
-        if (nonNull(requestDto.getNeedsEquipment())) {
+        if (requestDto.getNeedsEquipment() != null) {
             boolean needsEquipmentAreDifferent = (requestDto.getNeedsEquipment() != exercise.isNeedsEquipment());
             if (needsEquipmentAreDifferent) exercise.setNeedsEquipment(requestDto.getNeedsEquipment());
-            else throw new ApiException(ErrorMessage.NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT, HttpStatus.BAD_REQUEST);
+            else throw new ApiException(ErrorMessage.NEEDS_EQUIPMENT_IS_NOT_DIFFERENT, HttpStatus.BAD_REQUEST);
         }
 
         boolean bodyPartsAreDifferent = !exercise.getBodyParts().stream()
@@ -358,18 +310,15 @@ public class ExerciseServiceImpl implements ExerciseService {
     private ExerciseResponseDto mapExerciseToExerciseResponseDto(Exercise exercise) {
         ExerciseResponseDto exerciseResponseDto = modelMapper.map(exercise, ExerciseResponseDto.class);
 
-        List<BodyPartResponseDto> exerciseBodyPartsSorted = exercise.getBodyParts().stream()
-                .sorted(Comparator.comparingLong(BodyPart::getId))
+        List<BodyPartResponseDto> exerciseBodyPartsSorted = exercise.getBodyPartsSortedById().stream()
                 .map(bodyPart -> modelMapper.map(bodyPart, BodyPartResponseDto.class))
                 .toList();
-        exerciseResponseDto.setBodyParts(exerciseBodyPartsSorted);
-
-        List<HttpRefResponseDto> exerciseHttpRefsSorted = exercise.getHttpRefs().stream()
-                .sorted(Comparator.comparingLong(HttpRef::getId))
+        List<HttpRefResponseDto> exerciseHttpRefsSorted = exercise.getHttpRefsSortedById().stream()
                 .map(httpRef -> modelMapper.map(httpRef, HttpRefResponseDto.class))
                 .toList();
-        exerciseResponseDto.setHttpRefs(exerciseHttpRefsSorted);
 
+        exerciseResponseDto.setBodyParts(exerciseBodyPartsSorted);
+        exerciseResponseDto.setHttpRefs(exerciseHttpRefsSorted);
         return exerciseResponseDto;
     }
 
@@ -378,7 +327,7 @@ public class ExerciseServiceImpl implements ExerciseService {
     public void deleteCustomExercise(long exerciseId, long userId) {
         Exercise exercise = exerciseRepository
                 .findCustomByExerciseIdAndUserId(exerciseId, userId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND));
         userService.deleteUserExercise(userId, exercise);
         exerciseRepository.delete(exercise);
     }

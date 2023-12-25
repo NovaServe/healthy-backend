@@ -30,8 +30,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 exception.getHttpStatus(),
                 exception.getStackTrace());
 
-        ExceptionDto exceptionDto = new ExceptionDto(
-                exception.getMessage(), exception.getHttpStatus().value());
+        String message;
+        if (exception.getResourceId() != null) message = exception.getMessageWithResourceId();
+        else message = exception.getMessage();
+
+        ExceptionDto exceptionDto = new ExceptionDto(message, exception.getHttpStatus().value());
         return new ResponseEntity<ExceptionDto>(exceptionDto, exception.getHttpStatus());
     }
 

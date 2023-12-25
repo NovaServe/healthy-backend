@@ -129,7 +129,7 @@ class UserServiceTest {
 
         // Then
         verify(userRepository, times(1)).findById(user.getId());
-        assertEquals(ErrorMessage.USER_NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.RELATED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
     }
 
@@ -252,7 +252,7 @@ class UserServiceTest {
             errorMessage.append(" ");
             errorMessage.append(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName());
             errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName());
+            errorMessage.append(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName());
             errorMessage.append(" ");
             errorMessage.append(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName());
             errorMessage.append(" ");
@@ -263,7 +263,7 @@ class UserServiceTest {
                 assertEquals(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName(), exception.getMessage());
             if (email != null) assertEquals(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName(), exception.getMessage());
             if (fullName != null)
-                assertEquals(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName(), exception.getMessage());
+                assertEquals(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName(), exception.getMessage());
             if (age != null) assertEquals(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName(), exception.getMessage());
             if (password != null && confirmPassword != null)
                 assertEquals(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName(), exception.getMessage());
@@ -301,7 +301,7 @@ class UserServiceTest {
         verify(userRepository, times(0)).save(any(User.class));
 
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
-        assertEquals(ErrorMessage.USER_NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.RELATED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
     }
 
     @Test
@@ -383,7 +383,7 @@ class UserServiceTest {
         // Then
         verify(userRepository, times(1)).findById(anyLong());
 
-        assertEquals(ErrorMessage.USER_NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.RELATED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
     }
 }

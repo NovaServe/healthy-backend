@@ -269,7 +269,7 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
@@ -286,7 +286,7 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_REQUESTED.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
@@ -427,7 +427,7 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 // todo: change to 404
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
@@ -451,7 +451,7 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 // todo: change to DEFAULT_HTTP_REF_...
-                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_HTTP_REF_IS_NOT_ALLOWED_TO_MODIFY.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
@@ -536,7 +536,7 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
@@ -553,7 +553,7 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_HTTP_REF_IS_NOT_ALLOWED_TO_MODIFY.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }

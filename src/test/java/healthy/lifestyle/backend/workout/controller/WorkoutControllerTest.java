@@ -132,7 +132,7 @@ class WorkoutControllerTest {
         String responseContent = mvcResult.getResponse().getContentAsString();
         ExceptionDto responseDto = objectMapper.readValue(responseContent, new TypeReference<ExceptionDto>() {});
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), responseDto.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), responseDto.getMessage());
         assertEquals(Integer.valueOf(HttpStatus.NOT_FOUND.value()), responseDto.getCode());
     }
 
@@ -268,7 +268,7 @@ class WorkoutControllerTest {
         String responseContent = mvcResult.getResponse().getContentAsString();
         ExceptionDto responseDto = objectMapper.readValue(responseContent, new TypeReference<ExceptionDto>() {});
 
-        assertEquals(ErrorMessage.CUSTOM_WORKOUT_REQUIRED.getName(), responseDto.getMessage());
+        assertEquals(ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT.getName(), responseDto.getMessage());
         assertEquals(Integer.valueOf(HttpStatus.BAD_REQUEST.value()), responseDto.getCode());
     }
 
@@ -510,7 +510,7 @@ class WorkoutControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
@@ -718,7 +718,7 @@ class WorkoutControllerTest {
         mockMvc.perform(delete(URL.CUSTOM_WORKOUT_ID, defaultWorkout.getId()).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
 
@@ -741,7 +741,7 @@ class WorkoutControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 // todo: change to not found
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
@@ -780,7 +780,7 @@ class WorkoutControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
                 .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
 

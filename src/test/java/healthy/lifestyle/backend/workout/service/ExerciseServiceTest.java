@@ -92,7 +92,7 @@ class ExerciseServiceTest {
         when(exerciseRepository.save(any(Exercise.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
 
-        doNothing().when(userService).addExercise(any(Long.class), any(Exercise.class));
+        doNothing().when(userService).addExerciseToUser(any(Long.class), any(Exercise.class));
 
         // When
         ExerciseResponseDto exerciseActual = exerciseService.createExercise(requestDto, user.getId());
@@ -104,7 +104,7 @@ class ExerciseServiceTest {
         verify(httpRefRepository, times(2)).getReferenceById(anyLong());
         verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(eq(requestDto.getTitle()), eq(user.getId()));
         verify(exerciseRepository, times(1)).save(any(Exercise.class));
-        verify(userService, times(1)).addExercise(eq(user.getId()), any());
+        verify(userService, times(1)).addExerciseToUser(eq(user.getId()), any());
 
         assertThat(requestDto)
                 .usingRecursiveComparison()
@@ -311,7 +311,7 @@ class ExerciseServiceTest {
         verify((exerciseRepository), times(1)).findById(nonExistingExerciseId);
         verify(userService, times(0)).getUserById(anyLong());
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
     }
 
@@ -583,7 +583,7 @@ class ExerciseServiceTest {
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
     }
 
@@ -623,7 +623,7 @@ class ExerciseServiceTest {
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
     }
 
@@ -782,11 +782,11 @@ class ExerciseServiceTest {
 
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
 
-        if (nonNull(updateTitle)) assertEquals(ErrorMessage.TITLES_ARE_NOT_DIFFERENT.getName(), exception.getMessage());
+        if (nonNull(updateTitle)) assertEquals(ErrorMessage.TITLE_IS_NOT_DIFFERENT.getName(), exception.getMessage());
         if (nonNull(updateDescription))
-            assertEquals(ErrorMessage.DESCRIPTIONS_ARE_NOT_DIFFERENT.getName(), exception.getMessage());
+            assertEquals(ErrorMessage.DESCRIPTION_IS_NOT_DIFFERENT.getName(), exception.getMessage());
         if (nonNull(updateNeedsEquipment))
-            assertEquals(ErrorMessage.NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT.getName(), exception.getMessage());
+            assertEquals(ErrorMessage.NEEDS_EQUIPMENT_IS_NOT_DIFFERENT.getName(), exception.getMessage());
     }
 
     static Stream<Arguments> updateCustomExerciseMultipleValidButNotDifferentInputs() {
@@ -837,7 +837,7 @@ class ExerciseServiceTest {
         // Then
         verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(wrongExerciseId, wrongUserId);
         verify(exerciseRepository, times(0)).delete(any(Exercise.class));
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
     }
 }

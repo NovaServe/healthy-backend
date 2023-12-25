@@ -18,7 +18,7 @@ public interface UserService {
 
     User getUserById(long userId);
 
-    void addExercise(long userId, Exercise exercise);
+    void addExerciseToUser(long userId, Exercise exercise);
 
     void deleteUserExercise(long userId, Exercise exercise);
 
