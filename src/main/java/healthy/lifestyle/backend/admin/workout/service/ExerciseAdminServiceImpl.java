@@ -1,6 +1,6 @@
-package healthy.lifestyle.backend.admin.exercises.service;
+package healthy.lifestyle.backend.admin.workout.service;
 
-import healthy.lifestyle.backend.admin.exercises.repository.ExerciseAdminRepository;
+import healthy.lifestyle.backend.admin.workout.repository.ExerciseAdminRepository;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;

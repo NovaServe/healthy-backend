@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.admin.exercises.service;
+package healthy.lifestyle.backend.admin.workout.service;
 
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import java.util.List;

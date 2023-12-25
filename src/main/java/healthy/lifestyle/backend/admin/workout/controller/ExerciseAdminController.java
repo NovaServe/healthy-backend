@@ -1,6 +1,6 @@
-package healthy.lifestyle.backend.admin.exercises.controller;
+package healthy.lifestyle.backend.admin.workout.controller;
 
-import healthy.lifestyle.backend.admin.exercises.service.ExerciseAdminService;
+import healthy.lifestyle.backend.admin.workout.service.ExerciseAdminService;
 import healthy.lifestyle.backend.validation.*;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import java.util.List;
