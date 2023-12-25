@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ExerciseAdminRepository extends JpaRepository<Exercise, Long> {
-    @Query("SELECT e FROM Exercise e WHERE :title is NULL OR e.title LIKE %:title%) AND "
+    @Query("SELECT e FROM Exercise e WHERE (:title is NULL OR e.title LIKE %:title%) AND "
             + "(:description is NULL OR e.description LIKE %:description%) AND "
             + "(:isCustom is NULL OR e.isCustom = :isCustom) AND "
             + "(:needsEquipment is NULL OR e.needsEquipment = :needsEquipment)")
