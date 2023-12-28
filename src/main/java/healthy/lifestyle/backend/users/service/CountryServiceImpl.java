@@ -25,7 +25,7 @@ public class CountryServiceImpl implements CountryService {
     @Override
     public List<CountryResponseDto> getAllCountries() {
         List<Country> countries = countryRepository.findAll();
-        if (countries.isEmpty()) throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        if (countries.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
 
         return countries.stream()
                 .map(country -> modelMapper.map(country, CountryResponseDto.class))

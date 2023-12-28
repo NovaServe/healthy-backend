@@ -32,6 +32,6 @@ public class AuthService {
     public void checkAuthUserIdAndParamUserId(Authentication authentication, long userId) {
         Long authUserId = this.getUserIdFromAuthentication(authentication);
         if (authUserId == null || authUserId != userId)
-            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+            throw new ApiException(ErrorMessage.USER_REQUESTED_ANOTHER_USER_PROFILE, null, HttpStatus.BAD_REQUEST);
     }
 }

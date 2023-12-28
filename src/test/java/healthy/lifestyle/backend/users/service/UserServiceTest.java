@@ -119,18 +119,21 @@ class UserServiceTest {
     }
 
     @Test
-    void getUserDetailsByIdTest_shouldThrowErrorWith400_whenUserNotFound() {
+    void getUserDetailsByIdTest_shouldThrowErrorWith404_whenUserNotFound() {
         // Given
         User user = testUtil.createUser(2);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_NOT_FOUND, user.getId(), HttpStatus.NOT_FOUND);
         when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
         // When
-        ApiException exception = assertThrows(ApiException.class, () -> userService.getUserDetailsById(user.getId()));
+        ApiException actualException =
+                assertThrows(ApiException.class, () -> userService.getUserDetailsById(user.getId()));
 
         // Then
         verify(userRepository, times(1)).findById(user.getId());
-        assertEquals(ErrorMessage.RELATED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
     }
 
     @ParameterizedTest
@@ -288,11 +291,12 @@ class UserServiceTest {
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
         requestDto.setCountryId(user.getId());
         requestDto.setUsername("New-username");
-
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_NOT_FOUND, nonExistentUserId, HttpStatus.NOT_FOUND);
         when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
 
         // When
-        ApiException exception =
+        ApiException actualException =
                 assertThrows(ApiException.class, () -> userService.updateUser(nonExistentUserId, requestDto));
 
         // Then
@@ -300,8 +304,8 @@ class UserServiceTest {
         verify(countryRepository, times(0)).findById(anyLong());
         verify(userRepository, times(0)).save(any(User.class));
 
-        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
-        assertEquals(ErrorMessage.RELATED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
     }
 
     @Test
@@ -312,13 +316,15 @@ class UserServiceTest {
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
         requestDto.setUsername("New-username");
         requestDto.setCountryId(nonExistentCountryId);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.COUNTRY_NOT_FOUND, nonExistentCountryId, HttpStatus.NOT_FOUND);
 
         // Mocking
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(countryRepository.findById(nonExistentCountryId)).thenReturn(Optional.empty());
 
         // When
-        ApiException exception =
+        ApiException actualException =
                 assertThrows(ApiException.class, () -> userService.updateUser(user.getId(), requestDto));
 
         // Then
@@ -326,10 +332,8 @@ class UserServiceTest {
         verify(countryRepository, times(1)).findById(nonExistentCountryId);
         verify(userRepository, times(0)).save(any(User.class));
 
-        assertEquals(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                exception.getHttpStatus().value());
-        assertEquals(ErrorMessage.COUNTRY_NOT_FOUND.getName(), exception.getMessage());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -375,15 +379,18 @@ class UserServiceTest {
     @Test
     void deleteUserTest_shouldThrowErrorWith404_whenUserNotFound() {
         // Given
+        long randomUserId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_NOT_FOUND, randomUserId, HttpStatus.NOT_FOUND);
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // When
-        ApiException exception = assertThrows(ApiException.class, () -> userService.deleteUser(1L));
+        ApiException actualException = assertThrows(ApiException.class, () -> userService.deleteUser(randomUserId));
 
         // Then
         verify(userRepository, times(1)).findById(anyLong());
 
-        assertEquals(ErrorMessage.RELATED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, exception.getHttpStatus());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
     }
 }

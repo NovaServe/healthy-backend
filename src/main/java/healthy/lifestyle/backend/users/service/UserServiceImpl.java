@@ -66,13 +66,14 @@ public class UserServiceImpl implements UserService {
 
         Role role = roleRepository
                 .findByName("ROLE_USER")
-                .orElseThrow(() -> new ApiException(ErrorMessage.ROLE_NOT_FOUND, null, HttpStatus.INTERNAL_SERVER_ERROR));
+                .orElseThrow(
+                        () -> new ApiException(ErrorMessage.ROLE_NOT_FOUND, null, HttpStatus.INTERNAL_SERVER_ERROR));
 
         Country country = countryRepository
                 .findById(requestDto.getCountryId())
-                .orElseThrow(() -> new ApiException(ErrorMessage.COUNTRY_NOT_FOUND, requestDto.getCountryId(), HttpStatus.NOT_FOUND));
-
-        userRepository.save(User.builder()
+                .orElseThrow(() -> new ApiException(
+                        ErrorMessage.COUNTRY_NOT_FOUND, requestDto.getCountryId(), HttpStatus.NOT_FOUND));
+        User user = User.builder()
                 .username(requestDto.getUsername())
                 .email(requestDto.getEmail())
                 .password(passwordEncoder.encode(requestDto.getPassword()))
@@ -80,15 +81,17 @@ public class UserServiceImpl implements UserService {
                 .role(role)
                 .country(country)
                 .age(requestDto.getAge())
-                .build());
+                .build();
+        userRepository.save(user);
     }
 
     @Override
     public UserResponseDto getUserDetailsById(long userId) {
-        return userRepository
+        UserResponseDto responseDto = userRepository
                 .findById(userId)
                 .map(user -> modelMapper.map(user, UserResponseDto.class))
                 .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
+        return responseDto;
     }
 
     @Override
@@ -108,12 +111,14 @@ public class UserServiceImpl implements UserService {
                 && !requestDto.getCountryId().equals(user.getCountry().getId())) {
             Country country = countryRepository
                     .findById(requestDto.getCountryId())
-                    .orElseThrow(
-                            () -> new ApiException(ErrorMessage.COUNTRY_NOT_FOUND, requestDto.getCountryId(), HttpStatus.NOT_FOUND));
+                    .orElseThrow(() -> new ApiException(
+                            ErrorMessage.COUNTRY_NOT_FOUND, requestDto.getCountryId(), HttpStatus.NOT_FOUND));
             user.setCountry(country);
         }
 
-        return modelMapper.map(userRepository.save(user), UserResponseDto.class);
+        User savedUser = userRepository.save(user);
+        UserResponseDto responseDto = modelMapper.map(savedUser, UserResponseDto.class);
+        return responseDto;
     }
 
     private void checkIfFieldsAreDifferent(UserUpdateRequestDto requestDto, User user) {
@@ -174,9 +179,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public User getUserById(long userId) {
-        return userRepository
+        User user = userRepository
                 .findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.BAD_REQUEST));
+        return user;
     }
 
     @Override
