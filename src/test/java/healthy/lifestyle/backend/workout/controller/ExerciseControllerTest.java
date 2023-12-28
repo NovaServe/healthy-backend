@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
+import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
@@ -138,6 +139,28 @@ class ExerciseControllerTest {
         assertThat(responseDto.getHttpRefs())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                 .isEqualTo(List.of(defaultHttpRef, customHttpRef));
+
+        // Db
+        Exercise createdExercise = dbUtil.getExerciseById(responseDto.getId());
+        assertEquals(responseDto.getId(), createdExercise.getId());
+        assertEquals(requestDto.getTitle(), createdExercise.getTitle());
+        assertEquals(requestDto.getDescription(), createdExercise.getDescription());
+        assertEquals(requestDto.isNeedsEquipment(), createdExercise.isNeedsEquipment());
+        assertTrue(createdExercise.isCustom());
+        assertEquals(user.getId(), createdExercise.getUser().getId());
+
+        assertEquals(
+                requestDto.getBodyParts().size(), createdExercise.getBodyParts().size());
+        assertEquals(
+                requestDto.getHttpRefs().size(), createdExercise.getHttpRefs().size());
+
+        assertThat(createdExercise.getBodyPartsSortedById())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
+                .isEqualTo(List.of(bodyPart1, bodyPart2));
+
+        assertThat(createdExercise.getHttpRefsSortedById())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .isEqualTo(List.of(defaultHttpRef, customHttpRef));
     }
 
     @Test
@@ -180,7 +203,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomExerciseTest_shouldReturnErrorMessageWith400_whenNoBodyPartsGiven() throws Exception {
+    void createCustomExerciseTest_shouldReturnValidationMessageWith400_whenBodyPartsEmptyListGiven() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
@@ -196,19 +219,21 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Invalid nested object")))
+                .andExpect(jsonPath("$.bodyParts", is("Should be not empty list")))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomExerciseTest_shouldReturnErrorMessageWith400_whenWrongBodyPartIdsGiven() throws Exception {
+    void createCustomExerciseTest_shouldReturnErrorMessageWith400_whenBodyPartNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         boolean needsEquipment = false;
         long nonExistentBodyPartId = 1000L;
         ExerciseCreateRequestDto requestDto = dtoUtil.exerciseCreateRequestDto(
                 1, needsEquipment, List.of(nonExistentBodyPartId), Collections.emptyList());
+        ApiException expectedException =
+                new ApiException(ErrorMessage.BODY_PART_NOT_FOUND, nonExistentBodyPartId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(post(URL.CUSTOM_EXERCISES)
@@ -216,14 +241,15 @@ class ExerciseControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Invalid nested object")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomExerciseTest_shouldReturnErrorMessageWith400_whenWrongHttpRefIdsGiven() throws Exception {
+    void createCustomExerciseTest_shouldReturnErrorMessageWith400_whenHttpRefNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -232,6 +258,8 @@ class ExerciseControllerTest {
         long nonExistentHttpRefId = 1000L;
         ExerciseCreateRequestDto requestDto = dtoUtil.exerciseCreateRequestDto(
                 1, needsEquipment, List.of(bodyPart1.getId(), bodyPart2.getId()), List.of(nonExistentHttpRefId));
+        ApiException expectedException =
+                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(post(URL.CUSTOM_EXERCISES)
@@ -239,8 +267,9 @@ class ExerciseControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Invalid nested object")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -305,6 +334,8 @@ class ExerciseControllerTest {
     void getDefaultExerciseByIdTest_shouldReturnErrorMessageWith404_whenDefaultExerciseNotFound() throws Exception {
         // Given
         long nonExistentDefaultExerciseId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistentDefaultExerciseId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(get(URL.DEFAULT_EXERCISE_ID, nonExistentDefaultExerciseId)
@@ -312,8 +343,8 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.NOT_FOUND.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -445,6 +476,8 @@ class ExerciseControllerTest {
     void getCustomExerciseByIdTest_shouldReturnErrorMessageWith404_whenCustomExerciseNotFound() throws Exception {
         // Given
         long nonExistentCustomExerciseId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistentCustomExerciseId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(get(URL.CUSTOM_EXERCISE_ID, nonExistentCustomExerciseId)
@@ -452,8 +485,8 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.NOT_FOUND.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -471,14 +504,16 @@ class ExerciseControllerTest {
         boolean needsEquipment = true;
         Exercise customExercise =
                 dbUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart), List.of(defaultHttpRef), user2);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, customExercise.getId(), HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(get(URL.CUSTOM_EXERCISE_ID, customExercise.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -800,6 +835,8 @@ class ExerciseControllerTest {
         requestDto.setBodyPartIds(List.of(1L));
         requestDto.setHttpRefIds(List.of(1L));
         long nonExistentExerciseId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistentExerciseId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_EXERCISE_ID, nonExistentExerciseId)
@@ -808,13 +845,14 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnErrorMessageWith404_whenExerciseDoesntBelongToUser() throws Exception {
+    void updateCustomExerciseTest_shouldReturnErrorMessageWith400_whenExerciseDoesntBelongToUser() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -834,14 +872,18 @@ class ExerciseControllerTest {
         requestDto.setBodyPartIds(customExercise.getBodyPartsIdsSorted());
         requestDto.setHttpRefIds(Collections.emptyList());
 
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, customExercise2.getId(), HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(patch(URL.CUSTOM_EXERCISE_ID, customExercise2.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
 
                 // Then
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -865,6 +907,8 @@ class ExerciseControllerTest {
         requestDto.setHttpRefIds(Collections.emptyList());
         requestDto.setTitle(customExercise2.getTitle());
 
+        ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(patch(URL.CUSTOM_EXERCISE_ID, customExercise.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -872,13 +916,14 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.TITLE_DUPLICATE.getName())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnErrorMessageWith400_whenBodyPartNotFound() throws Exception {
+    void updateCustomExerciseTest_shouldReturnErrorMessageWith404_whenBodyPartNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
@@ -893,14 +938,18 @@ class ExerciseControllerTest {
         requestDto.setBodyPartIds(List.of(nonExistentBodyPartId));
         requestDto.setHttpRefIds(Collections.emptyList());
 
+        ApiException expectedException =
+                new ApiException(ErrorMessage.BODY_PART_NOT_FOUND, nonExistentBodyPartId, HttpStatus.NOT_FOUND);
+
         // When
         mockMvc.perform(patch(URL.CUSTOM_EXERCISE_ID, customExercise.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.INVALID_NESTED_OBJECT.getName())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -925,6 +974,9 @@ class ExerciseControllerTest {
         requestDto.setBodyPartIds(customExercise.getBodyPartsIdsSorted());
         requestDto.setHttpRefIds(List.of(customHttpRef2.getId()));
 
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, customHttpRef2.getId(), HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(patch(URL.CUSTOM_EXERCISE_ID, customExercise.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -932,7 +984,8 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -1008,7 +1061,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomExerciseTest_shouldReturnErrorMessageWith400_whenWrongExerciseIdGiven() throws Exception {
+    void deleteCustomExerciseTest_shouldReturnErrorMessageWith404_whenWrongExerciseNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
@@ -1017,13 +1070,17 @@ class ExerciseControllerTest {
         boolean needsEquipment = true;
         Exercise customExercise = dbUtil.createCustomExercise(
                 1, needsEquipment, List.of(bodyPart), List.of(customHttpRef, defaultHttpRef), user);
-        long wrongExerciseId = customExercise.getId() + 1;
+        long nonExistentExerciseId = 1000L;
+
+        ApiException expectedException =
+                new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistentExerciseId, HttpStatus.NOT_FOUND);
 
         // When
-        mockMvc.perform(delete(URL.CUSTOM_EXERCISE_ID, wrongExerciseId).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(delete(URL.CUSTOM_EXERCISE_ID, nonExistentExerciseId).contentType(MediaType.APPLICATION_JSON))
                 // Then
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 }

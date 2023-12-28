@@ -3,7 +3,6 @@ package healthy.lifestyle.backend.workout.service;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.repository.UserRepository;
 import healthy.lifestyle.backend.users.service.UserService;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -28,19 +27,15 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     private final ModelMapper modelMapper;
 
-    private final UserRepository userRepository;
-
     public WorkoutServiceImpl(
             WorkoutRepository workoutRepository,
             ExerciseRepository exerciseRepository,
             UserService userService,
-            ModelMapper modelMapper,
-            UserRepository userRepository) {
+            ModelMapper modelMapper) {
         this.workoutRepository = workoutRepository;
         this.exerciseRepository = exerciseRepository;
         this.userService = userService;
         this.modelMapper = modelMapper;
-        this.userRepository = userRepository;
     }
 
     @Override
@@ -57,22 +52,25 @@ public class WorkoutServiceImpl implements WorkoutService {
         for (long exerciseId : requestDto.getExerciseIds()) {
             Exercise exercise = exerciseRepository
                     .findById(exerciseId)
-                    .orElseThrow(() -> new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, exerciseId, HttpStatus.NOT_FOUND));
+                    .orElseThrow(
+                            () -> new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, exerciseId, HttpStatus.NOT_FOUND));
 
             if (exercise.isCustom() && !exercise.getUser().equals(user))
-                throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+                throw new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, exerciseId, HttpStatus.BAD_REQUEST);
 
             exerciseSet.add(exercise);
             workoutBodyParts.addAll(exercise.getBodyParts());
             if (exercise.isNeedsEquipment()) workoutNeedsEquipment = true;
         }
 
-        Workout savedWorkout = workoutRepository.save(Workout.builder()
+        Workout workout = Workout.builder()
+                .isCustom(true)
+                .user(user)
                 .title(requestDto.getTitle())
                 .description(requestDto.getDescription())
-                .isCustom(true)
                 .exercises(exerciseSet)
-                .build());
+                .build();
+        Workout savedWorkout = workoutRepository.save(workout);
         userService.addWorkout(user, savedWorkout);
 
         WorkoutResponseDto workoutResponseDto = modelMapper.map(savedWorkout, WorkoutResponseDto.class);
@@ -107,16 +105,18 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     @Transactional
-    public WorkoutResponseDto getWorkoutById(long id, boolean customRequired) {
+    public WorkoutResponseDto getWorkoutById(long workoutId, boolean customRequired) {
         Workout workout = workoutRepository
-                .findById(id)
-                .orElseThrow(() -> new ApiException(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .findById(workoutId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, workoutId, HttpStatus.NOT_FOUND));
 
         if (workout.isCustom() && !customRequired)
-            throw new ApiException(ErrorMessage.UNAUTHORIZED_FOR_THIS_RESOURCE, HttpStatus.UNAUTHORIZED);
+            throw new ApiException(
+                    ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT, null, HttpStatus.BAD_REQUEST);
 
         if (!workout.isCustom() && customRequired)
-            throw new ApiException(ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT, HttpStatus.BAD_REQUEST);
+            throw new ApiException(
+                    ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
 
         WorkoutResponseDto workoutDto = modelMapper.map(workout, WorkoutResponseDto.class);
 
@@ -144,13 +144,13 @@ public class WorkoutServiceImpl implements WorkoutService {
         return workoutDto;
     }
 
-    @Transactional
     @Override
+    @Transactional
     public List<WorkoutResponseDto> getDefaultWorkouts(String sortFieldName) {
         if (sortFieldName == null) sortFieldName = "id";
         Sort sort = Sort.by(Sort.Direction.ASC, sortFieldName);
 
-        return workoutRepository.findAllDefault(sort).stream()
+        List<WorkoutResponseDto> responseDtoList = workoutRepository.findAllDefault(sort).stream()
                 .map(workout -> modelMapper.map(workout, WorkoutResponseDto.class))
                 .peek(elt -> {
                     List<ExerciseResponseDto> exercisesSorted = elt.getExercises().stream()
@@ -176,6 +176,7 @@ public class WorkoutServiceImpl implements WorkoutService {
                     elt.setNeedsEquipment(needsEquipment);
                 })
                 .toList();
+        return responseDtoList;
     }
 
     @Override
@@ -184,19 +185,22 @@ public class WorkoutServiceImpl implements WorkoutService {
         if (requestDto.getTitle() == null
                 && requestDto.getDescription() == null
                 && requestDto.getExerciseIds().size() == 0)
-            throw new ApiException(ErrorMessage.EMPTY_REQUEST, HttpStatus.BAD_REQUEST);
+            throw new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
 
         User user = userService.getUserById(userId);
         Workout workout = workoutRepository
                 .findById(workoutId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND, HttpStatus.BAD_REQUEST));
+                .orElseThrow(() -> new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, workoutId, HttpStatus.NOT_FOUND));
 
+        if (!workout.isCustom())
+            throw new ApiException(
+                    ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
         if (user.getWorkouts() == null || !user.getWorkouts().contains(workout))
-            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+            throw new ApiException(ErrorMessage.USER_WORKOUT_MISMATCH, workoutId, HttpStatus.BAD_REQUEST);
 
         if (requestDto.getTitle() != null && !requestDto.getTitle().equals(workout.getTitle())) {
             List<Workout> workouts = workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), userId);
-            if (workouts.size() > 0) throw new ApiException(ErrorMessage.TITLE_DUPLICATE, HttpStatus.BAD_REQUEST);
+            if (workouts.size() > 0) throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
             workout.setTitle(requestDto.getTitle());
         }
 
@@ -224,14 +228,14 @@ public class WorkoutServiceImpl implements WorkoutService {
             for (long id : idsToAdd) {
                 Optional<Exercise> exerciseOptional = exerciseRepository.findById(id);
                 if (exerciseOptional.isEmpty())
-                    throw new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST);
+                    throw new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, id, HttpStatus.NOT_FOUND);
 
                 Exercise exercise = exerciseOptional.get();
                 if (exercise.isCustom()) {
                     boolean userHasCustomExercise =
                             user.getExercises() != null && user.getExercises().contains(exercise);
                     if (!userHasCustomExercise)
-                        throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+                        throw new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, id, HttpStatus.BAD_REQUEST);
                 }
 
                 workout.getExercises().add(exercise);
@@ -242,8 +246,7 @@ public class WorkoutServiceImpl implements WorkoutService {
             for (long id : idsToRemove) {
                 Exercise exercise = exerciseRepository
                         .findById(id)
-                        .orElseThrow(
-                                () -> new ApiException(ErrorMessage.INVALID_NESTED_OBJECT, HttpStatus.BAD_REQUEST));
+                        .orElseThrow(() -> new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, id, HttpStatus.NOT_FOUND));
                 workout.getExercises().remove(exercise);
                 workoutBodyParts.removeAll(exercise.getBodyParts());
             }
@@ -282,9 +285,14 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Override
     @Transactional
     public void deleteCustomWorkout(long userId, long workoutId) {
-        Workout workout = workoutRepository.findCustomByWorkoutIdAndUserId(workoutId, userId).stream()
-                .findFirst()
-                .orElseThrow(() -> new ApiException(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND, HttpStatus.BAD_REQUEST));
+        Workout workout = workoutRepository
+                .findById(workoutId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, workoutId, HttpStatus.NOT_FOUND));
+        if (!workout.isCustom())
+            throw new ApiException(
+                    ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
+        if (userId != workout.getUser().getId())
+            throw new ApiException(ErrorMessage.USER_WORKOUT_MISMATCH, workoutId, HttpStatus.BAD_REQUEST);
         User user = userService.getUserById(userId);
         userService.removeWorkout(user, workout);
         workoutRepository.delete(workout);

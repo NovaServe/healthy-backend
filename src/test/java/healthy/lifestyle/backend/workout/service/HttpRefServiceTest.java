@@ -82,38 +82,41 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void createCustomHttpRefTest_shouldReturnUserNotFoundAndBadRequest_whenInvalidUserIdProvided() {
+    void createCustomHttpRefTest_shouldThrowErrorWith404_whenInvalidUserIdProvided() {
         // Given
         HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
-        long userId = 1L;
-        when(userService.getUserById(userId)).thenReturn(null);
+        long nonExistentUserId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_NOT_FOUND, nonExistentUserId, HttpStatus.NOT_FOUND);
+        when(userService.getUserById(nonExistentUserId)).thenReturn(null);
 
         // When
-        ApiException exception = assertThrows(
-                ApiException.class, () -> httpRefService.createCustomHttpRef(userId, createHttpRequestDto));
+        ApiException actualException = assertThrows(
+                ApiException.class, () -> httpRefService.createCustomHttpRef(nonExistentUserId, createHttpRequestDto));
 
         // Then
-        verify(userService, times(1)).getUserById(userId);
-        verify(httpRefRepository, times(0)).findCustomByNameAndUserId(createHttpRequestDto.getName(), userId);
+        verify(userService, times(1)).getUserById(nonExistentUserId);
+        verify(httpRefRepository, times(0))
+                .findCustomByNameAndUserId(createHttpRequestDto.getName(), nonExistentUserId);
         verify(httpRefRepository, times(0)).save(org.mockito.ArgumentMatchers.any(HttpRef.class));
 
-        assertEquals(ErrorMessage.RELATED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void createCustomHttpRefTest_shouldReturnAlreadyExistsAndBadRequest_whenNameDuplicated() {
+    void createCustomHttpRefTest_shouldThrowErrorWith400_whenAlreadyExists() {
         // Given
         HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
         User user = testUtil.createUser(1);
-        when(userService.getUserById(user.getId())).thenReturn(user);
-
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
+        ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+        when(userService.getUserById(user.getId())).thenReturn(user);
         when(httpRefRepository.findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId()))
                 .thenReturn(Optional.of(httpRef));
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class, () -> httpRefService.createCustomHttpRef(user.getId(), createHttpRequestDto));
 
         // Then
@@ -121,12 +124,12 @@ class HttpRefServiceTest {
         verify(httpRefRepository, times(1)).findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId());
         verify(httpRefRepository, times(0)).save(org.mockito.ArgumentMatchers.any(HttpRef.class));
 
-        assertEquals(ErrorMessage.ALREADY_EXISTS.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void getDefaultHttpRefsTest_shouldReturnDefaultHttpRefs() {
+    void getDefaultHttpRefsTest_shouldReturnDefaultHttpRefResponseDtoList() {
         // Given
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
         HttpRef httpRef1 = testUtil.createDefaultHttpRef(1);
@@ -167,59 +170,68 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenHttpRefNotFound() {
+    void getCustomHttpRefByIdTest_shouldThrowErrorWith404_whenHttpRefNotFound() {
         // Given
+        long randomUserId = 1000L;
+        long nonExistentHttpRefId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
         when(httpRefRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // When
-        ApiException exception = assertThrows(ApiException.class, () -> httpRefService.getCustomHttpRefById(1L, 2L));
+        ApiException actualException = assertThrows(
+                ApiException.class, () -> httpRefService.getCustomHttpRefById(randomUserId, nonExistentHttpRefId));
 
         // Then
         verify(httpRefRepository, times(1)).findById(anyLong());
 
-        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefIsRequested() {
+    void getCustomHttpRefByIdTest_shouldThrowErrorAnd400_whenDefaultHttpRefRequestedInsteadOfCustom() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createDefaultHttpRef(1);
+        ApiException expectedException = new ApiException(
+                ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class, () -> httpRefService.getCustomHttpRefById(user.getId(), httpRef.getId()));
 
         // Then
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
 
-        assertEquals(ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() {
+    void getCustomHttpRefByIdTest_shouldThrowErrorWith400_whenHttpRefDoesntBelongToUser() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
+        long anotherUserId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, httpRef.getId(), HttpStatus.BAD_REQUEST);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
-        long wrongUserId = user.getId() + 1;
 
         // When
-        ApiException exception = assertThrows(
-                ApiException.class, () -> httpRefService.getCustomHttpRefById(wrongUserId, httpRef.getId()));
+        ApiException actualException = assertThrows(
+                ApiException.class, () -> httpRefService.getCustomHttpRefById(anotherUserId, httpRef.getId()));
 
         // Then
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
 
-        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void getCustomHttpRefsTest_shouldReturnCustomHttpRefs_whenValidUserIdAndSortByProvided() {
+    void getCustomHttpRefsTest_shouldReturnCustomHttpRefResponseDtoList() {
         // Given
         HttpRef httpRef1 = testUtil.createDefaultHttpRef(1);
         HttpRef httpRef2 = testUtil.createDefaultHttpRef(2);
@@ -245,7 +257,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldReturnHttpRefResponseDto_whenValidUpdateDtoProvided() {
+    void updateCustomHttpRefTest_shouldReturnUpdatedHttpRefResponseDto() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
@@ -268,33 +280,41 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() {
+    void updateCustomHttpRefTest_shouldThrowErrorWith404_whenHttpRefNotFound() {
         // Given
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
+        long randomUserId = 1000L;
+        long nonExistentHttpRefId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
         when(httpRefRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // When
-        ApiException exception =
-                assertThrows(ApiException.class, () -> httpRefService.updateCustomHttpRef(1L, 2L, requestDto));
+        ApiException actualException = assertThrows(
+                ApiException.class,
+                () -> httpRefService.updateCustomHttpRef(randomUserId, nonExistentHttpRefId, requestDto));
 
         // Then
         verify(httpRefRepository, times(1)).findById(anyLong());
         verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
 
-        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefIsRequestedToUpdate() {
+    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefRequestedInsteadOfCustom() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createDefaultHttpRef(1);
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
+
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class,
                 () -> httpRefService.updateCustomHttpRef(user.getId(), httpRef.getId(), requestDto));
 
@@ -302,48 +322,54 @@ class HttpRefServiceTest {
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
         verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
 
-        assertEquals(ErrorMessage.DEFAULT_HTTP_REF_IS_NOT_ALLOWED_TO_MODIFY.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() {
+    void updateCustomHttpRefTest_shouldThrowErrorWith400_whenHttpRefDoesntBelongToUser() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
+        long anotherUserId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, httpRef.getId(), HttpStatus.BAD_REQUEST);
+
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
-        long wrongUserId = user.getId() + 1;
 
         // When
-        ApiException exception = assertThrows(
-                ApiException.class, () -> httpRefService.updateCustomHttpRef(wrongUserId, httpRef.getId(), requestDto));
+        ApiException actualException = assertThrows(
+                ApiException.class,
+                () -> httpRefService.updateCustomHttpRef(anotherUserId, httpRef.getId(), requestDto));
 
         // Then
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
         verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
 
-        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenEmptyDtoProvided() {
+    void updateCustomHttpRefTest_shouldThrowErrorWith400_whenEmptyRequest() {
         // Given
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDtoEmpty();
         long randomUserId = 1000L;
         long randomHttpRefId = 1000L;
+        ApiException expectedException = new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
 
         // When
-        ApiException exception =
-                assertThrows(ApiException.class, () -> httpRefService.updateCustomHttpRef(randomUserId, randomHttpRefId, requestDto));
+        ApiException actualException = assertThrows(
+                ApiException.class,
+                () -> httpRefService.updateCustomHttpRef(randomUserId, randomHttpRefId, requestDto));
 
         // Then
         verify(httpRefRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
 
-        assertEquals(ErrorMessage.EMPTY_REQUEST.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -361,54 +387,63 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void deleteCustomHttpRefTest_shouldReturnNotFoundAnd400_whenHttpRefNotFound() {
+    void deleteCustomHttpRefTest_shouldThrowErrorWith404_whenHttpRefNotFound() {
         // Given
+        long randomUserId = 1000L;
+        long nonExistentHttpRefId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
         when(httpRefRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // When
-        ApiException exception = assertThrows(ApiException.class, () -> httpRefService.deleteCustomHttpRef(1L, 2L));
+        ApiException actualException = assertThrows(
+                ApiException.class, () -> httpRefService.deleteCustomHttpRef(randomUserId, nonExistentHttpRefId));
 
         // Then
         verify(httpRefRepository, times(1)).findById(anyLong());
 
-        assertEquals(ErrorMessage.REQUESTED_RESOURCE_NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void deleteCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefIsRequestedToDelete() {
+    void deleteCustomHttpRefTest_shouldThrowErrorWith400_whenDefaultHttpRefIsRequestedToDelete() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createDefaultHttpRef(1);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class, () -> httpRefService.deleteCustomHttpRef(user.getId(), httpRef.getId()));
 
         // Then
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
 
-        assertEquals(ErrorMessage.DEFAULT_HTTP_REF_IS_NOT_ALLOWED_TO_MODIFY.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void deleteCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenUserResourceMismatch() {
+    void deleteCustomHttpRefTest_shouldThrowErrorWith400_whenHttpRefBelongsToAnotherUser() {
         // Given
-        User user = testUtil.createUser(1);
-        HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
+        User user1 = testUtil.createUser(1);
+        User user2 = testUtil.createUser(2);
+        HttpRef httpRef = testUtil.createCustomHttpRef(1, user2);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, httpRef.getId(), HttpStatus.BAD_REQUEST);
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
-        long wrongUserId = user.getId() + 1;
 
         // When
-        ApiException exception = assertThrows(
-                ApiException.class, () -> httpRefService.deleteCustomHttpRef(wrongUserId, httpRef.getId()));
+        ApiException actualException = assertThrows(
+                ApiException.class, () -> httpRefService.deleteCustomHttpRef(user1.getId(), httpRef.getId()));
 
         // Then
         verify(httpRefRepository, times(1)).findById(httpRef.getId());
 
-        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 }

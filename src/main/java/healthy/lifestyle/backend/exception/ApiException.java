@@ -30,4 +30,8 @@ public class ApiException extends RuntimeException {
     public HttpStatus getHttpStatus() {
         return httpStatus;
     }
+
+    public int getHttpStatusValue() {
+        return httpStatus.value();
+    }
 }

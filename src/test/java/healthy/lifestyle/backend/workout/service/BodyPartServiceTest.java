@@ -36,7 +36,7 @@ class BodyPartServiceTest {
     TestUtil dataUtil = new TestUtil();
 
     @Test
-    void getBodyPartsTest_shouldReturnAllBodyParts() {
+    void getBodyPartsTest_shouldReturnBodyPartResponseDtoList() {
         // Given
         BodyPart bodyPart1 = dataUtil.createBodyPart(1);
         BodyPart bodyPart2 = dataUtil.createBodyPart(2);
@@ -55,30 +55,17 @@ class BodyPartServiceTest {
     }
 
     @Test
-    void getBodyPartsTest_shouldThrowExceptionWith500_whenHttpRefsAreNull() {
+    void getBodyPartsTest_shouldThrowExceptionWith404_whenBodyPartsNotFound() {
         // Given
-        when(bodyPartRepository.findAll()).thenReturn(null);
-
-        // When
-        ApiException exception = assertThrows(ApiException.class, () -> bodyPartService.getBodyParts());
-
-        // Then
-        verify(bodyPartRepository, times(1)).findAll();
-        assertEquals(ErrorMessage.SERVER_ERROR.getName(), exception.getMessage());
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatus());
-    }
-
-    @Test
-    void getBodyPartsTest_shouldThrowExceptionWith500_whenHttpRefsAreEmptyList() {
-        // Given
+        ApiException expectedException = new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
         when(bodyPartRepository.findAll()).thenReturn(new ArrayList<>());
 
         // When
-        ApiException exception = assertThrows(ApiException.class, () -> bodyPartService.getBodyParts());
+        ApiException actualException = assertThrows(ApiException.class, () -> bodyPartService.getBodyParts());
 
         // Then
         verify(bodyPartRepository, times(1)).findAll();
-        assertEquals(ErrorMessage.SERVER_ERROR.getName(), exception.getMessage());
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatus());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 }

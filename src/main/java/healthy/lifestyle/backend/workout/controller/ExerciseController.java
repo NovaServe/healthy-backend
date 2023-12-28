@@ -28,15 +28,18 @@ public class ExerciseController {
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<ExerciseResponseDto> createCustomExercise(@RequestBody ExerciseCreateRequestDto requestDto) {
+    public ResponseEntity<ExerciseResponseDto> createCustomExercise(
+            @Valid @RequestBody ExerciseCreateRequestDto requestDto) {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return new ResponseEntity<>(exerciseService.createExercise(requestDto, userId), HttpStatus.CREATED);
+        ExerciseResponseDto responseDto = exerciseService.createCustomExercise(requestDto, userId);
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
     @GetMapping("/default/{exercise_id}")
     public ResponseEntity<ExerciseResponseDto> getDefaultExerciseById(@PathVariable("exercise_id") long exercise_id) {
-        return ResponseEntity.ok(exerciseService.getExerciseById(exercise_id, true, null));
+        ExerciseResponseDto responseDto = exerciseService.getExerciseById(exercise_id, true, null);
+        return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping("/{exercise_id}")
@@ -44,12 +47,14 @@ public class ExerciseController {
     public ResponseEntity<ExerciseResponseDto> getCustomExerciseById(@PathVariable("exercise_id") long exercise_id) {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return ResponseEntity.ok(exerciseService.getExerciseById(exercise_id, false, userId));
+        ExerciseResponseDto responseDto = exerciseService.getExerciseById(exercise_id, false, userId);
+        return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping("/default")
     public ResponseEntity<List<ExerciseResponseDto>> getDefaultExercises() {
-        return ResponseEntity.ok(exerciseService.getDefaultExercises());
+        List<ExerciseResponseDto> responseDtoList = exerciseService.getDefaultExercises();
+        return ResponseEntity.ok(responseDtoList);
     }
 
     @GetMapping
@@ -57,7 +62,8 @@ public class ExerciseController {
     public ResponseEntity<List<ExerciseResponseDto>> getCustomExercises() {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return ResponseEntity.ok(exerciseService.getCustomExercises(userId));
+        List<ExerciseResponseDto> responseDtoList = exerciseService.getCustomExercises(userId);
+        return ResponseEntity.ok(responseDtoList);
     }
 
     @PatchMapping("/{exerciseId}")
@@ -66,7 +72,8 @@ public class ExerciseController {
             @PathVariable("exerciseId") long exerciseId, @Valid @RequestBody ExerciseUpdateRequestDto requestDto) {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return ResponseEntity.ok(exerciseService.updateCustomExercise(exerciseId, userId, requestDto));
+        ExerciseResponseDto responseDto = exerciseService.updateCustomExercise(exerciseId, userId, requestDto);
+        return ResponseEntity.ok(responseDto);
     }
 
     @DeleteMapping("/{exerciseId}")

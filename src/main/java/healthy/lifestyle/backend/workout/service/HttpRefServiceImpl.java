@@ -38,7 +38,7 @@ public class HttpRefServiceImpl implements HttpRefService {
         httpRefRepository
                 .findCustomByNameAndUserId(createHttpRequestDto.getName(), userId)
                 .ifPresent(alreadyExistentWithSameTitle -> {
-                    throw new ApiException(ErrorMessage.ALREADY_EXISTS, null, HttpStatus.BAD_REQUEST);
+                    throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
                 });
 
         HttpRef httpRefSaved = httpRefRepository.save(HttpRef.builder()
@@ -49,7 +49,8 @@ public class HttpRefServiceImpl implements HttpRefService {
                 .user(user)
                 .build());
 
-        return modelMapper.map(httpRefSaved, HttpRefResponseDto.class);
+        HttpRefResponseDto responseDto = modelMapper.map(httpRefSaved, HttpRefResponseDto.class);
+        return responseDto;
     }
 
     @Override
@@ -58,27 +59,32 @@ public class HttpRefServiceImpl implements HttpRefService {
                 .findById(httpRefId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, httpRefId, HttpStatus.NOT_FOUND));
 
-        if (!httpRef.isCustom()) throw new ApiException(ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
+        if (!httpRef.isCustom())
+            throw new ApiException(
+                    ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
 
         if (httpRef.getUser().getId() != userId)
-            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, httpRefId, HttpStatus.BAD_REQUEST);
+            throw new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, httpRefId, HttpStatus.BAD_REQUEST);
 
-        return modelMapper.map(httpRef, HttpRefResponseDto.class);
+        HttpRefResponseDto responseDto = modelMapper.map(httpRef, HttpRefResponseDto.class);
+        return responseDto;
     }
 
     @Override
     public List<HttpRefResponseDto> getDefaultHttpRefs(Sort sort) {
-        return httpRefRepository.findAllDefault(sort).stream()
+        List<HttpRefResponseDto> responseDtoList = httpRefRepository.findAllDefault(sort).stream()
                 .map(elt -> modelMapper.map(elt, HttpRefResponseDto.class))
                 .toList();
+        return responseDtoList;
     }
 
     @Override
     public List<HttpRefResponseDto> getCustomHttpRefs(long userId, String sortBy) {
         Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
-        return httpRefRepository.findCustomByUserId(userId, sort).stream()
+        List<HttpRefResponseDto> responseDtoList = httpRefRepository.findCustomByUserId(userId, sort).stream()
                 .map(elt -> modelMapper.map(elt, HttpRefResponseDto.class))
                 .toList();
+        return responseDtoList;
     }
 
     @Override
@@ -88,13 +94,14 @@ public class HttpRefServiceImpl implements HttpRefService {
 
         HttpRef httpRef = httpRefRepository
                 .findById(httpRefId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, httpRefId, HttpStatus.BAD_REQUEST));
+                .orElseThrow(() -> new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, httpRefId, HttpStatus.NOT_FOUND));
 
         if (!httpRef.isCustom())
-            throw new ApiException(ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
+            throw new ApiException(
+                    ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
 
         if (httpRef.getUser().getId() != userId)
-            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, httpRefId, HttpStatus.BAD_REQUEST);
+            throw new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, httpRefId, HttpStatus.BAD_REQUEST);
 
         if (requestDto.getName() != null && !requestDto.getName().equals(httpRef.getName()))
             httpRef.setName(requestDto.getName());
@@ -105,20 +112,22 @@ public class HttpRefServiceImpl implements HttpRefService {
         if (requestDto.getRef() != null && !requestDto.getRef().equals(httpRef.getRef()))
             httpRef.setRef(requestDto.getRef());
 
-        return modelMapper.map(httpRefRepository.save(httpRef), HttpRefResponseDto.class);
+        HttpRefResponseDto responseDto = modelMapper.map(httpRefRepository.save(httpRef), HttpRefResponseDto.class);
+        return responseDto;
     }
 
     @Override
     public void deleteCustomHttpRef(long userId, long httpRefId) {
         HttpRef httpRef = httpRefRepository
                 .findById(httpRefId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, httpRefId, HttpStatus.BAD_REQUEST));
+                .orElseThrow(() -> new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, httpRefId, HttpStatus.NOT_FOUND));
 
         if (!httpRef.isCustom())
-            throw new ApiException(ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
+            throw new ApiException(
+                    ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
 
         if (httpRef.getUser().getId() != userId)
-            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, httpRefId, HttpStatus.BAD_REQUEST);
+            throw new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, httpRefId, HttpStatus.BAD_REQUEST);
 
         httpRefRepository.delete(httpRef);
     }

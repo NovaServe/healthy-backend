@@ -22,7 +22,6 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
     private final JwtAuthFilter jwtAuthFilter;
-
     private final ApiUrl apiUrl;
 
     @Bean
