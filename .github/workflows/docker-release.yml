@@ -9,8 +9,11 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      ver: ${{ steps.set.outputs.ver }}
-      rel: ${{ steps.set.outputs.rel }}
+      current: ${{ steps.set.outputs.current }}
+      target: ${{ steps.set.outputs.target }}
+      test: ${{ steps.set.outputs.test }}
+    #      ver: ${{ steps.set.outputs.ver }}
+    #      rel: ${{ steps.set.outputs.rel }}
 
     steps:
       - name: Checkout
@@ -18,25 +21,36 @@ jobs:
 
       - name: Set versions
         id: set
-        run: |
-          echo "ver=$(cat VERSION)" >> $GITHUB_OUTPUT
-          echo "rel=$(cat RELEASE)" >> $GITHUB_OUTPUT
+        run: |          
+          echo "current=$(grep '^current=' versions | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
+          echo "target=$(grep '^target=' versions | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
+          echo "test=$(grep '^test=' versions | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
+#          echo "ver=$(cat VERSION)" >> $GITHUB_OUTPUT
+#          echo "rel=$(cat RELEASE)" >> $GITHUB_OUTPUT
 
       - name: Display versions
         run: |
-          echo ">>>>> ver is ${{ steps.set.outputs.ver }}"
-          echo ">>>>> rel is ${{ steps.set.outputs.rel }}"
+          echo ">> >> >> CURRENT VERSION: ${{ steps.set.outputs.current }}"
+          echo ">> >> >> TARGET VERSION: ${{ steps.set.outputs.target }}"
+          echo ">> >> >> TEST FLAG: ${{ steps.set.outputs.test }}"
+#          echo ">>>>> ver is ${{ steps.set.outputs.ver }}"
+#          echo ">>>>> rel is ${{ steps.set.outputs.rel }}"
+
 
   build-and-push:
     needs: checkversions
     runs-on: ubuntu-latest
-    if: ${{ needs.checkversions.outputs.ver == needs.checkversions.outputs.rel }}
+#    if: ${{ needs.checkversions.outputs.ver == needs.checkversions.outputs.rel }}
+    if: ${{ needs.checkversions.outputs.current == needs.checkversions.outputs.target }}
 
     steps:
       - name: Display versions
         run: |
-          echo ">>>>> ver is ${{ needs.checkversions.outputs.ver }}"
-          echo ">>>>> rel is ${{ needs.checkversions.outputs.rel }}"
+          echo ">> >> >> CURRENT VERSION: ${{ steps.set.outputs.current }}"
+          echo ">> >> >> TARGET VERSION: ${{ steps.set.outputs.target }}"
+          echo ">> >> >> TEST FLAG: ${{ steps.set.outputs.test }}"
+        # echo ">>>>> rel is ${{ needs.checkversions.outputs.rel }}"
+        # echo ">>>>> ver is ${{ needs.checkversions.outputs.ver }}"
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -75,9 +89,19 @@ jobs:
         run: ./gradlew clean build --info
 
       - name: Build Docker image
-        run: docker build -t healthylifestyle/backend:${{ needs.checkversions.outputs.ver }} -t healthylifestyle/backend:latest .
-        
+        if: ${{ needs.checkversions.outputs.test == 0 }}
+        run: docker build -t healthylifestyle/backend:${{ needs.checkversions.outputs.current }} -t healthylifestyle/backend:latest .
+
       - name: Push image to Docker Hub
+        if: ${{ needs.checkversions.outputs.test == 0 }}
         run: |
-          docker push healthylifestyle/backend:${{ needs.checkversions.outputs.ver }}
+          docker push healthylifestyle/backend:${{ needs.checkversions.outputs.current }}
           docker push healthylifestyle/backend:latest
+
+      - name: Build Docker test image
+        if: ${{ needs.checkversions.outputs.test == 1 }}
+        run: docker build -t healthylifestyle/backend:${{ needs.checkversions.outputs.current }}-test
+
+      - name: Push test image to Docker Hub
+        if: ${{ needs.checkversions.outputs.test == 1 }}
+        run: docker push healthylifestyle/backend:${{ needs.checkversions.outputs.current }}-test
