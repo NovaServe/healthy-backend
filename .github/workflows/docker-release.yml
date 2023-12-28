@@ -100,7 +100,7 @@ jobs:
 
       - name: Build Docker test image
         if: ${{ needs.checkversions.outputs.test == 1 }}
-        run: docker build -t healthylifestyle/backend:${{ needs.checkversions.outputs.current }}-test
+        run: docker build -t healthylifestyle/backend:${{ needs.checkversions.outputs.current }}-test .
 
       - name: Push test image to Docker Hub
         if: ${{ needs.checkversions.outputs.test == 1 }}
