@@ -6,7 +6,7 @@ import healthy.lifestyle.backend.workout.dto.ExerciseUpdateRequestDto;
 import java.util.List;
 
 public interface ExerciseService {
-    ExerciseResponseDto createExercise(ExerciseCreateRequestDto requestDto, long userId);
+    ExerciseResponseDto createCustomExercise(ExerciseCreateRequestDto requestDto, long userId);
 
     ExerciseResponseDto getExerciseById(long exerciseId, boolean requiredDefault, Long userId);
 

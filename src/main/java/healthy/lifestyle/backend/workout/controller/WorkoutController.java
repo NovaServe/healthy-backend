@@ -32,18 +32,21 @@ public class WorkoutController {
     public ResponseEntity<List<WorkoutResponseDto>> getDefaultWorkouts(
             @RequestParam(value = "sortFieldName", required = false) String sortFieldName) {
         if (isNull(sortFieldName)) sortFieldName = "id";
-        return ResponseEntity.ok(workoutService.getDefaultWorkouts(sortFieldName));
+        List<WorkoutResponseDto> responseDtoList = workoutService.getDefaultWorkouts(sortFieldName);
+        return ResponseEntity.ok(responseDtoList);
     }
 
     @GetMapping("/default/{workout_id}")
     public ResponseEntity<WorkoutResponseDto> getDefaultWorkoutDetails(@PathVariable("workout_id") long workoutId) {
-        return ResponseEntity.ok(workoutService.getWorkoutById(workoutId, false));
+        WorkoutResponseDto responseDto = workoutService.getWorkoutById(workoutId, false);
+        return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping("/{workout_id}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<WorkoutResponseDto> getCustomWorkoutDetails(@PathVariable("workout_id") long workoutId) {
-        return ResponseEntity.ok(workoutService.getWorkoutById(workoutId, true));
+        WorkoutResponseDto responseDto = workoutService.getWorkoutById(workoutId, true);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PostMapping
@@ -52,7 +55,8 @@ public class WorkoutController {
             @Valid @RequestBody WorkoutCreateRequestDto requestDto) {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return new ResponseEntity<>(workoutService.createCustomWorkout(userId, requestDto), HttpStatus.CREATED);
+        WorkoutResponseDto responseDto = workoutService.createCustomWorkout(userId, requestDto);
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
     @PatchMapping("/{workoutId}")
@@ -61,7 +65,8 @@ public class WorkoutController {
             @PathVariable long workoutId, @Valid @RequestBody WorkoutUpdateRequestDto requestDto) {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return new ResponseEntity<>(workoutService.updateCustomWorkout(userId, workoutId, requestDto), HttpStatus.OK);
+        WorkoutResponseDto responseDto = workoutService.updateCustomWorkout(userId, workoutId, requestDto);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
     @DeleteMapping("/{workoutId}")

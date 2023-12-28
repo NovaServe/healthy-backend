@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.workout.service;
 
-import static java.util.Objects.isNull;
-
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
@@ -26,13 +24,12 @@ public class BodyPartServiceImpl implements BodyPartService {
     @Override
     public List<BodyPartResponseDto> getBodyParts() {
         List<BodyPart> bodyParts = bodyPartRepository.findAll();
+        if (bodyParts.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
 
-        if (isNull(bodyParts) || bodyParts.size() == 0)
-            throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
-
-        return bodyParts.stream()
+        List<BodyPartResponseDto> responseDtoList = bodyParts.stream()
                 .map(elt -> modelMapper.map(elt, BodyPartResponseDto.class))
                 .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
                 .toList();
+        return responseDtoList;
     }
 }

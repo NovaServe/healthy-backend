@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
+import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.exception.ExceptionDto;
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
@@ -234,7 +235,7 @@ public class UserControllerTest {
             errorMessage.append(" ");
             errorMessage.append(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName());
             errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName());
+            errorMessage.append(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName());
             errorMessage.append(" ");
             errorMessage.append(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName());
             errorMessage.append(" ");
@@ -245,7 +246,7 @@ public class UserControllerTest {
                 assertEquals(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
             if (email != null) assertEquals(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
             if (fullName != null)
-                assertEquals(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
+                assertEquals(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
             if (age != null) assertEquals(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
             if (password != null && confirmPassword != null)
                 assertEquals(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
@@ -463,7 +464,7 @@ public class UserControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateUserTest_shouldReturnErrorMessageWith400_whenUserResourceMismatch() throws Exception {
+    void updateUserTest_shouldReturnErrorMessageWith400_whenUserRequestedAnotherUserProfile() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -474,6 +475,9 @@ public class UserControllerTest {
         requestDto.setCountryId(user1.getCountry().getId());
         requestDto.setUsername("New-username");
 
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_REQUESTED_ANOTHER_USER_PROFILE, null, HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(patch(URL.USER_ID, user2.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -481,8 +485,8 @@ public class UserControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -499,6 +503,8 @@ public class UserControllerTest {
         requestDto.setUsername("New-username");
         long nonExistentCountryId = 1000L;
         requestDto.setCountryId(nonExistentCountryId);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.COUNTRY_NOT_FOUND, nonExistentCountryId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(patch(URL.USER_ID, user.getId())
@@ -506,9 +512,9 @@ public class UserControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
 
                 // Then
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.COUNTRY_NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.INTERNAL_SERVER_ERROR.value())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -570,6 +576,8 @@ public class UserControllerTest {
         Country country = dbUtil.createCountry(1);
         User user1 = dbUtil.createUser(1, role, country);
         User user2 = dbUtil.createUser(2, role, country);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_REQUESTED_ANOTHER_USER_PROFILE, null, HttpStatus.BAD_REQUEST);
 
         // When
         String REQUEST_URL = URL.USER_ID;
@@ -577,8 +585,8 @@ public class UserControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -609,12 +617,16 @@ public class UserControllerTest {
 
     @Test
     void getCountriesTest_shouldReturnErrorMessageWith500_whenNoCountries() throws Exception {
+        // Given
+        ApiException expectedException = new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
+
         // When
         mockMvc.perform(get(URL.COUNTRIES).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message", is("Server error")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 }

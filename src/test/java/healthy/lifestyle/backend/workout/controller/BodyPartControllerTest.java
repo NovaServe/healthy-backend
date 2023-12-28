@@ -11,6 +11,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.URL;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
@@ -22,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -88,12 +91,15 @@ class BodyPartControllerTest {
     }
 
     @Test
-    void getBodyPartsTest_shouldReturnErrorMessageWith500_whenNoBodyPartsFound() throws Exception {
+    void getBodyPartsTest_shouldReturnErrorMessageWith404_whenBodyPartsNotFound() throws Exception {
+        ApiException expectedException = new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
+
         // When
         mockMvc.perform(get(URL.BODY_PARTS).contentType(MediaType.APPLICATION_JSON))
                 // Then
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message", is("Server error")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 }

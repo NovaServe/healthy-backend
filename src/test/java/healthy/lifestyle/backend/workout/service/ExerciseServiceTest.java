@@ -73,38 +73,34 @@ class ExerciseServiceTest {
         BodyPart bodyPart2 = testUtil.createBodyPart(2);
         HttpRef customHttpRef = testUtil.createCustomHttpRef(1, user);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(2);
-
+        boolean needsEquipment = false;
         ExerciseCreateRequestDto requestDto = dtoUtil.exerciseCreateRequestDto(
                 1,
-                false,
+                needsEquipment,
                 List.of(bodyPart1.getId(), bodyPart2.getId()),
                 List.of(customHttpRef.getId(), defaultHttpRef.getId()));
 
-        when(bodyPartRepository.existsById(anyLong())).thenReturn(true);
-        when(bodyPartRepository.getReferenceById(bodyPart1.getId())).thenReturn(bodyPart1);
-        when(bodyPartRepository.getReferenceById(bodyPart2.getId())).thenReturn(bodyPart2);
-        when(httpRefRepository.existsById(anyLong())).thenReturn(true);
-        when(httpRefRepository.getReferenceById(customHttpRef.getId())).thenReturn(customHttpRef);
-        when(httpRefRepository.getReferenceById(defaultHttpRef.getId())).thenReturn(defaultHttpRef);
+        when(bodyPartRepository.findById(bodyPart1.getId())).thenReturn(Optional.of(bodyPart1));
+        when(bodyPartRepository.findById(bodyPart2.getId())).thenReturn(Optional.of(bodyPart2));
+        when(httpRefRepository.findById(customHttpRef.getId())).thenReturn(Optional.of(customHttpRef));
+        when(httpRefRepository.findById(defaultHttpRef.getId())).thenReturn(Optional.of(defaultHttpRef));
 
         when(exerciseRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
                 .thenReturn(Optional.empty());
         when(exerciseRepository.save(any(Exercise.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
 
-        doNothing().when(userService).addExercise(any(Long.class), any(Exercise.class));
+        doNothing().when(userService).addExerciseToUser(any(Long.class), any(Exercise.class));
 
         // When
-        ExerciseResponseDto exerciseActual = exerciseService.createExercise(requestDto, user.getId());
+        ExerciseResponseDto exerciseActual = exerciseService.createCustomExercise(requestDto, user.getId());
 
         // Then
-        verify(bodyPartRepository, times(2)).existsById(anyLong());
-        verify(bodyPartRepository, times(2)).getReferenceById(anyLong());
-        verify(httpRefRepository, times(2)).existsById(anyLong());
-        verify(httpRefRepository, times(2)).getReferenceById(anyLong());
+        verify(bodyPartRepository, times(2)).findById(anyLong());
+        verify(httpRefRepository, times(2)).findById(anyLong());
         verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(eq(requestDto.getTitle()), eq(user.getId()));
         verify(exerciseRepository, times(1)).save(any(Exercise.class));
-        verify(userService, times(1)).addExercise(eq(user.getId()), any());
+        verify(userService, times(1)).addExerciseToUser(eq(user.getId()), any());
 
         assertThat(requestDto)
                 .usingRecursiveComparison()
@@ -301,18 +297,20 @@ class ExerciseServiceTest {
     void getExerciseByIdTest_shouldThrowErrorWith404_whenExerciseNotFound() {
         // Given
         long nonExistingExerciseId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistingExerciseId, HttpStatus.NOT_FOUND);
         when(exerciseRepository.findById(nonExistingExerciseId)).thenReturn(Optional.empty());
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class, () -> exerciseService.getExerciseById(nonExistingExerciseId, true, null));
 
         // Then
         verify((exerciseRepository), times(1)).findById(nonExistingExerciseId);
         verify(userService, times(0)).getUserById(anyLong());
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -325,19 +323,21 @@ class ExerciseServiceTest {
         boolean needsEquipment = true;
         Exercise customExercise = testUtil.createCustomExercise(
                 1, needsEquipment, List.of(bodyPart), List.of(defaultHttpRef, customHttpRef), user);
+        ApiException expectedException = new ApiException(
+                ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT, null, HttpStatus.BAD_REQUEST);
 
         when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class, () -> exerciseService.getExerciseById(customExercise.getId(), true, null));
 
         // Then
         verify((exerciseRepository), times(1)).findById(customExercise.getId());
         verify(userService, times(0)).getUserById(anyLong());
 
-        assertEquals(ErrorMessage.DEFAULT_CUSTOM_MISMATCH.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -353,11 +353,14 @@ class ExerciseServiceTest {
 
         User user2 = testUtil.createUser(2);
 
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, customExercise.getId(), HttpStatus.BAD_REQUEST);
+
         when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
         when(userService.getUserById(user2.getId())).thenReturn(user2);
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class,
                 () -> exerciseService.getExerciseById(customExercise.getId(), false, user2.getId()));
 
@@ -365,8 +368,8 @@ class ExerciseServiceTest {
         verify((exerciseRepository), times(1)).findById(customExercise.getId());
         verify(userService, times(1)).getUserById(user2.getId());
 
-        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @ParameterizedTest
@@ -415,8 +418,7 @@ class ExerciseServiceTest {
         List<HttpRef> expectedHttpRefs = List.of(customHttpRef1, defaultHttpRef1, customHttpRef3, defaultHttpRef3);
 
         // Mocking
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId()))
-                .thenReturn(Optional.of(customExercise));
+        when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
         when(userService.getUserById(user.getId())).thenReturn(user);
 
         if (nonNull(updateTitle)) {
@@ -438,7 +440,7 @@ class ExerciseServiceTest {
                 exerciseService.updateCustomExercise(customExercise.getId(), user.getId(), requestDto);
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId());
+        verify(exerciseRepository, times(1)).findById(customExercise.getId());
         verify(userService, times(1)).getUserById(user.getId());
 
         if (nonNull(updateTitle)) {
@@ -496,8 +498,7 @@ class ExerciseServiceTest {
         requestDto.setBodyPartIds(customExercise.getBodyPartsIdsSorted());
 
         // Mocking
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId()))
-                .thenReturn(Optional.of(customExercise));
+        when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
         when(userService.getUserById(user.getId())).thenReturn(user);
         when(exerciseRepository.save(any(Exercise.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
@@ -507,7 +508,7 @@ class ExerciseServiceTest {
                 exerciseService.updateCustomExercise(customExercise.getId(), user.getId(), requestDto);
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId());
+        verify(exerciseRepository, times(1)).findById(customExercise.getId());
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         verify(bodyPartRepository, times(0)).findById(anyLong());
@@ -539,24 +540,26 @@ class ExerciseServiceTest {
         requestDto.setBodyPartIds(customExercise.getBodyPartsIdsSorted());
         requestDto.setHttpRefIds(customExercise.getHttpRefsIdsSorted());
 
+        ApiException expectedException =
+                new ApiException(ErrorMessage.NO_UPDATES_REQUEST, null, HttpStatus.BAD_REQUEST);
+
         // Mocking
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId()))
-                .thenReturn(Optional.of(customExercise));
+        when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class,
                 () -> exerciseService.updateCustomExercise(customExercise.getId(), user.getId(), requestDto));
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId());
+        verify(exerciseRepository, times(1)).findById(customExercise.getId());
         verify(userService, times(0)).getUserById(anyLong());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.NO_UPDATES_REQUEST.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -568,63 +571,67 @@ class ExerciseServiceTest {
         long nonExistingExerciseId = 1000L;
         long nonExistingUserId = 1000L;
 
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(nonExistingExerciseId, nonExistingUserId))
-                .thenReturn(Optional.empty());
+        ApiException expectedException =
+                new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistingExerciseId, HttpStatus.NOT_FOUND);
+
+        when(exerciseRepository.findById(nonExistingExerciseId)).thenReturn(Optional.empty());
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class,
                 () -> exerciseService.updateCustomExercise(nonExistingExerciseId, nonExistingUserId, requestDto));
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(nonExistingExerciseId, nonExistingUserId);
+        verify(exerciseRepository, times(1)).findById(nonExistingExerciseId);
         verify(userService, times(0)).getUserById(anyLong());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowErrorWith404_whenExerciseDoesntBelongToUser() {
+    void updateCustomExerciseTest_shouldThrowErrorWith400_whenExerciseDoesntBelongToUser() {
         // Given
         Role role = testUtil.createUserRole();
         Country country = testUtil.createCountry(1);
-        User user = testUtil.createUser(1, role, country);
         BodyPart bodyPart = testUtil.createBodyPart(1);
-        HttpRef customHttpRef = testUtil.createCustomHttpRef(1, user);
+
+        User user1 = testUtil.createUser(1, role, country);
+        HttpRef customHttpRef = testUtil.createCustomHttpRef(1, user1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(2);
         boolean needsEquipment = true;
-        Exercise customExercise = testUtil.createCustomExercise(
-                1, needsEquipment, List.of(bodyPart), List.of(customHttpRef, defaultHttpRef), user);
+        Exercise customExercise1 = testUtil.createCustomExercise(
+                1, needsEquipment, List.of(bodyPart), List.of(customHttpRef, defaultHttpRef), user1);
 
         User user2 = testUtil.createUser(2, role, country);
         Exercise customExercise2 =
                 testUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart), List.of(defaultHttpRef), user2);
 
         ExerciseUpdateRequestDto requestDto = dtoUtil.exerciseUpdateRequestDtoEmpty();
-        requestDto.setBodyPartIds(customExercise.getBodyPartsIdsSorted());
+        requestDto.setBodyPartIds(customExercise1.getBodyPartsIdsSorted());
         requestDto.setHttpRefIds(Collections.emptyList());
 
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(customExercise.getId(), user2.getId()))
-                .thenReturn(Optional.empty());
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, customExercise1.getId(), HttpStatus.BAD_REQUEST);
+
+        when(exerciseRepository.findById(customExercise1.getId())).thenReturn(Optional.of(customExercise1));
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class,
-                () -> exerciseService.updateCustomExercise(customExercise.getId(), user2.getId(), requestDto));
+                () -> exerciseService.updateCustomExercise(customExercise1.getId(), user2.getId(), requestDto));
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(customExercise.getId(), user2.getId());
+        verify(exerciseRepository, times(1)).findById(customExercise1.getId());
         verify(userService, times(0)).getUserById(user2.getId());
-        verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -645,30 +652,31 @@ class ExerciseServiceTest {
         requestDto.setHttpRefIds(Collections.emptyList());
         requestDto.setTitle(alreadyExistedCustomExercise.getTitle());
 
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId()))
-                .thenReturn(Optional.of(customExercise));
+        ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+
+        when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
         when(userService.getUserById(user.getId())).thenReturn(user);
         when(exerciseRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
                 .thenReturn(Optional.of(alreadyExistedCustomExercise));
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class,
                 () -> exerciseService.updateCustomExercise(customExercise.getId(), user.getId(), requestDto));
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId());
+        verify(exerciseRepository, times(1)).findById(customExercise.getId());
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.TITLE_DUPLICATE.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowErrorWith400_whenBodyPartNotFound() {
+    void updateCustomExerciseTest_shouldThrowErrorWith404_whenBodyPartNotFound() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -683,24 +691,26 @@ class ExerciseServiceTest {
         requestDto.setBodyPartIds(List.of(nonExistingBodyPartId));
         requestDto.setHttpRefIds(Collections.emptyList());
 
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId()))
-                .thenReturn(Optional.of(customExercise));
+        ApiException expectedException =
+                new ApiException(ErrorMessage.BODY_PART_NOT_FOUND, nonExistingBodyPartId, HttpStatus.NOT_FOUND);
+
+        when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
         when(userService.getUserById(user.getId())).thenReturn(user);
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class,
                 () -> exerciseService.updateCustomExercise(customExercise.getId(), user.getId(), requestDto));
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId());
+        verify(exerciseRepository, times(1)).findById(customExercise.getId());
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(1)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
-        assertEquals(ErrorMessage.INVALID_NESTED_OBJECT.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -723,25 +733,27 @@ class ExerciseServiceTest {
         requestDto.setBodyPartIds(customExercise.getBodyPartsIdsSorted());
         requestDto.setHttpRefIds(List.of(customHttpRef2.getId()));
 
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId()))
-                .thenReturn(Optional.of(customExercise));
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, customHttpRef2.getId(), HttpStatus.BAD_REQUEST);
+
+        when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
         when(userService.getUserById(user.getId())).thenReturn(user);
         when(httpRefRepository.findById(customHttpRef2.getId())).thenReturn(Optional.of(customHttpRef2));
 
         // When
-        ApiException exception = assertThrows(
+        ApiException actualException = assertThrows(
                 ApiException.class,
                 () -> exerciseService.updateCustomExercise(customExercise.getId(), user.getId(), requestDto));
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId());
+        verify(exerciseRepository, times(1)).findById(customExercise.getId());
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(1)).findById(anyLong());
 
-        assertEquals(ErrorMessage.USER_RESOURCE_MISMATCH.getName(), exception.getMessage());
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @ParameterizedTest
@@ -764,8 +776,7 @@ class ExerciseServiceTest {
         requestDto.setDescription(updateDescription);
         requestDto.setNeedsEquipment(updateNeedsEquipment);
 
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId()))
-                .thenReturn(Optional.of(customExercise));
+        when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
         when(userService.getUserById(user.getId())).thenReturn(user);
 
         // When
@@ -774,7 +785,7 @@ class ExerciseServiceTest {
                 () -> exerciseService.updateCustomExercise(customExercise.getId(), user.getId(), requestDto));
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId());
+        verify(exerciseRepository, times(1)).findById(customExercise.getId());
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
@@ -782,11 +793,11 @@ class ExerciseServiceTest {
 
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
 
-        if (nonNull(updateTitle)) assertEquals(ErrorMessage.TITLES_ARE_NOT_DIFFERENT.getName(), exception.getMessage());
+        if (nonNull(updateTitle)) assertEquals(ErrorMessage.TITLE_IS_NOT_DIFFERENT.getName(), exception.getMessage());
         if (nonNull(updateDescription))
-            assertEquals(ErrorMessage.DESCRIPTIONS_ARE_NOT_DIFFERENT.getName(), exception.getMessage());
+            assertEquals(ErrorMessage.DESCRIPTION_IS_NOT_DIFFERENT.getName(), exception.getMessage());
         if (nonNull(updateNeedsEquipment))
-            assertEquals(ErrorMessage.NEEDS_EQUIPMENT_ARE_NOT_DIFFERENT.getName(), exception.getMessage());
+            assertEquals(ErrorMessage.NEEDS_EQUIPMENT_IS_NOT_DIFFERENT.getName(), exception.getMessage());
     }
 
     static Stream<Arguments> updateCustomExerciseMultipleValidButNotDifferentInputs() {
@@ -825,19 +836,23 @@ class ExerciseServiceTest {
     @Test
     void deleteCustomExerciseTest_shouldThrowErrorWith404_whenExerciseNotFound() {
         // Given
-        long wrongExerciseId = 1000L;
-        long wrongUserId = 1000L;
-        when(exerciseRepository.findCustomByExerciseIdAndUserId(wrongExerciseId, wrongUserId))
+        long randomUserId = 1000L;
+        long nonExistentExerciseId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistentExerciseId, HttpStatus.NOT_FOUND);
+
+        when(exerciseRepository.findCustomByExerciseIdAndUserId(nonExistentExerciseId, randomUserId))
                 .thenReturn(Optional.empty());
 
         // When
-        ApiException exception = assertThrows(
-                ApiException.class, () -> exerciseService.deleteCustomExercise(wrongExerciseId, wrongUserId));
+        ApiException actualException = assertThrows(
+                ApiException.class, () -> exerciseService.deleteCustomExercise(nonExistentExerciseId, randomUserId));
 
         // Then
-        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(wrongExerciseId, wrongUserId);
+        verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(nonExistentExerciseId, randomUserId);
         verify(exerciseRepository, times(0)).delete(any(Exercise.class));
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), exception.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getHttpStatus().value());
+
+        assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 }
