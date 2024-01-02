@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.LoginRequestDto;
 import healthy.lifestyle.backend.users.dto.LoginResponseDto;
 import healthy.lifestyle.backend.users.dto.SignupRequestDto;
@@ -31,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -378,27 +381,14 @@ class AuthControllerTest {
         assertTrue(tokenParts[2].length() >= 10);
     }
 
-    @Test
-    void loginTest_shouldReturnErrorMessageWith401_whenUserNotFound() throws Exception {
-        // Given
-        LoginRequestDto loginRequestDto = dtoUtil.loginRequestDto(1);
-
-        // When
-        mockMvc.perform(post(URL.LOGIN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequestDto)))
-                // Then
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message", is("Authentication error")))
-                .andDo(print());
-    }
-
     @ParameterizedTest
     @MethodSource("loginUsernamePasswordMismatch")
     void loginTest_shouldReturnErrorMessageWith401_whenUsernamePasswordMismatch(
             String usernameOrEmail, String password, String confirmPassword) throws Exception {
         // Given
         User user = dbUtil.createUser(1);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.AUTHENTICATION_ERROR, null, HttpStatus.UNAUTHORIZED);
 
         LoginRequestDto requestDto = dtoUtil.loginRequestDtoEmpty();
         requestDto.setUsernameOrEmail(usernameOrEmail);
@@ -412,7 +402,8 @@ class AuthControllerTest {
 
                 // Then
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message", is("Authentication error")))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 

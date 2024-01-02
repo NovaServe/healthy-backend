@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
+import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
@@ -112,6 +113,8 @@ class HttpRefControllerTest {
         HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
         createHttpRequestDto.setName(alreadyExistentHttpRef.getName());
 
+        ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(post(URL.CUSTOM_HTTP_REFS)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -119,8 +122,8 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.ALREADY_EXISTS.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -259,41 +262,46 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageWith400_whenHttpRefNotFound() throws Exception {
+    void getCustomHttpRefByIdTest_shouldReturnErrorMessageWith404_whenHttpRefNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         long nonExistentHttpRefId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, nonExistentHttpRefId).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequested() throws Exception {
+    void getCustomHttpRefByIdTest_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequestedInsteadOfCustom()
+            throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
+        ApiException expectedException = new ApiException(
+                ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, defaultHttpRef.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_REQUESTED.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageWith400_whenUserResourceMismatch() throws Exception {
+    void getCustomHttpRefByIdTest_shouldReturnErrorMessageWith400_whenHttpRefDoesntBelongToUser() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -302,13 +310,16 @@ class HttpRefControllerTest {
         User user2 = dbUtil.createUser(2, role, country);
         HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user2);
 
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, customHttpRef.getId(), HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, customHttpRef.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -413,12 +424,13 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenHttpRefNotFound() throws Exception {
+    void updateCustomHttpRefTest_shouldReturnErrorMessageWith404_whenHttpRefNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         long nonExistentHttpRefId = 1000L;
-
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_HTTP_REF_ID, nonExistentHttpRefId)
@@ -426,22 +438,22 @@ class HttpRefControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
-                // todo: change to 404
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenDefaultHttpRefUpdateRequested() throws Exception {
+    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequestedInsteadOfCustom()
+            throws Exception {
         // Given
         User user = dbUtil.createUser(1);
-
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
-
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(2);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_HTTP_REF_ID, defaultHttpRef.getId())
@@ -450,15 +462,14 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                // todo: change to DEFAULT_HTTP_REF_...
-                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenUserResourceMismatch() throws Exception {
+    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenHttpRefDoesntBelongToUser() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -470,6 +481,8 @@ class HttpRefControllerTest {
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user2);
 
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(2);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, customHttpRef2.getId(), HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_HTTP_REF_ID, customHttpRef2.getId())
@@ -478,8 +491,8 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -491,6 +504,7 @@ class HttpRefControllerTest {
         HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user);
 
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDtoEmpty();
+        ApiException expectedException = new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_HTTP_REF_ID, customHttpRef.getId())
@@ -499,8 +513,8 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.EMPTY_REQUEST.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -516,8 +530,7 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isNoContent())
-                // todo: change to void
-                .andExpect(jsonPath("$", is(customHttpRef.getId().intValue())))
+                .andExpect(jsonPath("$").doesNotExist())
                 .andDo(print());
 
         assertFalse(dbUtil.httpRefsExistByIds(List.of(customHttpRef.getId())));
@@ -525,42 +538,46 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomHttpRefTest_shouldReturnErrorMessageWith400_whenHttpRefNotFound() throws Exception {
+    void deleteCustomHttpRefTest_shouldReturnErrorMessageWith404_whenHttpRefNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
-
         long nonExistentHttpRefId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(delete(URL.CUSTOM_HTTP_REF_ID, nonExistentHttpRefId).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomHttpRefTest_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequested() throws Exception {
+    void deleteCustomHttpRefTest_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequestedInsteadOfCustom()
+            throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(delete(URL.CUSTOM_HTTP_REF_ID, defaultHttpRef.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.DEFAULT_MEDIA_IS_NOT_ALLOWED_TO_MODIFY.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomHttpRefTest_shouldReturnErrorMessageWith400_whenUserResourceMismatch() throws Exception {
+    void deleteCustomHttpRefTest_shouldReturnErrorMessageWith400_whenHttpRefDoesntBelongToUser() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -571,13 +588,16 @@ class HttpRefControllerTest {
         User user2 = dbUtil.createUser(2, role, country);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user2);
 
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, customHttpRef2.getId(), HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(delete(URL.CUSTOM_HTTP_REF_ID, customHttpRef2.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 }

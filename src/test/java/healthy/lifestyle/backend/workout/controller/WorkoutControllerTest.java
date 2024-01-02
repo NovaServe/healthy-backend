@@ -16,8 +16,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
+import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.exception.ExceptionDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -86,7 +86,148 @@ class WorkoutControllerTest {
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnDefaultWorkoutDtoWith200Ok_whenIdIsValid() throws Exception {
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void createCustomWorkoutTest_shouldReturnWorkoutResponseDtoWith201_whenValidRequest() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
+        HttpRef customHttpRef = dbUtil.createCustomHttpRef(2, user);
+        boolean needsEquipment = true;
+        Exercise defaultExercise =
+                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef));
+        Exercise customExercise =
+                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef), user);
+
+        WorkoutCreateRequestDto requestDto =
+                dtoUtil.workoutCreateRequestDto(1, List.of(defaultExercise.getId(), customExercise.getId()));
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_WORKOUTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", is(notNullValue())))
+                .andExpect(jsonPath("$.title", is(requestDto.getTitle())))
+                .andExpect(jsonPath("$.description", is(requestDto.getDescription())))
+                .andExpect(jsonPath("$.isCustom", is(true)))
+                .andExpect(jsonPath("$.needsEquipment", is(needsEquipment)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        WorkoutResponseDto responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<WorkoutResponseDto>() {});
+
+        // Db
+        Workout createdWorkout = dbUtil.getWorkoutById(responseDto.getId());
+        assertEquals(user.getId(), createdWorkout.getUser().getId());
+        assertWorkout(responseDto, createdWorkout);
+        assertWorkout(responseDto, List.of(bodyPart1, bodyPart2), List.of(defaultExercise, customExercise));
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void createCustomWorkoutTest_shouldReturnErrorMessageWith400_whenWorkoutAlreadyExistsWithSameTitle()
+            throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
+        HttpRef customHttpRef = dbUtil.createCustomHttpRef(2, user);
+        boolean needsEquipment = true;
+        Exercise defaultExercise =
+                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef));
+        Exercise customExercise =
+                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef), user);
+        Workout customWorkout = dbUtil.createCustomWorkout(1, List.of(defaultExercise, customExercise), user);
+
+        WorkoutCreateRequestDto requestDto =
+                dtoUtil.workoutCreateRequestDto(1, List.of(defaultExercise.getId(), customExercise.getId()));
+        requestDto.setTitle(customWorkout.getTitle());
+
+        ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_WORKOUTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
+                .andDo(print())
+                .andReturn();
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void createCustomWorkoutTest_shouldReturnErrorMessageWith404_whenExerciseNotFound() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        long nonExistentExerciseId = 1000L;
+        WorkoutCreateRequestDto requestDto = dtoUtil.workoutCreateRequestDto(1, List.of(nonExistentExerciseId));
+        ApiException expectedException =
+                new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistentExerciseId, HttpStatus.NOT_FOUND);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_WORKOUTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
+                .andDo(print())
+                .andReturn();
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void createCustomWorkoutTest_shouldReturnErrorMessageWith400_whenExerciseDoesntBelongToUser() throws Exception {
+        // Given
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+
+        User user1 = dbUtil.createUser(1, role, country);
+        User user2 = dbUtil.createUser(2, role, country);
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
+        HttpRef customHttpRef = dbUtil.createCustomHttpRef(2, user2);
+        boolean needsEquipment = true;
+        Exercise defaultExercise =
+                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef));
+        Exercise customExercise =
+                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef), user2);
+
+        WorkoutCreateRequestDto requestDto =
+                dtoUtil.workoutCreateRequestDto(1, List.of(defaultExercise.getId(), customExercise.getId()));
+
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, customExercise.getId(), HttpStatus.BAD_REQUEST);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_WORKOUTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
+                .andDo(print())
+                .andReturn();
+    }
+
+    @Test
+    void getDefaultWorkoutByIdTest_shouldReturnDefaultWorkoutDtoWith200_whenIdIsValid() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -116,28 +257,27 @@ class WorkoutControllerTest {
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnErrorMessageWith404_whenWorkoutDoesNotExist() throws Exception {
+    void getDefaultWorkoutByIdTest_shouldReturnErrorMessageWith404_whenWorkoutNotFound() throws Exception {
         // Given
         long nonExistentDefaultWorkoutId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, nonExistentDefaultWorkoutId, HttpStatus.NOT_FOUND);
 
         // When
-        MvcResult mvcResult = mockMvc.perform(get(URL.DEFAULT_WORKOUT_ID, nonExistentDefaultWorkoutId)
+        mockMvc.perform(get(URL.DEFAULT_WORKOUT_ID, nonExistentDefaultWorkoutId)
                         .contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        ExceptionDto responseDto = objectMapper.readValue(responseContent, new TypeReference<ExceptionDto>() {});
-
-        assertEquals(ErrorMessage.NOT_FOUND.getName(), responseDto.getMessage());
-        assertEquals(Integer.valueOf(HttpStatus.NOT_FOUND.value()), responseDto.getCode());
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnErrorMessageWith401_whenCustomWorkoutRequested() throws Exception {
+    void getDefaultWorkoutByIdTest_shouldReturnErrorMessageWith400_whenCustomWorkoutRequestedInsteadOfDefault()
+            throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -151,20 +291,18 @@ class WorkoutControllerTest {
                 dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef), user);
         Workout customWorkout = dbUtil.createCustomWorkout(1, List.of(defaultExercise, customExercise), user);
 
+        ApiException expectedException = new ApiException(
+                ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT, null, HttpStatus.BAD_REQUEST);
+
         // When
-        MvcResult mvcResult = mockMvc.perform(
-                        get(URL.DEFAULT_WORKOUT_ID, customWorkout.getId()).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get(URL.DEFAULT_WORKOUT_ID, customWorkout.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
-                .andExpect(status().isUnauthorized())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        ExceptionDto responseDto = objectMapper.readValue(responseContent, new TypeReference<ExceptionDto>() {});
-
-        assertEquals(ErrorMessage.UNAUTHORIZED_FOR_THIS_RESOURCE.getName(), responseDto.getMessage());
-        assertEquals(Integer.valueOf(HttpStatus.UNAUTHORIZED.value()), responseDto.getCode());
     }
 
     @Test
@@ -243,7 +381,8 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomWorkoutByIdTest_shouldReturnErrorMessageWith400_whenDefaultWorkoutRequested() throws Exception {
+    void getCustomWorkoutByIdTest_shouldReturnErrorMessageWith400_whenDefaultWorkoutRequestedInsteadOfCustom()
+            throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -256,150 +395,16 @@ class WorkoutControllerTest {
                 dbUtil.createDefaultExercise(2, needsEquipment, List.of(bodyPart2), List.of(defaultHttpRef2));
         Workout defaultWorkout = dbUtil.createDefaultWorkout(1, List.of(defaultExercise1, defaultExercise2));
 
+        ApiException expectedException = new ApiException(
+                ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
+
         // When
-        MvcResult mvcResult = mockMvc.perform(
-                        get(URL.CUSTOM_WORKOUT_ID, defaultWorkout.getId()).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get(URL.CUSTOM_WORKOUT_ID, defaultWorkout.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andDo(print())
-                .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        ExceptionDto responseDto = objectMapper.readValue(responseContent, new TypeReference<ExceptionDto>() {});
-
-        assertEquals(ErrorMessage.CUSTOM_WORKOUT_REQUIRED.getName(), responseDto.getMessage());
-        assertEquals(Integer.valueOf(HttpStatus.BAD_REQUEST.value()), responseDto.getCode());
-    }
-
-    @Test
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomWorkoutTest_shouldReturnWorkoutResponseDtoWith201_whenValidRequest() throws Exception {
-        // Given
-        User user = dbUtil.createUser(1);
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
-        HttpRef customHttpRef = dbUtil.createCustomHttpRef(2, user);
-        boolean needsEquipment = true;
-        Exercise defaultExercise =
-                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef));
-        Exercise customExercise =
-                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef), user);
-
-        WorkoutCreateRequestDto requestDto =
-                dtoUtil.workoutCreateRequestDto(1, List.of(defaultExercise.getId(), customExercise.getId()));
-
-        // When
-        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_WORKOUTS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-
-                // Then
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id", is(notNullValue())))
-                .andExpect(jsonPath("$.title", is(requestDto.getTitle())))
-                .andExpect(jsonPath("$.description", is(requestDto.getDescription())))
-                .andExpect(jsonPath("$.isCustom", is(true)))
-                .andExpect(jsonPath("$.needsEquipment", is(needsEquipment)))
-                .andDo(print())
-                .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        WorkoutResponseDto responseDto =
-                objectMapper.readValue(responseContent, new TypeReference<WorkoutResponseDto>() {});
-
-        Workout createdWorkout = dbUtil.getWorkoutById(responseDto.getId());
-        assertWorkout(responseDto, createdWorkout);
-        assertWorkout(responseDto, List.of(bodyPart1, bodyPart2), List.of(defaultExercise, customExercise));
-    }
-
-    @Test
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomWorkoutTest_shouldReturnErrorMessageWith400_whenWorkoutAlreadyExists() throws Exception {
-        // Given
-        User user = dbUtil.createUser(1);
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
-        HttpRef customHttpRef = dbUtil.createCustomHttpRef(2, user);
-        boolean needsEquipment = true;
-        Exercise defaultExercise =
-                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef));
-        Exercise customExercise =
-                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef), user);
-        Workout customWorkout = dbUtil.createCustomWorkout(1, List.of(defaultExercise, customExercise), user);
-
-        WorkoutCreateRequestDto requestDto =
-                dtoUtil.workoutCreateRequestDto(1, List.of(defaultExercise.getId(), customExercise.getId()));
-        requestDto.setTitle(customWorkout.getTitle());
-
-        // When
-        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_WORKOUTS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.TITLE_DUPLICATE.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
-                .andDo(print())
-                .andReturn();
-    }
-
-    @Test
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomWorkoutTest_shouldReturnErrorMessageWith400_whenExerciseNotFound() throws Exception {
-        // Given
-        User user = dbUtil.createUser(1);
-        long nonExistentExerciseId = 1000L;
-
-        WorkoutCreateRequestDto requestDto = dtoUtil.workoutCreateRequestDto(1, List.of(nonExistentExerciseId));
-
-        // When
-        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_WORKOUTS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.INVALID_NESTED_OBJECT.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
-                .andDo(print())
-                .andReturn();
-    }
-
-    @Test
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomWorkoutTest_shouldReturnErrorMessageWith400_whenExerciseBelongsToAnotherUser() throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
-        HttpRef customHttpRef = dbUtil.createCustomHttpRef(2, user2);
-        boolean needsEquipment = true;
-        Exercise defaultExercise =
-                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef));
-        Exercise customExercise =
-                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef), user2);
-
-        WorkoutCreateRequestDto requestDto =
-                dtoUtil.workoutCreateRequestDto(1, List.of(defaultExercise.getId(), customExercise.getId()));
-
-        // When
-        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_WORKOUTS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
     }
@@ -476,6 +481,7 @@ class WorkoutControllerTest {
         Workout customWorkout = dbUtil.createCustomWorkout(1, List.of(defaultExercise, customExercise), user);
 
         WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDtoEmpty();
+        ApiException expectedException = new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_WORKOUT_ID, customWorkout.getId())
@@ -484,14 +490,14 @@ class WorkoutControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.EMPTY_REQUEST.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnErrorMessageWith400_whenWorkoutNotFound() throws Exception {
+    void updateCustomWorkoutTest_shouldReturnErrorMessageWith404_whenWorkoutNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
@@ -502,6 +508,8 @@ class WorkoutControllerTest {
         long nonExistentWorkoutId = 1000L;
 
         WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDto(1, List.of(defaultExercise.getId()));
+        ApiException expectedException =
+                new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, nonExistentWorkoutId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_WORKOUT_ID, nonExistentWorkoutId)
@@ -509,9 +517,9 @@ class WorkoutControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -536,6 +544,8 @@ class WorkoutControllerTest {
         Workout customWorkout = dbUtil.createCustomWorkout(1, List.of(defaultExercise, customExercise), user2);
 
         WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDto(2, List.of(customExercise.getId()));
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_WORKOUT_MISMATCH, customWorkout.getId(), HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_WORKOUT_ID, customWorkout.getId())
@@ -544,8 +554,8 @@ class WorkoutControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -570,6 +580,8 @@ class WorkoutControllerTest {
                 dtoUtil.workoutUpdateRequestDto(3, List.of(defaultExercise.getId(), customExercise.getId()));
         requestDto.setTitle(alreayExistentCustomWorkout.getTitle());
 
+        ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(patch(URL.CUSTOM_WORKOUT_ID, customWorkoutToUpdate.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -577,14 +589,14 @@ class WorkoutControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.TITLE_DUPLICATE.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnErrorMessageWith400_whenExerciseNotFound() throws Exception {
+    void updateCustomWorkoutTest_shouldReturnErrorMessageWith404_whenExerciseNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -601,6 +613,8 @@ class WorkoutControllerTest {
         long nonExistentExerciseId = 1000L;
 
         WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDto(2, List.of(nonExistentExerciseId));
+        ApiException expectedException =
+                new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistentExerciseId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_WORKOUT_ID, customWorkout.getId())
@@ -608,9 +622,9 @@ class WorkoutControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.INVALID_NESTED_OBJECT.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -640,6 +654,8 @@ class WorkoutControllerTest {
                 3, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef2, customHttpRef2), user2);
 
         WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDto(2, List.of(customExercise2.getId()));
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, customExercise2.getId(), HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_WORKOUT_ID, customWorkout.getId())
@@ -648,8 +664,8 @@ class WorkoutControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.USER_RESOURCE_MISMATCH.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -696,7 +712,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomWorkoutTest_shouldReturnErrorMessageWith400_whenDefaultWorkoutRequestedToDelete()
+    void deleteCustomWorkoutTest_shouldReturnErrorMessageWith400_whenDefaultWorkoutRequestedInsteadOfCustom()
             throws Exception {
         // Given
         User user = dbUtil.createUser(1);
@@ -714,12 +730,16 @@ class WorkoutControllerTest {
         long defaultExerciseId = defaultExercise.getId();
         long defaultWorkoutId = defaultWorkout.getId();
 
+        ApiException expectedException = new ApiException(
+                ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(delete(URL.CUSTOM_WORKOUT_ID, defaultWorkout.getId()).contentType(MediaType.APPLICATION_JSON))
+
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
 
         assertNotNull(dbUtil.getWorkoutById(defaultWorkoutId));
@@ -731,19 +751,20 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomWorkoutTest_shouldReturnErrorMessageWith400_whenWorkoutNotFound() throws Exception {
+    void deleteCustomWorkoutTest_shouldReturnErrorMessageWith404_whenWorkoutNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         long nonExistentWorkoutId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, nonExistentWorkoutId, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(delete(URL.CUSTOM_WORKOUT_ID, nonExistentWorkoutId).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
-                // todo: change to not found
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -775,13 +796,16 @@ class WorkoutControllerTest {
         long customExerciseId = customExercise.getId();
         long customWorkoutId = customWorkout.getId();
 
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_WORKOUT_MISMATCH, customWorkout.getId(), HttpStatus.BAD_REQUEST);
+
         // When
         mockMvc.perform(delete(URL.CUSTOM_WORKOUT_ID, customWorkout.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(ErrorMessage.NOT_FOUND.getName())))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
 
         assertNotNull(dbUtil.getWorkoutById(customWorkoutId));

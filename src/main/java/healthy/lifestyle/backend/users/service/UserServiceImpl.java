@@ -59,20 +59,21 @@ public class UserServiceImpl implements UserService {
     @Override
     public void createUser(SignupRequestDto requestDto) {
         if (userRepository.existsByEmail(requestDto.getEmail()))
-            throw new ApiException(ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+            throw new ApiException(ErrorMessage.ALREADY_EXISTS, null, HttpStatus.BAD_REQUEST);
 
         if (userRepository.existsByUsername(requestDto.getUsername()))
-            throw new ApiException(ErrorMessage.ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+            throw new ApiException(ErrorMessage.ALREADY_EXISTS, null, HttpStatus.BAD_REQUEST);
 
         Role role = roleRepository
                 .findByName("ROLE_USER")
-                .orElseThrow(() -> new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
+                .orElseThrow(
+                        () -> new ApiException(ErrorMessage.ROLE_NOT_FOUND, null, HttpStatus.INTERNAL_SERVER_ERROR));
 
         Country country = countryRepository
                 .findById(requestDto.getCountryId())
-                .orElseThrow(() -> new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
-
-        userRepository.save(User.builder()
+                .orElseThrow(() -> new ApiException(
+                        ErrorMessage.COUNTRY_NOT_FOUND, requestDto.getCountryId(), HttpStatus.NOT_FOUND));
+        User user = User.builder()
                 .username(requestDto.getUsername())
                 .email(requestDto.getEmail())
                 .password(passwordEncoder.encode(requestDto.getPassword()))
@@ -80,22 +81,24 @@ public class UserServiceImpl implements UserService {
                 .role(role)
                 .country(country)
                 .age(requestDto.getAge())
-                .build());
+                .build();
+        userRepository.save(user);
     }
 
     @Override
     public UserResponseDto getUserDetailsById(long userId) {
-        return userRepository
+        UserResponseDto responseDto = userRepository
                 .findById(userId)
                 .map(user -> modelMapper.map(user, UserResponseDto.class))
-                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
+        return responseDto;
     }
 
     @Override
     public UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto) {
         User user = userRepository
                 .findById(userId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
 
         checkIfFieldsAreDifferent(requestDto, user);
 
@@ -108,12 +111,14 @@ public class UserServiceImpl implements UserService {
                 && !requestDto.getCountryId().equals(user.getCountry().getId())) {
             Country country = countryRepository
                     .findById(requestDto.getCountryId())
-                    .orElseThrow(
-                            () -> new ApiException(ErrorMessage.COUNTRY_NOT_FOUND, HttpStatus.INTERNAL_SERVER_ERROR));
+                    .orElseThrow(() -> new ApiException(
+                            ErrorMessage.COUNTRY_NOT_FOUND, requestDto.getCountryId(), HttpStatus.NOT_FOUND));
             user.setCountry(country);
         }
 
-        return modelMapper.map(userRepository.save(user), UserResponseDto.class);
+        User savedUser = userRepository.save(user);
+        UserResponseDto responseDto = modelMapper.map(savedUser, UserResponseDto.class);
+        return responseDto;
     }
 
     private void checkIfFieldsAreDifferent(UserUpdateRequestDto requestDto, User user) {
@@ -129,7 +134,7 @@ public class UserServiceImpl implements UserService {
 
         if (requestDto.getFullName() != null && user.getFullName().equals(requestDto.getFullName())) {
             if (!errorMessage.isEmpty()) errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.FULLNAME_IS_NOT_DIFFERENT.getName());
+            errorMessage.append(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName());
         }
 
         if (requestDto.getAge() != null && user.getAge() == requestDto.getAge()) {
@@ -151,7 +156,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(long userId) {
         User user = userRepository
                 .findById(userId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
         removalService.deleteCustomWorkouts(user.getWorkoutsIdsSorted());
         removalService.deleteCustomExercises(user.getExercisesIdsSorted());
         removalService.deleteCustomHttpRefs(user.getHttpRefsIdsSorted());
@@ -167,22 +172,25 @@ public class UserServiceImpl implements UserService {
             String token = jwtTokenProvider.generateToken(authentication);
             return new LoginResponseDto(token);
         } catch (Exception e) {
-            throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, HttpStatus.UNAUTHORIZED);
+            throw new ApiException(ErrorMessage.AUTHENTICATION_ERROR, null, HttpStatus.UNAUTHORIZED);
         }
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public User getUserById(long userId) {
-        return userRepository.findById(userId).orElse(null);
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.BAD_REQUEST));
+        return user;
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public void addExercise(long userId, Exercise exercise) {
+    public void addExerciseToUser(long userId, Exercise exercise) {
         User user = userRepository
                 .findById(userId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
         if (user.getExercises() == null) user.setExercises(new HashSet<>());
         user.getExercises().add(exercise);
         userRepository.save(user);
@@ -193,7 +201,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUserExercise(long userId, Exercise exercise) {
         User user = userRepository
                 .findById(userId)
-                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
         if (user.getExercises() != null) user.getExercises().remove(exercise);
         userRepository.save(user);
     }

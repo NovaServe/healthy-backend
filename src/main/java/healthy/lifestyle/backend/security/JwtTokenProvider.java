@@ -58,21 +58,21 @@ public class JwtTokenProvider {
 
             String signature = claims.getSignature();
             if (isNull(signature)) {
-                throw new ApiException(ErrorMessage.INVALID_TOKEN, HttpStatus.UNAUTHORIZED);
+                throw new ApiException(ErrorMessage.INVALID_TOKEN, null, HttpStatus.UNAUTHORIZED);
             }
 
             Date issuedAt = claims.getBody().getIssuedAt();
             Date expiredAt = claims.getBody().getExpiration();
             if ((expiredAt.getTime() - issuedAt.getTime())
                     != securityProps.Jwt().expirationMilliseconds()) {
-                throw new ApiException(ErrorMessage.INVALID_TOKEN, HttpStatus.UNAUTHORIZED);
+                throw new ApiException(ErrorMessage.INVALID_TOKEN, null, HttpStatus.UNAUTHORIZED);
             }
 
             String usernameOrEmail = claims.getBody().getSubject();
             if (authService
                     .findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
                     .isEmpty()) {
-                throw new ApiException(ErrorMessage.INVALID_TOKEN, HttpStatus.UNAUTHORIZED);
+                throw new ApiException(ErrorMessage.INVALID_TOKEN, null, HttpStatus.UNAUTHORIZED);
             }
 
         } catch (ExpiredJwtException
@@ -80,7 +80,7 @@ public class JwtTokenProvider {
                 | MalformedJwtException
                 | SignatureException
                 | IllegalArgumentException ex) {
-            throw new ApiException(ErrorMessage.INVALID_TOKEN, HttpStatus.UNAUTHORIZED);
+            throw new ApiException(ErrorMessage.INVALID_TOKEN, null, HttpStatus.UNAUTHORIZED);
         }
 
         return true;

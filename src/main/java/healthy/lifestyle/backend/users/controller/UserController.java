@@ -38,7 +38,8 @@ public class UserController {
     public ResponseEntity<UserResponseDto> getUserDetails() {
         Long authUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return ResponseEntity.ok(userService.getUserDetailsById(authUserId));
+        UserResponseDto responseDto = userService.getUserDetailsById(authUserId);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PatchMapping("/{userId}")
@@ -48,7 +49,8 @@ public class UserController {
             @Valid @RequestBody UserUpdateRequestDto requestDto) {
         authService.checkAuthUserIdAndParamUserId(
                 SecurityContextHolder.getContext().getAuthentication(), userId);
-        return ResponseEntity.ok(userService.updateUser(userId, requestDto));
+        UserResponseDto responseDto = userService.updateUser(userId, requestDto);
+        return ResponseEntity.ok(responseDto);
     }
 
     @DeleteMapping("/{userId}")
@@ -62,6 +64,7 @@ public class UserController {
 
     @GetMapping("/countries")
     public ResponseEntity<List<CountryResponseDto>> getCountries() {
-        return ResponseEntity.ok(countryService.getAllCountries());
+        List<CountryResponseDto> responseDtoList = countryService.getAllCountries();
+        return ResponseEntity.ok(responseDtoList);
     }
 }

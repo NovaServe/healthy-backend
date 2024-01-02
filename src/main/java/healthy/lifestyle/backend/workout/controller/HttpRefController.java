@@ -29,10 +29,29 @@ public class HttpRefController {
         this.authService = authService;
     }
 
+    @PostMapping
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<HttpRefResponseDto> createCustomHttpRef(
+            @RequestBody @Valid HttpRefCreateRequestDto requestDto) {
+        Long userId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        HttpRefResponseDto responseDto = httpRefService.createCustomHttpRef(userId, requestDto);
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{httpRefId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<HttpRefResponseDto> getCustomHttpRefById(@PathVariable Long httpRefId) {
+        Long userId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        HttpRefResponseDto responseDto = httpRefService.getCustomHttpRefById(userId, httpRefId);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
+
     @GetMapping("/default")
     public ResponseEntity<List<HttpRefResponseDto>> getDefaultHttpRefs() {
-        return new ResponseEntity<>(
-                httpRefService.getDefaultHttpRefs(Sort.by(Sort.Direction.ASC, "id")), HttpStatus.OK);
+        List<HttpRefResponseDto> responseDtoList = httpRefService.getDefaultHttpRefs(Sort.by(Sort.Direction.ASC, "id"));
+        return new ResponseEntity<>(responseDtoList, HttpStatus.OK);
     }
 
     @GetMapping
@@ -42,16 +61,8 @@ public class HttpRefController {
         if (isNull(sortBy)) sortBy = "id";
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return new ResponseEntity<>(httpRefService.getCustomHttpRefs(userId, "id"), HttpStatus.OK);
-    }
-
-    @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<HttpRefResponseDto> createCustomHttpRef(
-            @RequestBody @Valid HttpRefCreateRequestDto requestDto) {
-        Long userId = authService.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        return new ResponseEntity<>(httpRefService.createCustomHttpRef(userId, requestDto), HttpStatus.CREATED);
+        List<HttpRefResponseDto> responseDtoList = httpRefService.getCustomHttpRefs(userId, "id");
+        return new ResponseEntity<>(responseDtoList, HttpStatus.OK);
     }
 
     @PatchMapping("/{httpRefId}")
@@ -60,22 +71,16 @@ public class HttpRefController {
             @PathVariable Long httpRefId, @RequestBody @Valid HttpRefUpdateRequestDto requestDto) {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return new ResponseEntity<>(httpRefService.updateCustomHttpRef(userId, httpRefId, requestDto), HttpStatus.OK);
+        HttpRefResponseDto responseDto = httpRefService.updateCustomHttpRef(userId, httpRefId, requestDto);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
     @DeleteMapping("/{httpRefId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<Long> deleteCustomHttpRef(@PathVariable Long httpRefId) {
-        Long userId = authService.getUserIdFromAuthentication(
+    public ResponseEntity<?> deleteCustomHttpRef(@PathVariable Long httpRefId) {
+        Long authUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return new ResponseEntity<>(httpRefService.deleteCustomHttpRef(userId, httpRefId), HttpStatus.NO_CONTENT);
-    }
-
-    @GetMapping("/{httpRefId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<HttpRefResponseDto> getCustomHttpRefById(@PathVariable Long httpRefId) {
-        Long userId = authService.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        return new ResponseEntity<>(httpRefService.getCustomHttpRefById(userId, httpRefId), HttpStatus.OK);
+        httpRefService.deleteCustomHttpRef(authUserId, httpRefId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
