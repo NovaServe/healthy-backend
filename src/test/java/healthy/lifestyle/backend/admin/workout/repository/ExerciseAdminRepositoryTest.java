@@ -58,33 +58,28 @@ class ExerciseAdminRepositoryTest {
     void findByFiltersTest_shouldReturnListOfExercises(
             String title, String description, Boolean isCustom, Boolean needsEquipment, List<Integer> resultSeeds) {
         // Given
-        boolean isCustomValue = (isCustom != null) ? isCustom.booleanValue() : false;
-        boolean needsEquipmentValue = (needsEquipment != null) ? needsEquipment.booleanValue() : false;
-
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         HttpRef httpRef1 = dbUtil.createDefaultHttpRef(1);
-        Exercise exercise1 =
-                dbUtil.createDefaultExercise(1, needsEquipmentValue, List.of(bodyPart1), List.of(httpRef1));
+        Exercise exercise1 = dbUtil.createDefaultExercise(1, true, List.of(bodyPart1), List.of(httpRef1));
 
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
         HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
-        Exercise exercise2 =
-                dbUtil.createDefaultExercise(2, needsEquipmentValue, List.of(bodyPart1), List.of(httpRef1));
+        Exercise exercise2 = dbUtil.createDefaultExercise(2, true, List.of(bodyPart1), List.of(httpRef1));
 
         User user = dbUtil.createUser(1);
         BodyPart bodyPart3 = dbUtil.createBodyPart(3);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user);
         Exercise customExercise1 =
-                dbUtil.createCustomExercise(3, needsEquipmentValue, List.of(bodyPart3), List.of(customHttpRef1), user);
+                dbUtil.createCustomExercise(3, true, List.of(bodyPart3), List.of(customHttpRef1), user);
 
         BodyPart bodyPart4 = dbUtil.createBodyPart(4);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user);
         Exercise customExercise2 =
-                dbUtil.createCustomExercise(4, needsEquipmentValue, List.of(bodyPart4), List.of(customHttpRef2), user);
+                dbUtil.createCustomExercise(4, true, List.of(bodyPart4), List.of(customHttpRef2), user);
 
         // When
         Optional<List<Exercise>> resultOptional =
-                exerciseAdminRepository.findByFilters(title, description, isCustomValue, needsEquipmentValue);
+                exerciseAdminRepository.findByFilters(title, description, isCustom, needsEquipment);
 
         // Then
         assertTrue(resultOptional.isPresent());
@@ -99,24 +94,22 @@ class ExerciseAdminRepositoryTest {
 
     static Stream<Arguments> multipleFilters() {
         return Stream.of(
-
                 // Positive cases for default exercises
-                Arguments.of(null, null, false, null, List.of(1, 2)),
                 Arguments.of(null, null, false, false, List.of(1, 2)),
-                Arguments.of("Exercise 1", "Desc 1", false, null, List.of(1)),
+                Arguments.of(null, null, false, false, List.of(1, 2)),
+                Arguments.of("Exercise 1", "Desc 1", false, false, List.of(1)),
                 Arguments.of("Exercise 2", "Desc 2", false, false, List.of(2)),
 
                 // Negative cases for default exercises
-                Arguments.of(null, null, true, null, Collections.emptyList()),
+                Arguments.of(null, null, true, false, Collections.emptyList()),
                 Arguments.of(null, null, true, true, Collections.emptyList()),
-                Arguments.of("NonExistentValue", null, null, null, Collections.emptyList()),
-                Arguments.of(null, "NonExistentValue", null, null, Collections.emptyList()),
+                Arguments.of("NonExistentValue", null, false, false, Collections.emptyList()),
+                Arguments.of(null, "NonExistentValue", false, false, Collections.emptyList()),
 
                 // Positive cases for custom exercises
-                Arguments.of(null, null, true, null, List.of(3, 4)),
+                Arguments.of(null, null, true, false, List.of(3, 4)),
                 Arguments.of(null, null, true, true, List.of(3, 4)),
                 Arguments.of("Exercise 3", "Desc 3", true, true, List.of(3)),
-                Arguments.of("Exercise 4", "Desc 4", true, true, List.of(4)),
 
                 // Negative cases for custom exercises
                 Arguments.of("NonExistentValue", null, true, true, Collections.emptyList()),

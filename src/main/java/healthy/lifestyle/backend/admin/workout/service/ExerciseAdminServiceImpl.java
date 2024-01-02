@@ -28,7 +28,7 @@ public class ExerciseAdminServiceImpl implements ExerciseAdminService {
 
         List<Exercise> exercises = exerciseAdminRepository
                 .findByFilters(title, description, isCustom, needsEquipment)
-                .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND));
 
         return exercises.stream()
                 .map(exercise -> modelMapper.map(exercise, ExerciseResponseDto.class))
