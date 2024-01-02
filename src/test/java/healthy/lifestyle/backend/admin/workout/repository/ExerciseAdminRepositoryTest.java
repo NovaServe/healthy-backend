@@ -85,7 +85,7 @@ class ExerciseAdminRepositoryTest {
         assertTrue(resultOptional.isPresent());
         List<Exercise> result = resultOptional.get();
 
-        // assertEquals(resultSeeds.size(), result.size());
+        assertEquals(resultSeeds.size(), result.size());
         for (int i = 0; i < resultSeeds.size(); i++) {
             assertEquals("Exercise " + resultSeeds.get(i), result.get(i).getTitle());
             assertEquals("Desc " + resultSeeds.get(i), result.get(i).getDescription());
@@ -95,25 +95,23 @@ class ExerciseAdminRepositoryTest {
     static Stream<Arguments> multipleFilters() {
         return Stream.of(
                 // Positive cases for default exercises
-                Arguments.of(null, null, false, false, List.of(1, 2)),
-                Arguments.of(null, null, false, false, List.of(1, 2)),
-                Arguments.of("Exercise 1", "Desc 1", false, false, List.of(1)),
-                Arguments.of("Exercise 2", "Desc 2", false, false, List.of(2)),
+                Arguments.of(null, null, false, true, List.of(1, 2)),
+                Arguments.of("Exercise 1", null, false, true, List.of(1)),
+                Arguments.of(null, "Desc 2", false, true, List.of(2)),
 
                 // Negative cases for default exercises
                 Arguments.of(null, null, true, false, Collections.emptyList()),
-                Arguments.of(null, null, true, true, Collections.emptyList()),
-                Arguments.of("NonExistentValue", null, false, false, Collections.emptyList()),
-                Arguments.of(null, "NonExistentValue", false, false, Collections.emptyList()),
+                Arguments.of("NonExistentValue", null, true, false, Collections.emptyList()),
+                Arguments.of(null, "NonExistentValue", true, false, Collections.emptyList()),
 
                 // Positive cases for custom exercises
-                Arguments.of(null, null, true, false, List.of(3, 4)),
                 Arguments.of(null, null, true, true, List.of(3, 4)),
-                Arguments.of("Exercise 3", "Desc 3", true, true, List.of(3)),
+                Arguments.of("Exercise 4", null, true, true, List.of(4)),
+                Arguments.of(null, "Desc 3", true, true, List.of(3)),
 
                 // Negative cases for custom exercises
-                Arguments.of("NonExistentValue", null, true, true, Collections.emptyList()),
-                Arguments.of(null, "NonExistentValue", true, true, Collections.emptyList()),
+                Arguments.of("NonExistentValue", null, true, false, Collections.emptyList()),
+                Arguments.of(null, "NonExistentValue", true, false, Collections.emptyList()),
                 Arguments.of("NonExistentValue", "NonExistentValue", true, true, Collections.emptyList()));
     }
 }
