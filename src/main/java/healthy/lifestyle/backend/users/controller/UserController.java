@@ -1,9 +1,5 @@
 package healthy.lifestyle.backend.users.controller;
 
-import static java.util.Objects.isNull;
-
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
 import healthy.lifestyle.backend.users.dto.UserResponseDto;
 import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
@@ -40,35 +36,35 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<UserResponseDto> getUserDetails() {
-        Long authenticatedUserId = authService.getUserIdFromAuthentication(
+        Long authUserId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        return ResponseEntity.ok(userService.getUserDetailsById(authenticatedUserId));
+        UserResponseDto responseDto = userService.getUserDetailsById(authUserId);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PatchMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<UserResponseDto> updateUser(
-            @PathVariable("userId") Long userId, @Valid @RequestBody UserUpdateRequestDto requestDto) {
-        Long authenticatedUserId = authService.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
-            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
-        return ResponseEntity.ok(userService.updateUser(userId, requestDto));
+            @PathVariable("userId") @NotNull @PositiveOrZero Long userId,
+            @Valid @RequestBody UserUpdateRequestDto requestDto) {
+        authService.checkAuthUserIdAndParamUserId(
+                SecurityContextHolder.getContext().getAuthentication(), userId);
+        UserResponseDto responseDto = userService.updateUser(userId, requestDto);
+        return ResponseEntity.ok(responseDto);
     }
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> deleteUser(@PathVariable("userId") @NotNull @PositiveOrZero Long userId) {
-        Long authenticatedUserId = authService.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        if (isNull(authenticatedUserId) || !authenticatedUserId.equals(userId))
-            throw new ApiException(ErrorMessage.USER_RESOURCE_MISMATCH, HttpStatus.BAD_REQUEST);
+        authService.checkAuthUserIdAndParamUserId(
+                SecurityContextHolder.getContext().getAuthentication(), userId);
         userService.deleteUser(userId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/countries")
     public ResponseEntity<List<CountryResponseDto>> getCountries() {
-        return ResponseEntity.ok(countryService.getAllCountries());
+        List<CountryResponseDto> responseDtoList = countryService.getAllCountries();
+        return ResponseEntity.ok(responseDtoList);
     }
 }

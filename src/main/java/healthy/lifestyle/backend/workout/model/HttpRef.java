@@ -37,8 +37,6 @@ public class HttpRef {
     @OrderBy("id")
     private Set<Exercise> exercises;
 
-    // user_id column preserves the user id value only for custom httpRefs (when httpRef.isCustom is true).
-    // If the httpRef is default (when httpRef.isCustom is false), then user_id is null.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // FOREIGN KEY(user_id) REFERENCES users(id)
     private User user;

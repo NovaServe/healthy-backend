@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.users.service;
 
-import static java.util.Objects.isNull;
-
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.dto.CountryResponseDto;
@@ -27,9 +25,7 @@ public class CountryServiceImpl implements CountryService {
     @Override
     public List<CountryResponseDto> getAllCountries() {
         List<Country> countries = countryRepository.findAll();
-
-        if (isNull(countries) || countries.size() == 0)
-            throw new ApiException(ErrorMessage.SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+        if (countries.isEmpty()) throw new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
 
         return countries.stream()
                 .map(country -> modelMapper.map(country, CountryResponseDto.class))

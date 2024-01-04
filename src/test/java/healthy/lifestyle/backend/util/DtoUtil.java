@@ -85,6 +85,10 @@ public class DtoUtil {
         return this.signupRequestDtoBase(seed, countryId, null);
     }
 
+    public SignupRequestDto signupRequestDtoEmpty() {
+        return SignupRequestDto.builder().build();
+    }
+
     private SignupRequestDto signupRequestDtoBase(int seed, Long countryId, Integer age) {
         int AGE_CONST = 20;
         return SignupRequestDto.builder()
@@ -104,6 +108,10 @@ public class DtoUtil {
                 .password("Password-" + seed)
                 .confirmPassword("Password-" + seed)
                 .build();
+    }
+
+    public LoginRequestDto loginRequestDtoEmpty() {
+        return new LoginRequestDto.Builder().build();
     }
 
     public UserUpdateRequestDto userUpdateRequestDto(String seed, Long countryId, Integer age) {

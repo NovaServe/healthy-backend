@@ -1,10 +1,7 @@
 package healthy.lifestyle.backend.users.dto;
 
 import healthy.lifestyle.backend.validation.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 @NoArgsConstructor
@@ -24,7 +21,6 @@ public class SignupRequestDto {
     @NotBlank
     @Email
     @Size(min = 6, max = 64)
-    @EmailValidation
     private String email;
 
     @NotBlank
@@ -39,10 +35,11 @@ public class SignupRequestDto {
 
     @NotBlank
     @Size(min = 4, max = 64)
-    @FullnameValidation
+    @FullNameValidation
     private String fullName;
 
-    @NotNull private Long countryId;
+    @NotNull @PositiveOrZero
+    private Long countryId;
 
     @AgeValidation
     private Integer age;

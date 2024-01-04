@@ -9,12 +9,7 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-@PasswordsMatchValidation.List({
-    @PasswordsMatchValidation(
-            password = "password",
-            confirmPassword = "confirmPassword",
-            message = "Passwords must match")
-})
+@PasswordsMatchValidation.List({@PasswordsMatchValidation(password = "password", confirmPassword = "confirmPassword")})
 public class UserUpdateRequestDto {
     @Size(min = 6, max = 20)
     @UsernameValidation
@@ -33,7 +28,7 @@ public class UserUpdateRequestDto {
     private String confirmPassword;
 
     @Size(min = 4, max = 64)
-    @FullnameValidation
+    @FullNameValidation
     private String fullName;
 
     @NotNull @PositiveOrZero

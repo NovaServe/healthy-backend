@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.workout.dto;
 
 import healthy.lifestyle.backend.validation.DescriptionValidation;
+import healthy.lifestyle.backend.validation.NotEmptyList;
 import healthy.lifestyle.backend.validation.TitleValidation;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,7 +26,8 @@ public class ExerciseCreateRequestDto {
 
     @NotNull private boolean needsEquipment;
 
-    @NotNull private List<Long> bodyParts;
+    @NotNull @NotEmptyList
+    private List<Long> bodyParts;
 
     private List<Long> httpRefs;
 }

@@ -1,10 +1,11 @@
 package healthy.lifestyle.backend.users.service;
 
-import static java.util.Objects.isNull;
-
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.repository.UserRepository;
 import java.util.Optional;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -21,9 +22,16 @@ public class AuthService {
     }
 
     public Long getUserIdFromAuthentication(Authentication authentication) {
-        if (isNull(authentication) || !authentication.isAuthenticated()) return null;
+        if (authentication == null || !authentication.isAuthenticated()) return null;
         String usernameOrEmail = authentication.getName();
-        Optional<User> userOptional = findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
-        return userOptional.map(User::getId).orElse(null);
+        return findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
+                .map(User::getId)
+                .orElse(null);
+    }
+
+    public void checkAuthUserIdAndParamUserId(Authentication authentication, long userId) {
+        Long authUserId = this.getUserIdFromAuthentication(authentication);
+        if (authUserId == null || authUserId != userId)
+            throw new ApiException(ErrorMessage.USER_REQUESTED_ANOTHER_USER_PROFILE, null, HttpStatus.BAD_REQUEST);
     }
 }
