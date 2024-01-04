@@ -8,6 +8,7 @@ import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
+import healthy.lifestyle.backend.util.Shared;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +71,7 @@ public class UserAdminRepositoryTest {
 
         Country country1 = dbUtil.createCountry(1);
         Country country2 = dbUtil.createCountry(2);
+        Country country3 = dbUtil.createCountry(3);
 
         User user1 = dbUtil.createUser(1, roleUser, country1, 34);
         User user2 = dbUtil.createUser(2, roleUser, country2, 16);
@@ -79,7 +81,7 @@ public class UserAdminRepositoryTest {
         Optional<Role> roleFilter = Stream.of(roleUser, roleAdmin)
                 .filter(role -> role.getName().equals(roleName))
                 .findFirst();
-        Optional<Country> countryFilter = Stream.of(country1, country2)
+        Optional<Country> countryFilter = Stream.of(country1, country2, country3)
                 .filter(country -> country.getName().equals(countryName))
                 .findFirst();
 
@@ -96,6 +98,9 @@ public class UserAdminRepositoryTest {
             assertEquals("Username-" + resultSeeds.get(i), result.get(i).getUsername());
             assertEquals(
                     "email-" + resultSeeds.get(i) + "@email.com", result.get(i).getEmail());
+            assertEquals(
+                    "Full Name " + Shared.numberToText(resultSeeds.get(i)),
+                    result.get(i).getFullName());
         }
     }
 
@@ -123,7 +128,7 @@ public class UserAdminRepositoryTest {
                 Arguments.of("ROLE_USER", "NonExistentValue", null, null, null, null, Collections.emptyList()),
                 Arguments.of("ROLE_USER", null, "NonExistentValue", null, null, null, Collections.emptyList()),
                 Arguments.of("ROLE_USER", null, null, "NonExistentValue", null, null, Collections.emptyList()),
-                // Arguments.of("ROLE_USER", null, null, null, "Country 100", null, Collections.emptyList()),
+                Arguments.of("ROLE_USER", null, null, null, "Country 3", null, Collections.emptyList()),
                 Arguments.of("ROLE_USER", null, null, null, null, 100, Collections.emptyList()),
 
                 // Positive cases for ROLE_ADMIN
@@ -148,7 +153,7 @@ public class UserAdminRepositoryTest {
                 Arguments.of("ROLE_ADMIN", "NonExistentValue", null, null, null, null, Collections.emptyList()),
                 Arguments.of("ROLE_ADMIN", null, "NonExistentValue", null, null, null, Collections.emptyList()),
                 Arguments.of("ROLE_ADMIN", null, null, "NonExistentValue", null, null, Collections.emptyList()),
-                // Arguments.of("ROLE_ADMIN", null, null, null, "Country 100", null, Collections.emptyList()),
+                Arguments.of("ROLE_ADMIN", null, null, null, "Country 3", null, Collections.emptyList()),
                 Arguments.of("ROLE_ADMIN", null, null, null, null, 100, Collections.emptyList()),
 
                 // Positive cases for all roles
@@ -172,7 +177,7 @@ public class UserAdminRepositoryTest {
                 Arguments.of(null, "NonExistentValue", null, null, null, null, Collections.emptyList()),
                 Arguments.of(null, null, "NonExistentValue", null, null, null, Collections.emptyList()),
                 Arguments.of(null, null, null, "NonExistentValue", null, null, Collections.emptyList()),
-                // Arguments.of(null, null, null, null, "Country 100", null, Collections.emptyList()),
+                Arguments.of(null, null, null, null, "Country 3", null, Collections.emptyList()),
                 Arguments.of(null, null, null, null, null, 100, Collections.emptyList()));
     }
 }
