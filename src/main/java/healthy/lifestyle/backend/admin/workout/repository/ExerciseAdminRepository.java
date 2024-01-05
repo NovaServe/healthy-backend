@@ -15,6 +15,6 @@ public interface ExerciseAdminRepository extends JpaRepository<Exercise, Long> {
     Optional<List<Exercise>> findByFilters(
             @Param("title") String title,
             @Param("description") String description,
-            @Param("isCustom") boolean isCustom,
-            @Param("needsEquipment") boolean needsEquipment);
+            @Param("isCustom") Boolean isCustom,
+            @Param("needsEquipment") Boolean needsEquipment);
 }

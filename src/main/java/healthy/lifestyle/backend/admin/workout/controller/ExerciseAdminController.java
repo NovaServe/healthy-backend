@@ -27,8 +27,8 @@ public class ExerciseAdminController {
     public ResponseEntity<List<ExerciseResponseDto>> getAllExercises(
             @RequestParam(name = "title", required = false) @TitleValidation String title,
             @RequestParam(name = "description", required = false) @DescriptionValidation String description,
-            @RequestParam(name = "isCustom", required = false) boolean isCustom,
-            @RequestParam(name = "needsEquipment", required = false) boolean needsEquipment) {
+            @RequestParam(name = "isCustom", required = false) Boolean isCustom,
+            @RequestParam(name = "needsEquipment", required = false) Boolean needsEquipment) {
         return ResponseEntity.ok(
                 exerciseAdminService.getExercisesByFilters(title, description, isCustom, needsEquipment));
     }

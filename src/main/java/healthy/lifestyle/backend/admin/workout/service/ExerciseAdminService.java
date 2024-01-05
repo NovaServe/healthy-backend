@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface ExerciseAdminService {
     List<ExerciseResponseDto> getExercisesByFilters(
-            String title, String description, boolean isCustom, boolean needsEquipment);
+            String title, String description, Boolean isCustom, Boolean needsEquipment);
 }
