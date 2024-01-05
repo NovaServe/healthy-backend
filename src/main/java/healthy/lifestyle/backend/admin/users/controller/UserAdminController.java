@@ -26,7 +26,7 @@ public class UserAdminController {
             @RequestParam(name = "role", required = false) Long roleId,
             @RequestParam(name = "username", required = false) @UsernameValidation String username,
             @RequestParam(name = "email", required = false) @EmailValidation String email,
-            @RequestParam(name = "fullName", required = false) String fullName,
+            @RequestParam(name = "fullName", required = false) @FullNameValidation String fullName,
             @RequestParam(name = "country", required = false) Long countryId,
             @RequestParam(name = "age", required = false) @AgeValidation Integer age) {
         return ResponseEntity.ok(adminService.getUsersByFilters(roleId, username, email, fullName, countryId, age));
