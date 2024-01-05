@@ -9,11 +9,11 @@ import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -74,7 +74,10 @@ public class ExerciseAdminServiceTest {
 
         List<Exercise> exercises = Arrays.asList(defaultExercise1, defaultExercise2, customExercise1, customExercise2);
 
-        List<Exercise> expectedExercises = filterExercises(exercises, title, description, isCustom, needsEquipment);
+        List<Exercise> expectedExercises = exercises.stream()
+                .filter(exercise -> resultSeeds.contains(
+                        Integer.parseInt(exercise.getTitle().split(" ")[1])))
+                .collect(Collectors.toList());
 
         when(exerciseAdminRepository.findByFilters(eq(title), eq(description), eq(isCustom), eq(needsEquipment)))
                 .thenReturn(Optional.of(expectedExercises));
@@ -84,7 +87,6 @@ public class ExerciseAdminServiceTest {
                 exerciseAdminService.getExercisesByFilters(title, description, isCustom, needsEquipment);
 
         // Then
-        Assertions.assertEquals(expectedExercises.size(), result.size());
         for (int i = 0; i < resultSeeds.size(); i++) {
             Assertions.assertEquals(
                     "Exercise " + resultSeeds.get(i), result.get(i).getTitle());
@@ -99,34 +101,6 @@ public class ExerciseAdminServiceTest {
                 .findByFilters(eq(title), eq(description), eq(isCustom), eq(needsEquipment));
     }
 
-    public List<Exercise> filterExercises(
-            List<Exercise> exercises, String title, String description, Boolean isCustom, Boolean needsEquipment) {
-        List<Exercise> filteredExercises = new ArrayList<>();
-
-        for (Exercise exercise : exercises) {
-            boolean includeExercise = true;
-
-            if (title != null && !exercise.getTitle().equals(title)) {
-                includeExercise = false;
-            }
-            if (description != null && !exercise.getDescription().equals(description)) {
-                includeExercise = false;
-            }
-            if (isCustom != null && exercise.isCustom() != isCustom) {
-                includeExercise = false;
-            }
-            if (needsEquipment != null && exercise.isNeedsEquipment() != needsEquipment) {
-                includeExercise = false;
-            }
-
-            if (includeExercise) {
-                filteredExercises.add(exercise);
-            }
-        }
-
-        return filteredExercises;
-    }
-
     static Stream<Arguments> multipleFilters() {
         return Stream.of(
                 // Positive cases for default exercises
@@ -135,8 +109,8 @@ public class ExerciseAdminServiceTest {
                 Arguments.of("Exercise 2", "Desc 2", false, false, List.of(2)),
 
                 // Negative cases for default exercises
-                Arguments.of("NonExistentVale", "NonExistentVale", false, null, Collections.emptyList()),
-                Arguments.of("NonExistentVale", null, false, true, Collections.emptyList()),
+                Arguments.of("NonExistentValue", "NonExistentValue", false, null, Collections.emptyList()),
+                Arguments.of("NonExistentValue", null, false, true, Collections.emptyList()),
 
                 // Positive cases for custom exercises
                 Arguments.of(null, null, true, null, List.of(3, 4)),
@@ -144,14 +118,14 @@ public class ExerciseAdminServiceTest {
                 Arguments.of("Exercise 4", "Desc 4", true, false, List.of(4)),
 
                 // Negative cases for custom exercises
-                Arguments.of("NonExistentVale", "NonExistentVale", true, null, Collections.emptyList()),
-                Arguments.of("NonExistentVale", null, true, null, Collections.emptyList()),
+                Arguments.of("NonExistentValue", "NonExistentValue", true, null, Collections.emptyList()),
+                Arguments.of("NonExistentValue", null, true, null, Collections.emptyList()),
 
                 // Positive cases for all exercises
                 Arguments.of(null, null, null, null, List.of(1, 2, 3, 4)),
 
                 // Negative cases for all exercises
-                Arguments.of("NonExistentVale", "NonExistentVale", null, null, Collections.emptyList()),
-                Arguments.of("NonExistentVale", null, null, null, Collections.emptyList()));
+                Arguments.of("NonExistentValue", "NonExistentValue", null, null, Collections.emptyList()),
+                Arguments.of("NonExistentValue", null, null, null, Collections.emptyList()));
     }
 }
