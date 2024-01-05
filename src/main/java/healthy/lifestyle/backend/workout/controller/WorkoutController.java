@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.workout.controller;
 
-import static java.util.Objects.isNull;
-
 import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.workout.dto.WorkoutCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
@@ -28,27 +26,6 @@ public class WorkoutController {
         this.authService = authService;
     }
 
-    @GetMapping("/default")
-    public ResponseEntity<List<WorkoutResponseDto>> getDefaultWorkouts(
-            @RequestParam(value = "sortFieldName", required = false) String sortFieldName) {
-        if (isNull(sortFieldName)) sortFieldName = "id";
-        List<WorkoutResponseDto> responseDtoList = workoutService.getDefaultWorkouts(sortFieldName);
-        return ResponseEntity.ok(responseDtoList);
-    }
-
-    @GetMapping("/default/{workout_id}")
-    public ResponseEntity<WorkoutResponseDto> getDefaultWorkoutDetails(@PathVariable("workout_id") long workoutId) {
-        WorkoutResponseDto responseDto = workoutService.getWorkoutById(workoutId, false);
-        return ResponseEntity.ok(responseDto);
-    }
-
-    @GetMapping("/{workout_id}")
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<WorkoutResponseDto> getCustomWorkoutDetails(@PathVariable("workout_id") long workoutId) {
-        WorkoutResponseDto responseDto = workoutService.getWorkoutById(workoutId, true);
-        return ResponseEntity.ok(responseDto);
-    }
-
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<WorkoutResponseDto> createCustomWorkout(
@@ -57,6 +34,41 @@ public class WorkoutController {
                 SecurityContextHolder.getContext().getAuthentication());
         WorkoutResponseDto responseDto = workoutService.createCustomWorkout(userId, requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/default/{workout_id}")
+    public ResponseEntity<WorkoutResponseDto> getDefaultWorkoutById(@PathVariable("workout_id") long workoutId) {
+        WorkoutResponseDto responseDto = workoutService.getWorkoutById(workoutId, false);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @GetMapping("/{workout_id}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<WorkoutResponseDto> getCustomWorkoutById(@PathVariable("workout_id") long workoutId) {
+        WorkoutResponseDto responseDto = workoutService.getWorkoutById(workoutId, true);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @GetMapping("/default")
+    public ResponseEntity<List<WorkoutResponseDto>> getDefaultWorkouts(
+            @RequestParam(value = "sortBy", required = false) String sortBy) {
+        if (sortBy == null) sortBy = "id";
+        boolean isDefault = true;
+        Long userId = null;
+        List<WorkoutResponseDto> responseDtoList = workoutService.getWorkouts(sortBy, isDefault, userId);
+        return ResponseEntity.ok(responseDtoList);
+    }
+
+    @GetMapping()
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<List<WorkoutResponseDto>> getCustomWorkouts(
+            @RequestParam(value = "sortBy", required = false) String sortBy) {
+        if (sortBy == null) sortBy = "id";
+        boolean isDefault = false;
+        Long userId = authService.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        List<WorkoutResponseDto> responseDtoList = workoutService.getWorkouts(sortBy, isDefault, userId);
+        return ResponseEntity.ok(responseDtoList);
     }
 
     @PatchMapping("/{workoutId}")

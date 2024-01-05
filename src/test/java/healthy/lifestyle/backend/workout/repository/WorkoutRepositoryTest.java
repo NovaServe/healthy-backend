@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -49,6 +50,50 @@ class WorkoutRepositoryTest {
     @BeforeEach
     void beforeEach() {
         dbUtil.deleteAll();
+    }
+
+    @Test
+    void findAllCustomByUserId() {
+        // Given
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        boolean needsEquipment = true;
+        Exercise defaultExercise1 =
+                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
+        Workout defaultWorkout1 = dbUtil.createDefaultWorkout(1, List.of(defaultExercise1));
+
+        Role userRole = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+
+        User user1 = dbUtil.createUser(1, userRole, country);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(2, user1);
+        Exercise customExercise1 =
+                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user1);
+        Workout customWorkout1 = dbUtil.createCustomWorkout(2, List.of(customExercise1), user1);
+
+        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(3, user1);
+        Exercise customExercise2 =
+                dbUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart3), List.of(customHttpRef2), user1);
+        Workout customWorkout2 = dbUtil.createCustomWorkout(3, List.of(customExercise2), user1);
+
+        User user2 = dbUtil.createUser(2, userRole, country);
+        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
+        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(4, user1);
+        Exercise customExercise3 =
+                dbUtil.createCustomExercise(4, needsEquipment, List.of(bodyPart4), List.of(customHttpRef3), user2);
+        Workout customWorkout3 = dbUtil.createCustomWorkout(4, List.of(customExercise3), user2);
+
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+
+        // When
+        List<Workout> actualWorkouts = workoutRepository.findAllCustomByUserId(sort, user1.getId());
+
+        // Then
+        assertEquals(2, actualWorkouts.size());
+        assertEquals(customWorkout1.getId(), actualWorkouts.get(0).getId());
+        assertEquals(customWorkout2.getId(), actualWorkouts.get(1).getId());
     }
 
     @Test
