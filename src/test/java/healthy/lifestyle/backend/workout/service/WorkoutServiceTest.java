@@ -298,7 +298,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void getDefaultWorkoutsTest_shouldReturnDefaultWorkouts() {
+    void getWorkoutsTest_shouldReturnDefaultWorkouts() {
         // Given
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
         BodyPart bodyPart2 = testUtil.createBodyPart(2);
@@ -314,11 +314,13 @@ class WorkoutServiceTest {
         Workout defaultWorkout2 = testUtil.createDefaultWorkout(2, List.of(defaultExercise2));
         List<Workout> defaultWorkouts = List.of(defaultWorkout1, defaultWorkout2);
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        boolean isDefault = true;
+        Long userId = null;
 
         when(workoutRepository.findAllDefault(sort)).thenReturn(defaultWorkouts);
 
         // When
-        List<WorkoutResponseDto> responseWorkouts = workoutService.getDefaultWorkouts("id");
+        List<WorkoutResponseDto> responseWorkouts = workoutService.getWorkouts("id", isDefault, userId);
 
         // Then
         verify(workoutRepository, times(1)).findAllDefault(sort);
@@ -377,6 +379,46 @@ class WorkoutServiceTest {
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
         assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
+    }
+
+    @Test
+    void getWorkoutsTest_shouldReturnCustomWorkouts() {
+        // Given
+        BodyPart bodyPart1 = testUtil.createBodyPart(1);
+        HttpRef defaultHttpRef1 = testUtil.createDefaultHttpRef(1);
+        boolean needsEquipment = true;
+        Exercise defaultExercise1 =
+                testUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
+        Workout defaultWorkout1 = testUtil.createDefaultWorkout(1, List.of(defaultExercise1));
+
+        User user = testUtil.createUser(1);
+        BodyPart bodyPart2 = testUtil.createBodyPart(2);
+        HttpRef customHttpRef1 = testUtil.createCustomHttpRef(2, user);
+        Exercise customExercise1 =
+                testUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user);
+        Workout customWorkout1 = testUtil.createCustomWorkout(2, List.of(customExercise1), user);
+
+        BodyPart bodyPart3 = testUtil.createBodyPart(3);
+        HttpRef customHttpRef2 = testUtil.createCustomHttpRef(3, user);
+        Exercise customExercise2 =
+                testUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart3), List.of(customHttpRef2), user);
+        Workout customWorkout2 = testUtil.createCustomWorkout(3, List.of(customExercise2), user);
+
+        List<Workout> customWorkouts = List.of(customWorkout1, customWorkout2);
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        boolean isDefault = false;
+
+        when(workoutRepository.findAllCustomByUserId(sort, user.getId())).thenReturn(customWorkouts);
+
+        // When
+        List<WorkoutResponseDto> responseWorkouts = workoutService.getWorkouts("id", isDefault, user.getId());
+
+        // Then
+        verify(workoutRepository, times(1)).findAllCustomByUserId(sort, user.getId());
+        assertEquals(2, responseWorkouts.size());
+        assertThat(customWorkouts)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "bodyParts", "user")
+                .isEqualTo(responseWorkouts);
     }
 
     @Test
