@@ -31,6 +31,8 @@ public class URL {
 
     public static final String DEFAULT_EXERCISE_ID = "/api/v1/workouts/exercises/default/{exerciseId}";
 
+    public static final String ADMIN_EXERCISES = "/api/v1/admin/exercises";
+
     public static final String CUSTOM_WORKOUTS = "/api/v1/workouts";
 
     public static final String DEFAULT_WORKOUTS = "/api/v1/workouts/default";
