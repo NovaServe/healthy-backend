@@ -46,7 +46,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         List<User> users = userAdminRepository
                 .findByFilters(role.orElse(null), username, email, fullName, country.orElse(null), age)
                 .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND));
-
+        if (users.isEmpty()) {
+            throw new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
+        }
         return users.stream()
                 .map(user -> modelMapper.map(user, UserResponseDto.class))
                 .sorted(Comparator.comparing(UserResponseDto::getId))
