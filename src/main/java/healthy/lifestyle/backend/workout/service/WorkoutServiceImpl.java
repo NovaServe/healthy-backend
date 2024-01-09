@@ -146,11 +146,13 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     @Transactional
-    public List<WorkoutResponseDto> getDefaultWorkouts(String sortFieldName) {
-        if (sortFieldName == null) sortFieldName = "id";
-        Sort sort = Sort.by(Sort.Direction.ASC, sortFieldName);
+    public List<WorkoutResponseDto> getWorkouts(String sortBy, boolean isDefault, Long userId) {
+        Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
+        List<Workout> workouts;
+        if (isDefault) workouts = workoutRepository.findAllDefault(sort);
+        else workouts = workoutRepository.findAllCustomByUserId(sort, userId);
 
-        List<WorkoutResponseDto> responseDtoList = workoutRepository.findAllDefault(sort).stream()
+        List<WorkoutResponseDto> responseDtoList = workouts.stream()
                 .map(workout -> modelMapper.map(workout, WorkoutResponseDto.class))
                 .peek(elt -> {
                     List<ExerciseResponseDto> exercisesSorted = elt.getExercises().stream()

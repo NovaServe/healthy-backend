@@ -306,7 +306,7 @@ class WorkoutControllerTest {
     }
 
     @Test
-    void getDefaultWorkoutsTest_shouldReturnDefaultWorkoutDtoListWith200_whenNoUrlParam() throws Exception {
+    void getWorkoutsTest_shouldReturnDefaultWorkoutDtoListWith200_whenNoUrlParams() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -407,6 +407,47 @@ class WorkoutControllerTest {
                 .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getWorkoutsTest_shouldReturnCustomWorkoutDtoListWith200_whenNoUrlParams() throws Exception {
+        // Given
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        boolean needsEquipment = true;
+        Exercise defaultExercise1 =
+                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
+        Workout defaultWorkout1 = dbUtil.createDefaultWorkout(1, List.of(defaultExercise1));
+
+        User user = dbUtil.createUser(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(2, user);
+        Exercise customExercise1 =
+                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user);
+        Workout customWorkout1 = dbUtil.createCustomWorkout(2, List.of(customExercise1), user);
+
+        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(3, user);
+        Exercise customExercise2 =
+                dbUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart3), List.of(customHttpRef2), user);
+        Workout customWorkout2 = dbUtil.createCustomWorkout(3, List.of(customExercise2), user);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_WORKOUTS).contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        List<WorkoutResponseDto> responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<List<WorkoutResponseDto>>() {});
+
+        assertEquals(2, responseDto.size());
+        assertWorkout(responseDto.get(0), customWorkout1);
+        assertWorkout(responseDto.get(1), customWorkout2);
     }
 
     @Test

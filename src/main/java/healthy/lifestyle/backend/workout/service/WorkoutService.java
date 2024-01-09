@@ -10,7 +10,7 @@ public interface WorkoutService {
 
     WorkoutResponseDto getWorkoutById(long workoutId, boolean customRequired);
 
-    List<WorkoutResponseDto> getDefaultWorkouts(String sortFieldName);
+    List<WorkoutResponseDto> getWorkouts(String sortBy, boolean isDefault, Long userId);
 
     WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, WorkoutUpdateRequestDto requestDto);
 
