@@ -44,7 +44,7 @@ class UserAdminServiceTest {
     @Spy
     private TestUtil testUtil;
 
-    @Mock
+    @Spy
     ModelMapper modelMapper;
 
     @Test
@@ -57,7 +57,6 @@ class UserAdminServiceTest {
         when(userAdminRepository.findByFilters(
                         any(Role.class), anyString(), anyString(), anyString(), eq(null), anyInt()))
                 .thenReturn(Optional.of(List.of(user)));
-        when(modelMapper.map(eq(user), eq(UserResponseDto.class))).thenReturn(new UserResponseDto());
 
         // When
         List<UserResponseDto> result = userAdminService.getUsersByFilters(
@@ -82,7 +81,6 @@ class UserAdminServiceTest {
         when(userAdminRepository.findByFilters(
                         eq(null), anyString(), anyString(), anyString(), any(Country.class), anyInt()))
                 .thenReturn(Optional.of(List.of(user)));
-        when(modelMapper.map(eq(user), eq(UserResponseDto.class))).thenReturn(new UserResponseDto());
 
         // When
         List<UserResponseDto> result = userAdminService.getUsersByFilters(
@@ -98,15 +96,13 @@ class UserAdminServiceTest {
     }
 
     @Test
-    void getUsersByFiltersTest_shouldReturnUserResponseDtoList_whenRoleAndCountryIsNullAndRepositoryReturnUsers() {
+    void getUsersByFiltersTest_shouldReturnUsersResponseDtoList_whenValidFilters() {
         // Given
         User user1 = testUtil.createUser(1);
         User user2 = testUtil.createUser(2);
 
         when(userAdminRepository.findByFilters(eq(null), anyString(), anyString(), anyString(), eq(null), anyInt()))
                 .thenReturn(Optional.of(List.of(user1, user2)));
-        when(modelMapper.map(any(User.class), eq(UserResponseDto.class)))
-                .thenReturn(UserResponseDto.builder().id(1L).build());
 
         // When
         List<UserResponseDto> result = userAdminService.getUsersByFilters(
@@ -122,7 +118,7 @@ class UserAdminServiceTest {
     }
 
     @Test
-    void getUsersByFiltersTest_shouldThrowExceptionWith404_whenRoleAndCountryNotNullAndUsersNotFound() {
+    void getUsersByFiltersTest_shouldThrowExceptionWith404_whenUsersNotFound() {
         // Given
         Role roleUser = testUtil.createUserRole(1);
         Country country = testUtil.createCountry(1);
@@ -133,6 +129,40 @@ class UserAdminServiceTest {
         when(userAdminRepository.findByFilters(
                         any(Role.class), anyString(), anyString(), anyString(), any(Country.class), anyInt()))
                 .thenReturn(Optional.empty());
+
+        // When
+        ApiException actualException = assertThrows(
+                ApiException.class,
+                () -> userAdminService.getUsersByFilters(
+                        roleUser.getId(),
+                        "NonExistentValue",
+                        "NonExistentValue",
+                        "NonExistentValue",
+                        country.getId(),
+                        20));
+
+        // Then
+        verify(userAdminRepository, times(1))
+                .findByFilters(eq(roleUser), anyString(), anyString(), anyString(), eq(country), anyInt());
+        verify(roleRepository, times(1)).findById(anyLong());
+        verify(countryRepository, times(1)).findById(anyLong());
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
+        verify(modelMapper, times(0)).map(any(User.class), eq(UserResponseDto.class));
+    }
+
+    @Test
+    void getUsersByFiltersTest_shouldThrowExceptionWith404_whenRepositoryReturnsEmptyList() {
+        // Given
+        Role roleUser = testUtil.createUserRole(1);
+        Country country = testUtil.createCountry(1);
+
+        ApiException expectedException = new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
+        when(countryRepository.findById(anyLong())).thenReturn(Optional.of(country));
+        when(roleRepository.findById(anyLong())).thenReturn(Optional.of(roleUser));
+        when(userAdminRepository.findByFilters(
+                        any(Role.class), anyString(), anyString(), anyString(), any(Country.class), anyInt()))
+                .thenReturn(Optional.of(List.of()));
 
         // When
         ApiException actualException = assertThrows(
