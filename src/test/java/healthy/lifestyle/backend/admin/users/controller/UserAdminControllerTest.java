@@ -1,36 +1,58 @@
-package healthy.lifestyle.backend.admin.users.repository;
+package healthy.lifestyle.backend.admin.users.controller;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
+import healthy.lifestyle.backend.users.dto.UserResponseDto;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.util.DbUtil;
-import healthy.lifestyle.backend.util.Shared;
+import healthy.lifestyle.backend.util.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 @Testcontainers
 @Import(BeanConfig.class)
-public class UserAdminRepositoryTest {
+public class UserAdminControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    DbUtil dbUtil;
 
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
@@ -43,12 +65,6 @@ public class UserAdminRepositoryTest {
         registry.add("spring.datasource.password", postgresqlContainer::getPassword);
     }
 
-    @Autowired
-    UserAdminRepository userAdminRepository;
-
-    @Autowired
-    DbUtil dbUtil;
-
     @BeforeEach
     void beforeEach() {
         dbUtil.deleteAll();
@@ -56,6 +72,7 @@ public class UserAdminRepositoryTest {
 
     @ParameterizedTest
     @MethodSource("multipleFilters")
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "ADMIN")
     void findByFiltersTest_shouldReturnListOfUsers(
             String roleName,
             String username,
@@ -63,7 +80,8 @@ public class UserAdminRepositoryTest {
             String fullName,
             String countryName,
             Integer age,
-            List<Integer> resultSeeds) {
+            List<Integer> resultSeeds)
+            throws Exception {
 
         // Given
         Role roleUser = dbUtil.createUserRole();
@@ -78,27 +96,47 @@ public class UserAdminRepositoryTest {
         User admin1 = dbUtil.createUser(3, roleAdmin, country2, 45);
         User admin2 = dbUtil.createUser(4, roleAdmin, country2, 21);
 
-        Optional<Role> roleFilter = Stream.of(roleUser, roleAdmin)
+        Optional<String> roleFilter = Stream.of(roleUser, roleAdmin)
                 .filter(role -> role.getName().equals(roleName))
+                .map(role -> role.getId().toString())
                 .findFirst();
-        Optional<Country> countryFilter = Stream.of(country1, country2, country3)
+        Optional<String> countryFilter = Stream.of(country1, country2, country3)
                 .filter(country -> country.getName().equals(countryName))
+                .map(country -> country.getId().toString())
                 .findFirst();
 
         // When
-        List<User> resultList = userAdminRepository.findByFilters(
-                roleFilter.orElse(null), username, email, fullName, countryFilter.orElse(null), age);
+        MockHttpServletRequestBuilder requestBuilder = get(URL.ADMIN_USERS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .param("role", roleFilter.orElse(null))
+                .param("username", username)
+                .param("email", email)
+                .param("fullName", fullName)
+                .param("country", countryFilter.orElse(null))
+                .param("age", age == null ? null : String.valueOf(age));
 
-        // Then
-        assertEquals(resultSeeds.size(), resultList.size());
+        MvcResult mvcResult = mockMvc.perform(requestBuilder)
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        List<UserResponseDto> userResponseDtoList =
+                objectMapper.readValue(responseContent, new TypeReference<List<UserResponseDto>>() {});
+
+        Assertions.assertEquals(userResponseDtoList.size(), resultSeeds.size());
+
+        assertEquals(resultSeeds.size(), userResponseDtoList.size());
         for (int i = 0; i < resultSeeds.size(); i++) {
-            assertEquals("Username-" + resultSeeds.get(i), resultList.get(i).getUsername());
+            assertEquals(
+                    "Username-" + resultSeeds.get(i), userResponseDtoList.get(i).getUsername());
             assertEquals(
                     "email-" + resultSeeds.get(i) + "@email.com",
-                    resultList.get(i).getEmail());
+                    userResponseDtoList.get(i).getEmail());
             assertEquals(
                     "Full Name " + Shared.numberToText(resultSeeds.get(i)),
-                    resultList.get(i).getFullName());
+                    userResponseDtoList.get(i).getFullName());
         }
     }
 
