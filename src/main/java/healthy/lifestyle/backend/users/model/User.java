@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.users.model;
 
+import healthy.lifestyle.backend.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
@@ -52,6 +53,9 @@ public class User {
     @OneToMany(mappedBy = "user")
     private Set<HttpRef> httpRefs;
 
+    @OneToMany(mappedBy = "user")
+    private Set<Nutrition> nutritions;
+
     public List<Exercise> getExercisesSortedById() {
         return this.getExercises().stream()
                 .sorted(Comparator.comparingLong(Exercise::getId))
@@ -86,5 +90,11 @@ public class User {
         Set<BodyPart> bodyParts = new HashSet<>();
         this.getExercises().forEach(elt -> bodyParts.addAll(elt.getBodyParts()));
         return bodyParts.stream().toList();
+    }
+
+    public List<Nutrition> getNutritionsSortedById() {
+        return this.getNutritions().stream()
+                .sorted(Comparator.comparingLong(Nutrition::getId))
+                .toList();
     }
 }
