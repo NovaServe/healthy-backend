@@ -2,6 +2,8 @@ package healthy.lifestyle.backend.util;
 
 import static java.util.Objects.isNull;
 
+import healthy.lifestyle.backend.mentals.repository.MentalRepository;
+import healthy.lifestyle.backend.mentals.repository.MentalTypeRepository;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -47,6 +49,12 @@ public class DbUtil implements Util {
     WorkoutRepository workoutRepository;
 
     @Autowired
+    MentalRepository mentalRepository;
+
+    @Autowired
+    MentalTypeRepository mentalTypeRepository;
+
+    @Autowired
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -60,6 +68,8 @@ public class DbUtil implements Util {
         userRepository.deleteAll();
         countryRepository.deleteAll();
         roleRepository.deleteAll();
+        mentalRepository.deleteAll();
+        mentalTypeRepository.deleteAll();
     }
 
     @Override
