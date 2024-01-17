@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.workout.model;
 
+import healthy.lifestyle.backend.mentals.model.Mental;
 import healthy.lifestyle.backend.users.model.User;
 import jakarta.persistence.*;
 import java.util.Set;
@@ -40,4 +41,8 @@ public class HttpRef {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // FOREIGN KEY(user_id) REFERENCES users(id)
     private User user;
+
+    @ManyToMany(mappedBy = "httpRefs")
+    @OrderBy("id")
+    private Set<Mental> mentals;
 }
