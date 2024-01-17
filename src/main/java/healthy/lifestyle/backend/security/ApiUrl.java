@@ -39,4 +39,7 @@ public class ApiUrl {
 
     @Value("${api.basePath}/${api.version}/admin/hello-world")
     private String adminHelloWorldUrl;
+
+    @Value("${api.basePath}/${api.version}/mentals/default/{mental_id}")
+    private String defaultMentalDetailsUrl;
 }
