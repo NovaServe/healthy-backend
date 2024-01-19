@@ -22,5 +22,5 @@ public class MentalResponseDto {
 
     private List<HttpRefResponseDto> httpRefs;
 
-    private Long mentalId;
+    private Long mentalTypeId;
 }

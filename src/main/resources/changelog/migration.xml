@@ -217,7 +217,6 @@
 
     <changeSet id="mental_init" author="Anastasiia Shevchuk" context="structure">
         <comment>Create mental table</comment>
-
         <createTable tableName="mental_types">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -227,28 +226,27 @@
             </column>
         </createTable>
 
-    <createTable tableName="mentals">
-        <column name="id" type="bigint" autoIncrement="true">
-            <constraints primaryKey="true"/>
-        </column>
-        <column name="title" type="varchar">
-            <constraints nullable="false" unique="false"/>
-        </column>
-        <column name="description" type="varchar">
-            <constraints nullable="true" unique="false"/>
-        </column>
-        <column name="is_custom" type="boolean">
-            <constraints nullable="false" unique="false"/>
-        </column>
-        <column name="user_id" type="bigint">
-            <constraints nullable="true" unique="false" foreignKeyName="fk_user_id"
-                         references="users(id)"/>
-        </column>
-        <column name="type_id" type="bigint">
-            <constraints nullable="false" foreignKeyName="fk_type_id" references="mental_types(id)"/>
-        </column>
-    </createTable>
-
+        <createTable tableName="mentals">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="title" type="varchar">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="description" type="varchar">
+                <constraints nullable="true" unique="false"/>
+            </column>
+            <column name="is_custom" type="boolean">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="true" unique="false" foreignKeyName="fk_user_id"
+                             references="users(id)"/>
+            </column>
+            <column name="type_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_type_id" references="mental_types(id)"/>
+            </column>
+        </createTable>
 
         <createTable tableName="mentals_http_refs">
             <column name="id" type="bigint" autoIncrement="true">
@@ -263,9 +261,6 @@
                              references="http_refs(id)"/>
             </column>
         </createTable>
-
-    <sqlFile path="sql/mental_types_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
-</changeSet>
-
-
+        <sqlFile path="sql/mental_types_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+    </changeSet>
 </databaseChangeLog>
