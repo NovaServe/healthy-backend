@@ -2,6 +2,8 @@ package healthy.lifestyle.backend.util;
 
 import static java.util.Objects.isNull;
 
+import healthy.lifestyle.backend.mentals.model.Mental;
+import healthy.lifestyle.backend.mentals.model.MentalType;
 import healthy.lifestyle.backend.mentals.repository.MentalRepository;
 import healthy.lifestyle.backend.mentals.repository.MentalTypeRepository;
 import healthy.lifestyle.backend.users.model.Country;
@@ -268,5 +270,46 @@ public class DbUtil implements Util {
 
     public Workout getWorkoutById(long id) {
         return workoutRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType) {
+        return this.createMentalBase(seed, false, httpRefs, null, mentalType);
+    }
+
+    @Override
+    public Mental createCustomMental(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user) {
+        Mental mental = this.createMentalBase(seed, true, httpRefs, user, mentalType);
+        if (user.getMentals() == null) user.setMentals(new HashSet<>());
+        user.getMentals().add(mental);
+        userRepository.save(user);
+        return mental;
+    }
+
+    private Mental createMentalBase(
+            int seed, boolean isCustom, List<HttpRef> httpRefs, User user, MentalType mentalType) {
+        Mental mental = Mental.builder()
+                .title("Mental " + seed)
+                .description("Desc " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .httpRefs(new HashSet<>(httpRefs))
+                .type(mentalType)
+                .build();
+        return mentalRepository.save(mental);
+    }
+
+    @Override
+    public MentalType createMeditationType() {
+        return this.createMentalTypeBase("MEDITATION");
+    }
+
+    @Override
+    public MentalType createAffirmationType() {
+        return this.createMentalTypeBase("AFFIRMATION");
+    }
+
+    private MentalType createMentalTypeBase(String mentalType) {
+        return mentalTypeRepository.save(MentalType.builder().name(mentalType).build());
     }
 }
