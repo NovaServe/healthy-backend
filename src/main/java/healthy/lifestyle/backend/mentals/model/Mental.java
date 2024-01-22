@@ -3,6 +3,8 @@ package healthy.lifestyle.backend.mentals.model;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import jakarta.persistence.*;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import lombok.*;
 
@@ -41,4 +43,10 @@ public class Mental {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "type_id") // FOREIGN KEY(type_id) REFERENCES mental_types(id)
     private MentalType type;
+
+    public List<HttpRef> getHttpRefsSortedById() {
+        return this.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRef::getId))
+                .toList();
+    }
 }

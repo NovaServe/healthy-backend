@@ -65,6 +65,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, apiUrl.getAdminHelloWorldUrl())
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, apiUrl.getDefaultMentalDetailsUrl())
+                        .permitAll()
                         .anyRequest()
                         .authenticated());
 
