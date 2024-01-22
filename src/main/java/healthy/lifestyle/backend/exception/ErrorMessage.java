@@ -29,7 +29,9 @@ public enum ErrorMessage {
     EMAIL_IS_NOT_DIFFERENT("Email is not different"),
     FULL_NAME_IS_NOT_DIFFERENT("Full name is not different"),
     AGE_IS_NOT_DIFFERENT("Age is not different"),
-    PASSWORD_IS_NOT_DIFFERENT("Password is not different");
+    PASSWORD_IS_NOT_DIFFERENT("Password is not different"),
+    USER_MENTAL_MISMATCH("Mental with id %d doesn't belong to the user"),
+    MENTAL_NOT_FOUND("Mental with id %d not found");
 
     private final String name;
 

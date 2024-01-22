@@ -2,10 +2,11 @@ package healthy.lifestyle.backend.util;
 
 import static java.util.Objects.isNull;
 
+import healthy.lifestyle.backend.mentals.model.Mental;
+import healthy.lifestyle.backend.mentals.model.MentalType;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
@@ -181,5 +182,53 @@ public class TestUtil implements Util {
 
     private Role createRoleBase(String role, Long id) {
         return Role.builder().id(id).name("ROLE_" + role).build();
+    }
+
+    @Override
+    public Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType) {
+        return this.createMentalBase(seed, false, httpRefs, null, mentalType);
+    }
+
+    @Override
+    public Mental createCustomMental(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user) {
+        Mental mental = this.createMentalBase(seed, true, httpRefs, user, mentalType);
+        if (user.getMentals() == null) user.setMentals(new HashSet<>());
+        user.getMentals().add(mental);
+        return mental;
+    }
+
+    public Mental createMentalBase(
+            int seed, boolean isCustom, List<HttpRef> httpRefs, User user, MentalType mentalType) {
+        return Mental.builder()
+                .id((long) seed)
+                .title("Mental " + seed)
+                .description("Desc " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .httpRefs(new HashSet<>(httpRefs))
+                .type(mentalType)
+                .build();
+    }
+
+    @Override
+    public MentalType createMeditationType() {
+        return this.createMentalTypeBase("MEDITATION", null);
+    }
+
+    public MentalType createMeditationType(int id) {
+        return this.createMentalTypeBase("MEDITATION", (long) id);
+    }
+
+    @Override
+    public MentalType createAffirmationType() {
+        return this.createMentalTypeBase("AFFIRMATION", null);
+    }
+
+    public MentalType createAffirmationType(int id) {
+        return this.createMentalTypeBase("AFFIRMATION", (long) id);
+    }
+
+    private MentalType createMentalTypeBase(String mentalType, Long id) {
+        return MentalType.builder().id(id).name(mentalType).build();
     }
 }
