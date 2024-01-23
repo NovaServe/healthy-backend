@@ -74,7 +74,7 @@ class HttpRefRepositoryTest {
         assertEquals(2, httpRefsActual.size());
 
         assertThat(httpRefsActual)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "mentals")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "mentals", "nutritions")
                 .isEqualTo(List.of(defaultHttpRef1, defaultHttpRef2));
     }
 
@@ -103,7 +103,7 @@ class HttpRefRepositoryTest {
         assertEquals(2, httpRefsActual.size());
 
         assertThat(httpRefsActual)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
                 .isEqualTo(List.of(customHttpRef1, customHttpRef2));
     }
 

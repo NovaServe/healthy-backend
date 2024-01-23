@@ -10,6 +10,4 @@ import lombok.*;
 public class NutritionTypeResponseDto {
     private long id;
     private String name;
-    private String supplement;
-    private String recipe;
 }

@@ -272,13 +272,7 @@
                 <constraints primaryKey="true"/>
             </column>
             <column name="name" type="varchar">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="supplement" type="varchar">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="recipe" type="varchar">
-                <constraints nullable="false" unique="false"/>
+                <constraints nullable="false" unique="true"/>
             </column>
         </createTable>
 
@@ -290,7 +284,7 @@
                 <constraints nullable="false" unique="false"/>
             </column>
             <column name="description" type="varchar">
-                <constraints nullable="false" unique="false"/>
+                <constraints nullable="true" unique="false"/>
             </column>
             <column name="is_custom" type="boolean">
                 <constraints nullable="false" unique="false"/>
@@ -302,6 +296,20 @@
             <column name="user_id" type="bigint">
                 <constraints nullable="true" foreignKeyName="fk_user_id"
                              references="users(id)"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="nutritions_http_refs">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="nutrition_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_nutrition_id"
+                             references="nutritions(id)" />
+            </column>
+            <column name="http_ref_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_http_ref_id"
+                             references="http_refs(id)" />
             </column>
         </createTable>
 

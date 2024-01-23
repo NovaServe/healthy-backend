@@ -7,10 +7,12 @@ import healthy.lifestyle.backend.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.nutrition.repository.NutritionRepository;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
+import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
+import java.util.Comparator;
+import java.util.List;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class NutritionServiceImpl implements NutritionService {
@@ -28,7 +30,6 @@ public class NutritionServiceImpl implements NutritionService {
     }
 
     @Override
-    @Transactional
     public NutritionResponseDto getNutritionById(long nutritionId, boolean requiredDefault, Long userId) {
         Nutrition nutrition = nutritionRepository
                 .findById(nutritionId)
@@ -51,6 +52,12 @@ public class NutritionServiceImpl implements NutritionService {
         }
 
         NutritionResponseDto nutritionResponseDto = modelMapper.map(nutrition, NutritionResponseDto.class);
+
+        List<HttpRefResponseDto> httpRefsSorted = nutritionResponseDto.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                .toList();
+
+        nutritionResponseDto.setHttpRefs(httpRefsSorted);
 
         return nutritionResponseDto;
     }

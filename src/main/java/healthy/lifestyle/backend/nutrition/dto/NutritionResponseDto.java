@@ -1,5 +1,7 @@
 package healthy.lifestyle.backend.nutrition.dto;
 
+import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
+import java.util.List;
 import lombok.*;
 
 @NoArgsConstructor
@@ -12,5 +14,7 @@ public class NutritionResponseDto {
     private String title;
     private String description;
     private boolean isCustom;
+
+    private List<HttpRefResponseDto> httpRefs;
     private NutritionTypeResponseDto type;
 }

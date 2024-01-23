@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.users.model;
-import healthy.lifestyle.backend.nutrition.model.Nutrition;
+
 import healthy.lifestyle.backend.mentals.model.Mental;
+import healthy.lifestyle.backend.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;

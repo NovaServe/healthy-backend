@@ -16,12 +16,6 @@ public class NutritionType {
     @Column(name = "id", unique = true, nullable = false)
     private Long id;
 
-    @Column(name = "name", unique = false, nullable = false)
+    @Column(name = "name", unique = true, nullable = false)
     private String name;
-
-    @Column(name = "supplement", unique = false, nullable = false)
-    private String supplement;
-
-    @Column(name = "recipe", unique = false, nullable = false)
-    private String recipe;
 }
