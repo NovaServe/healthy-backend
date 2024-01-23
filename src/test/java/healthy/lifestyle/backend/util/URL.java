@@ -42,4 +42,6 @@ public class URL {
     public static final String DEFAULT_WORKOUT_ID = "/api/v1/workouts/default/{workoutId}";
 
     public static final String ADMIN_USERS = "/api/v1/admin/users";
+
+    public static final String DEFAULT_MENTAL_ID = "/api/v1/mentals/default/{mental_id}";
 }
