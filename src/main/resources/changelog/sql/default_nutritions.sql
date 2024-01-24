@@ -2,7 +2,7 @@ INSERT INTO nutrition_types(id, name) VALUES
 (1, 'Recipe'),
 (2, 'Supplement');
 
-ALTER sequence nutrition_types_id_seq restart with 11;
+ALTER sequence nutrition_types_id_seq restart with 3;
 
 INSERT INTO nutritions(id, title, description, is_custom, nutrition_type_id) VALUES
 (1, 'Protein-packed Chicken Salad', 'A nutritious salad loaded with grilled chicken, mixed greens, tomatoes, and a light vinaigrette.', false, 1),

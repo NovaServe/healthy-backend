@@ -2,6 +2,8 @@ package healthy.lifestyle.backend.util;
 
 import healthy.lifestyle.backend.mentals.model.Mental;
 import healthy.lifestyle.backend.mentals.model.MentalType;
+import healthy.lifestyle.backend.nutrition.model.Nutrition;
+import healthy.lifestyle.backend.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -48,4 +50,12 @@ public interface Util {
     MentalType createMeditationType();
 
     MentalType createAffirmationType();
+
+    Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType);
+
+    Nutrition createCustomNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType, User user);
+
+    NutritionType createSupplementType();
+
+    NutritionType createRecipeType();
 }

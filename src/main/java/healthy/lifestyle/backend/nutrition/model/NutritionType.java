@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.nutrition.model;
 
 import jakarta.persistence.*;
+import java.util.Set;
 import lombok.*;
 
 @Entity
@@ -13,9 +14,11 @@ import lombok.*;
 public class NutritionType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", unique = true, nullable = false)
     private Long id;
 
     @Column(name = "name", unique = true, nullable = false)
     private String name;
+
+    @OneToMany(mappedBy = "type")
+    private Set<Nutrition> nutritions;
 }
