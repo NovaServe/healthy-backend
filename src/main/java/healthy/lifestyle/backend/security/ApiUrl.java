@@ -37,6 +37,9 @@ public class ApiUrl {
     @Value("${api.basePath}/${api.version}/workouts/default/{workout_id}")
     private String defaultWorkoutDetailsUrl;
 
+    @Value("${api.basePath}/${api.version}/nutritions/default/{nutrition_id}")
+    private String defaultNutritionDetailsUrl;
+
     @Value("${api.basePath}/${api.version}/admin/hello-world")
     private String adminHelloWorldUrl;
 

@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.users.model;
 
 import healthy.lifestyle.backend.mentals.model.Mental;
+import healthy.lifestyle.backend.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;
@@ -56,6 +57,9 @@ public class User {
     @OneToMany(mappedBy = "user")
     private Set<Mental> mentals;
 
+    @OneToMany(mappedBy = "user")
+    private Set<Nutrition> nutritions;
+
     public List<Exercise> getExercisesSortedById() {
         return this.getExercises().stream()
                 .sorted(Comparator.comparingLong(Exercise::getId))
@@ -95,6 +99,12 @@ public class User {
     public List<Mental> getMentalsSortedById() {
         return this.getMentals().stream()
                 .sorted(Comparator.comparingLong(Mental::getId))
+                .toList();
+    }
+
+    public List<Nutrition> getNutritionsSortedById() {
+        return this.getNutritions().stream()
+                .sorted(Comparator.comparingLong(Nutrition::getId))
                 .toList();
     }
 }

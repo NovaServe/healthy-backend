@@ -81,7 +81,7 @@ class MentalServiceTest {
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
         assertThat(httpRefs_)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
                 .isEqualTo(mentalDtoActual.getHttpRefs());
     }
 

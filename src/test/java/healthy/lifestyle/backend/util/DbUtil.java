@@ -6,6 +6,10 @@ import healthy.lifestyle.backend.mentals.model.Mental;
 import healthy.lifestyle.backend.mentals.model.MentalType;
 import healthy.lifestyle.backend.mentals.repository.MentalRepository;
 import healthy.lifestyle.backend.mentals.repository.MentalTypeRepository;
+import healthy.lifestyle.backend.nutrition.model.Nutrition;
+import healthy.lifestyle.backend.nutrition.model.NutritionType;
+import healthy.lifestyle.backend.nutrition.repository.NutritionRepository;
+import healthy.lifestyle.backend.nutrition.repository.NutritionTypeRepository;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -55,6 +59,12 @@ public class DbUtil implements Util {
 
     @Autowired
     MentalTypeRepository mentalTypeRepository;
+
+    @Autowired
+    NutritionRepository nutritionRepository;
+
+    @Autowired
+    NutritionTypeRepository nutritionTypeRepository;
 
     @Autowired
     PasswordEncoder passwordEncoder() {
@@ -311,5 +321,49 @@ public class DbUtil implements Util {
 
     private MentalType createMentalTypeBase(String mentalType) {
         return mentalTypeRepository.save(MentalType.builder().name(mentalType).build());
+    }
+
+    @Override
+    public Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType) {
+        return this.createNutritionBase(seed, false, httpRefs, null, nutritionType);
+    }
+
+    @Override
+    public Nutrition createCustomNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType, User user) {
+        Nutrition nutrition = this.createNutritionBase(seed, true, httpRefs, user, nutritionType);
+        if (user.getNutritions() == null) user.setNutritions(new HashSet<>());
+        user.getNutritions().add(nutrition);
+        userRepository.save(user);
+        return nutrition;
+    }
+
+    private Nutrition createNutritionBase(
+            int seed, boolean isCustom, List<HttpRef> httpRefs, User user, NutritionType nutritionType) {
+
+        Nutrition nutrition = Nutrition.builder()
+                .title("Nutrition " + seed)
+                .description("Desc " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .httpRefs(new HashSet<>(httpRefs))
+                .type(nutritionType)
+                .build();
+
+        return nutritionRepository.save(nutrition);
+    }
+
+    @Override
+    public NutritionType createSupplementType() {
+        return this.createNutritionTypeBase("SUPPLEMENT");
+    }
+
+    @Override
+    public NutritionType createRecipeType() {
+        return this.createNutritionTypeBase("RECIPE");
+    }
+
+    private NutritionType createNutritionTypeBase(String nutritionType) {
+        return nutritionTypeRepository.save(
+                NutritionType.builder().name(nutritionType).build());
     }
 }
