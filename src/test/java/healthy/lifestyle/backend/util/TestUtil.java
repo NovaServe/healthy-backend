@@ -4,6 +4,8 @@ import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.mentals.model.Mental;
 import healthy.lifestyle.backend.mentals.model.MentalType;
+import healthy.lifestyle.backend.nutrition.model.Nutrition;
+import healthy.lifestyle.backend.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -230,5 +232,54 @@ public class TestUtil implements Util {
 
     private MentalType createMentalTypeBase(String mentalType, Long id) {
         return MentalType.builder().id(id).name(mentalType).build();
+    }
+
+    @Override
+    public Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType) {
+        return this.createNutritionBase(seed, false, httpRefs, null, nutritionType);
+    }
+
+    @Override
+    public Nutrition createCustomNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType, User user) {
+        Nutrition nutrition = this.createNutritionBase(seed, true, httpRefs, user, nutritionType);
+        if (user.getNutritions() == null) user.setNutritions(new HashSet<>());
+        user.getNutritions().add(nutrition);
+        return nutrition;
+    }
+
+    private Nutrition createNutritionBase(
+            int seed, boolean isCustom, List<HttpRef> httpRefs, User user, NutritionType nutritionType) {
+
+        return Nutrition.builder()
+                .id((long) seed)
+                .title("Nutrition " + seed)
+                .description("Desc " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .httpRefs(new HashSet<>(httpRefs))
+                .type(nutritionType)
+                .build();
+    }
+
+    @Override
+    public NutritionType createSupplementType() {
+        return this.createNutritionTypeBase(null, "SUPPLEMENT");
+    }
+
+    public NutritionType createSupplementType(long id) {
+        return this.createNutritionTypeBase(id, "SUPPLEMENT");
+    }
+
+    @Override
+    public NutritionType createRecipeType() {
+        return this.createNutritionTypeBase(null, "RECIPE");
+    }
+
+    public NutritionType createRecipeType(long id) {
+        return this.createNutritionTypeBase(id, "RECIPE");
+    }
+
+    private NutritionType createNutritionTypeBase(Long id, String nutritionType) {
+        return NutritionType.builder().id(id).name(nutritionType).build();
     }
 }

@@ -63,6 +63,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getDefaultWorkoutDetailsUrl())
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, apiUrl.getDefaultNutritionDetailsUrl())
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST, apiUrl.getAdminHelloWorldUrl())
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getDefaultMentalDetailsUrl())

@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.mentals.service;
+package healthy.lifestyle.backend.nutritions.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -8,11 +8,12 @@ import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.mentals.dto.MentalResponseDto;
-import healthy.lifestyle.backend.mentals.model.Mental;
-import healthy.lifestyle.backend.mentals.model.MentalType;
-import healthy.lifestyle.backend.mentals.repository.MentalRepository;
-import healthy.lifestyle.backend.mentals.repository.MentalTypeRepository;
+import healthy.lifestyle.backend.nutrition.dto.NutritionResponseDto;
+import healthy.lifestyle.backend.nutrition.model.Nutrition;
+import healthy.lifestyle.backend.nutrition.model.NutritionType;
+import healthy.lifestyle.backend.nutrition.repository.NutritionRepository;
+import healthy.lifestyle.backend.nutrition.repository.NutritionTypeRepository;
+import healthy.lifestyle.backend.nutrition.service.NutritionServiceImpl;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserServiceImpl;
 import healthy.lifestyle.backend.util.DtoUtil;
@@ -32,12 +33,12 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
-class MentalServiceTest {
+public class NutritionServiceTest {
     @Mock
-    private MentalRepository mentalRepository;
+    private NutritionRepository nutritionRepository;
 
     @Mock
-    private MentalTypeRepository mentalTypeRepository;
+    private NutritionTypeRepository nutritionTypeRepository;
 
     @Mock
     private HttpRefRepository httpRefRepository;
@@ -49,55 +50,60 @@ class MentalServiceTest {
     ModelMapper modelMapper;
 
     @InjectMocks
-    MentalServiceImpl mentalService;
+    NutritionServiceImpl nutritionService;
 
     TestUtil testUtil = new TestUtil();
 
     DtoUtil dtoUtil = new DtoUtil();
 
     @Test
-    void getMentalByIdTest_shouldReturnDefaultMentalDto() {
+    void getDefaultNutritionByIdTest_shouldReturnDefaultNutritionDto() {
         // Given
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
-        MentalType mentalType = testUtil.createAffirmationType();
-        Mental defaultMental = testUtil.createDefaultMental(1, List.of(defaultHttpRef), mentalType);
+        NutritionType nutritionType1 = testUtil.createSupplementType(1);
+        NutritionType nutritionType2 = testUtil.createRecipeType(2);
 
-        when(mentalRepository.findById(defaultMental.getId())).thenReturn(Optional.of(defaultMental));
+        Nutrition defaultNutrition = testUtil.createDefaultNutrition(1, List.of(defaultHttpRef), nutritionType1);
+
+        when(nutritionRepository.findById(defaultNutrition.getId())).thenReturn(Optional.of(defaultNutrition));
 
         // When
-        MentalResponseDto mentalDtoActual = mentalService.getMentalById(defaultMental.getId(), true, null);
+        NutritionResponseDto nutritionDtoActual =
+                nutritionService.getNutritionById(defaultNutrition.getId(), true, null);
 
         // Then
-        verify((mentalRepository), times(1)).findById(defaultMental.getId());
+        verify(nutritionRepository, times(1)).findById(defaultNutrition.getId());
         verify(userService, times(0)).getUserById(anyLong());
 
-        assertThat(defaultMental)
+        assertThat(defaultNutrition)
                 .usingRecursiveComparison()
                 .ignoringFields("user", "httpRefs", "type")
-                .isEqualTo(mentalDtoActual);
+                .isEqualTo(nutritionDtoActual);
 
-        List<HttpRef> httpRefs_ = defaultMental.getHttpRefs().stream()
+        List<HttpRef> httpRefs = defaultNutrition.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
-        assertThat(httpRefs_)
+
+        assertThat(httpRefs)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
-                .isEqualTo(mentalDtoActual.getHttpRefs());
+                .isEqualTo(nutritionDtoActual.getHttpRefs());
     }
 
     @Test
-    void getMentalByIdTest_shouldThrowErrorWith404_whenMentalNotFound() {
+    void getDefaultNutritionByIdTest_shouldThrowErrorWith404_whenNutritionNotFound() {
         // Given
-        long nonExistingMentalId = 1000L;
+        long nonExistingNutritionId = 1000L;
         ApiException expectedException =
-                new ApiException(ErrorMessage.MENTAL_NOT_FOUND, nonExistingMentalId, HttpStatus.NOT_FOUND);
-        when(mentalRepository.findById(nonExistingMentalId)).thenReturn(Optional.empty());
+                new ApiException(ErrorMessage.NUTRITION_NOT_FOUND, nonExistingNutritionId, HttpStatus.NOT_FOUND);
+
+        when(nutritionRepository.findById(nonExistingNutritionId)).thenReturn(Optional.empty());
 
         // When
-        ApiException actualException =
-                assertThrows(ApiException.class, () -> mentalService.getMentalById(nonExistingMentalId, true, null));
+        ApiException actualException = assertThrows(
+                ApiException.class, () -> nutritionService.getNutritionById(nonExistingNutritionId, true, null));
 
         // Then
-        verify((mentalRepository), times(1)).findById(nonExistingMentalId);
+        verify(nutritionRepository, times(1)).findById(nonExistingNutritionId);
         verify(userService, times(0)).getUserById(anyLong());
 
         assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
@@ -105,25 +111,25 @@ class MentalServiceTest {
     }
 
     @Test
-    void getMentalByIdTest_shouldThrowErrorWith400_whenDefaultMentalRequestedInsteadOfCustom() {
+    void getDefaultNutritionByIdTest_shouldThrowErrorWith400_whenDefaultNutritionRequestedInsteadOfCustom() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
         HttpRef customHttpRef = testUtil.createCustomHttpRef(2, user);
-        MentalType mentalType = testUtil.createAffirmationType(1);
+        NutritionType nutritionType = testUtil.createSupplementType(1);
 
-        Mental customMental = testUtil.createCustomMental(1, List.of(defaultHttpRef, customHttpRef), mentalType, user);
+        Nutrition customNutrition = testUtil.createCustomNutrition(1, List.of(defaultHttpRef), nutritionType, user);
         ApiException expectedException = new ApiException(
                 ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT, null, HttpStatus.BAD_REQUEST);
 
-        when(mentalRepository.findById(customMental.getId())).thenReturn(Optional.of(customMental));
+        when(nutritionRepository.findById(customNutrition.getId())).thenReturn(Optional.of(customNutrition));
 
         // When
-        ApiException actualException =
-                assertThrows(ApiException.class, () -> mentalService.getMentalById(customMental.getId(), true, null));
+        ApiException actualException = assertThrows(
+                ApiException.class, () -> nutritionService.getNutritionById(customNutrition.getId(), true, null));
 
         // Then
-        verify((mentalRepository), times(1)).findById(customMental.getId());
+        verify((nutritionRepository), times(1)).findById(customNutrition.getId());
         verify(userService, times(0)).getUserById(anyLong());
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
@@ -131,28 +137,30 @@ class MentalServiceTest {
     }
 
     @Test
-    void getMentalByIdTest_shouldThrowErrorWith400_whenRequestedMentalDoesntBelongToUser() {
+    void getDefaultNutritionByIdTest_shouldThrowErrorWith400_whenRequestedNutritionDoesntBelongToUser() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
         HttpRef customHttpRef = testUtil.createCustomHttpRef(2, user);
-        MentalType mentalType = testUtil.createAffirmationType(1);
-        Mental customMental = testUtil.createCustomMental(1, List.of(defaultHttpRef, customHttpRef), mentalType, user);
+        NutritionType nutritionType = testUtil.createSupplementType(1);
+        Nutrition customNutrition =
+                testUtil.createCustomNutrition(1, List.of(defaultHttpRef, customHttpRef), nutritionType, user);
 
         User user2 = testUtil.createUser(2);
 
         ApiException expectedException =
-                new ApiException(ErrorMessage.USER_MENTAL_MISMATCH, customMental.getId(), HttpStatus.BAD_REQUEST);
+                new ApiException(ErrorMessage.USER_NUTRITION_MISMATCH, customNutrition.getId(), HttpStatus.BAD_REQUEST);
 
-        when(mentalRepository.findById(customMental.getId())).thenReturn(Optional.of(customMental));
+        when(nutritionRepository.findById(customNutrition.getId())).thenReturn(Optional.of(customNutrition));
         when(userService.getUserById(user2.getId())).thenReturn(user2);
 
         // When
         ApiException actualException = assertThrows(
-                ApiException.class, () -> mentalService.getMentalById(customMental.getId(), false, user2.getId()));
+                ApiException.class,
+                () -> nutritionService.getNutritionById(customNutrition.getId(), false, user2.getId()));
 
         // Then
-        verify((mentalRepository), times(1)).findById(customMental.getId());
+        verify((nutritionRepository), times(1)).findById(customNutrition.getId());
         verify(userService, times(1)).getUserById(user2.getId());
 
         assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
