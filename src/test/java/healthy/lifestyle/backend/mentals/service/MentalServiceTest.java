@@ -22,6 +22,7 @@ import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -157,5 +158,37 @@ class MentalServiceTest {
 
         assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
         assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
+    }
+
+    @Test
+    void getMentalByIdTest_shouldReturnCustomMentalDto() {
+        // Given
+        User user = testUtil.createUser(1);
+        HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
+        HttpRef customHttpRef = testUtil.createCustomHttpRef(2, user);
+        MentalType mentalType = testUtil.createAffirmationType(1);
+        Mental customMental = testUtil.createCustomMental(1, List.of(defaultHttpRef, customHttpRef), mentalType, user);
+
+        when(mentalRepository.findById(customMental.getId())).thenReturn(Optional.of(customMental));
+        when(userService.getUserById(user.getId())).thenReturn(user);
+
+        // When
+        MentalResponseDto mentalDtoActual = mentalService.getMentalById(customMental.getId(), false, user.getId());
+
+        // Then
+        verify((mentalRepository), times(1)).findById(customMental.getId());
+        verify(userService, times(1)).getUserById(user.getId());
+
+        Assertions.assertThat(customMental)
+                .usingRecursiveComparison()
+                .ignoringFields("user", "httpRefs", "type")
+                .isEqualTo(mentalDtoActual);
+
+        List<HttpRef> httpRefs_ = customMental.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRef::getId))
+                .toList();
+        assertThat(httpRefs_)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
+                .isEqualTo(mentalDtoActual.getHttpRefs());
     }
 }

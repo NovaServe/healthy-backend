@@ -46,4 +46,6 @@ public class URL {
     public static final String DEFAULT_MENTAL_ID = "/api/v1/mentals/default/{mental_id}";
 
     public static final String DEFAULT_NUTRITION_ID = "/api/v1/nutritions/default/{nutrition_id}";
+
+    public static final String CUSTOM_MENTAL_ID = "/api/v1/mentals/{mental_id}";
 }

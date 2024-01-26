@@ -15,6 +15,7 @@ import java.util.List;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MentalServiceImpl implements MentalService {
@@ -43,6 +44,7 @@ public class MentalServiceImpl implements MentalService {
     }
 
     @Override
+    @Transactional
     public MentalResponseDto getMentalById(long mentalId, boolean requiredDefault, Long userId) {
         Mental mental = mentalRepository
                 .findById(mentalId)

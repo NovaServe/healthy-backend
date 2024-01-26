@@ -76,11 +76,11 @@ public class DbUtil implements Util {
         workoutRepository.deleteAll();
         exerciseRepository.deleteAll();
         bodyPartRepository.deleteAll();
+        mentalRepository.deleteAll();
         httpRefRepository.deleteAll();
         userRepository.deleteAll();
         countryRepository.deleteAll();
         roleRepository.deleteAll();
-        mentalRepository.deleteAll();
         mentalTypeRepository.deleteAll();
     }
 
