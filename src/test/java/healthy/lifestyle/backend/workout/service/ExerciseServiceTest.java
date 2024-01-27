@@ -114,7 +114,7 @@ class ExerciseServiceTest {
                 .isEqualTo(exerciseActual.getBodyParts());
 
         assertThat(List.of(customHttpRef, defaultHttpRef))
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
                 .isEqualTo(exerciseActual.getHttpRefs());
     }
 
@@ -286,7 +286,8 @@ class ExerciseServiceTest {
                     .toList();
 
             assertThat(httpRefs_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                            "exercises", "user", "mentals", "nutritions")
                     .isEqualTo(exercisesDtoActual.get(id).getHttpRefs());
         });
     }
@@ -335,7 +336,8 @@ class ExerciseServiceTest {
                     .toList();
 
             assertThat(httpRefs_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                            "exercises", "user", "mentals", "nutritions")
                     .isEqualTo(exercisesDtoActual.get(id).getHttpRefs());
         });
     }
@@ -374,7 +376,7 @@ class ExerciseServiceTest {
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
         assertThat(httpRefs_)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
                 .isEqualTo(exerciseDtoActual.getHttpRefs());
     }
 
@@ -416,7 +418,7 @@ class ExerciseServiceTest {
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
         assertThat(httpRefs_)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
                 .isEqualTo(exerciseDtoActual.getHttpRefs());
     }
 

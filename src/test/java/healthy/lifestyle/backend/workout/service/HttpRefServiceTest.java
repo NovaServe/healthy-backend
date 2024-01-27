@@ -151,7 +151,7 @@ class HttpRefServiceTest {
         org.hamcrest.MatcherAssert.assertThat(httpRefsActual, hasSize(httpRefsDefault.size()));
 
         Assertions.assertThat(httpRefsDefault)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
                 .isEqualTo(httpRefsActual);
     }
 
@@ -317,7 +317,7 @@ class HttpRefServiceTest {
         org.hamcrest.MatcherAssert.assertThat(httpRefsActual, hasSize(httpRefs.size()));
 
         assertThat(httpRefs)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
                 .isEqualTo(httpRefsActual);
     }
 

@@ -2,6 +2,14 @@ package healthy.lifestyle.backend.util;
 
 import static java.util.Objects.isNull;
 
+import healthy.lifestyle.backend.mentals.model.Mental;
+import healthy.lifestyle.backend.mentals.model.MentalType;
+import healthy.lifestyle.backend.mentals.repository.MentalRepository;
+import healthy.lifestyle.backend.mentals.repository.MentalTypeRepository;
+import healthy.lifestyle.backend.nutrition.model.Nutrition;
+import healthy.lifestyle.backend.nutrition.model.NutritionType;
+import healthy.lifestyle.backend.nutrition.repository.NutritionRepository;
+import healthy.lifestyle.backend.nutrition.repository.NutritionTypeRepository;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
@@ -47,6 +55,18 @@ public class DbUtil implements Util {
     WorkoutRepository workoutRepository;
 
     @Autowired
+    MentalRepository mentalRepository;
+
+    @Autowired
+    MentalTypeRepository mentalTypeRepository;
+
+    @Autowired
+    NutritionRepository nutritionRepository;
+
+    @Autowired
+    NutritionTypeRepository nutritionTypeRepository;
+
+    @Autowired
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -56,10 +76,12 @@ public class DbUtil implements Util {
         workoutRepository.deleteAll();
         exerciseRepository.deleteAll();
         bodyPartRepository.deleteAll();
+        mentalRepository.deleteAll();
         httpRefRepository.deleteAll();
         userRepository.deleteAll();
         countryRepository.deleteAll();
         roleRepository.deleteAll();
+        mentalTypeRepository.deleteAll();
     }
 
     @Override
@@ -172,6 +194,11 @@ public class DbUtil implements Util {
         return this.createUserBase(seed, role, country, null, null, null, null);
     }
 
+    @Override
+    public User createUser(int seed, Role role, Country country, int age) {
+        return this.createUserBase(seed, role, country, age, null, null, null);
+    }
+
     private User createUserBase(
             int seed,
             Role role,
@@ -253,5 +280,90 @@ public class DbUtil implements Util {
 
     public Workout getWorkoutById(long id) {
         return workoutRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType) {
+        return this.createMentalBase(seed, false, httpRefs, null, mentalType);
+    }
+
+    @Override
+    public Mental createCustomMental(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user) {
+        Mental mental = this.createMentalBase(seed, true, httpRefs, user, mentalType);
+        if (user.getMentals() == null) user.setMentals(new HashSet<>());
+        user.getMentals().add(mental);
+        userRepository.save(user);
+        return mental;
+    }
+
+    private Mental createMentalBase(
+            int seed, boolean isCustom, List<HttpRef> httpRefs, User user, MentalType mentalType) {
+        Mental mental = Mental.builder()
+                .title("Mental " + seed)
+                .description("Desc " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .httpRefs(new HashSet<>(httpRefs))
+                .type(mentalType)
+                .build();
+        return mentalRepository.save(mental);
+    }
+
+    @Override
+    public MentalType createMeditationType() {
+        return this.createMentalTypeBase("MEDITATION");
+    }
+
+    @Override
+    public MentalType createAffirmationType() {
+        return this.createMentalTypeBase("AFFIRMATION");
+    }
+
+    private MentalType createMentalTypeBase(String mentalType) {
+        return mentalTypeRepository.save(MentalType.builder().name(mentalType).build());
+    }
+
+    @Override
+    public Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType) {
+        return this.createNutritionBase(seed, false, httpRefs, null, nutritionType);
+    }
+
+    @Override
+    public Nutrition createCustomNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType, User user) {
+        Nutrition nutrition = this.createNutritionBase(seed, true, httpRefs, user, nutritionType);
+        if (user.getNutritions() == null) user.setNutritions(new HashSet<>());
+        user.getNutritions().add(nutrition);
+        userRepository.save(user);
+        return nutrition;
+    }
+
+    private Nutrition createNutritionBase(
+            int seed, boolean isCustom, List<HttpRef> httpRefs, User user, NutritionType nutritionType) {
+
+        Nutrition nutrition = Nutrition.builder()
+                .title("Nutrition " + seed)
+                .description("Desc " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .httpRefs(new HashSet<>(httpRefs))
+                .type(nutritionType)
+                .build();
+
+        return nutritionRepository.save(nutrition);
+    }
+
+    @Override
+    public NutritionType createSupplementType() {
+        return this.createNutritionTypeBase("SUPPLEMENT");
+    }
+
+    @Override
+    public NutritionType createRecipeType() {
+        return this.createNutritionTypeBase("RECIPE");
+    }
+
+    private NutritionType createNutritionTypeBase(String nutritionType) {
+        return nutritionTypeRepository.save(
+                NutritionType.builder().name(nutritionType).build());
     }
 }
