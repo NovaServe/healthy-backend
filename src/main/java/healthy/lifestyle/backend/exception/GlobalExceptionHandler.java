@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.exception;
 
 import static java.util.Objects.nonNull;
 
+import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -25,10 +26,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ExceptionDto> handleApiException(ApiException exception, WebRequest webRequest) {
         logger.error(
-                "GlobalExceptionHandler.handleApiException(): {}, {}, {}",
-                webRequest.getDescription(false),
-                exception.getHttpStatus(),
-                exception.getStackTrace());
+                "{}, {}, {}", webRequest.getDescription(false), exception.getHttpStatus(), exception.getStackTrace());
 
         String message;
         if (exception.getResourceId() != null) message = exception.getMessageWithResourceId();
@@ -43,14 +41,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ExceptionDto> handleApiExceptionCustomMessage(
             ApiExceptionCustomMessage exception, WebRequest webRequest) {
         logger.error(
-                "GlobalExceptionHandler.handleApiException(): {}, {}, {}",
-                webRequest.getDescription(false),
-                exception.getHttpStatus(),
-                exception.getStackTrace());
+                "{}, {}, {}", webRequest.getDescription(false), exception.getHttpStatus(), exception.getStackTrace());
 
         ExceptionDto exceptionDto = new ExceptionDto(
                 exception.getMessage(), exception.getHttpStatus().value());
         return new ResponseEntity<ExceptionDto>(exceptionDto, exception.getHttpStatus());
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ExceptionDto> handleConstraintViolationException(ConstraintViolationException exception) {
+        String[] messageParts = exception.getMessage().split(",");
+        String[] substrings = new String[messageParts.length];
+        for (int i = 0; i < messageParts.length; i++) {
+            int dotIndex = messageParts[i].indexOf('.');
+            String substring = messageParts[i].substring(dotIndex + 1);
+            substrings[i] = substring;
+        }
+        String resultMessage = String.join(", ", substrings);
+        ExceptionDto exceptionDto = new ExceptionDto(resultMessage, HttpStatus.BAD_REQUEST.value());
+        logger.error("{} - {}", exceptionDto.getMessage(), exceptionDto.getCode());
+        return new ResponseEntity<>(exceptionDto, HttpStatus.BAD_REQUEST);
     }
 
     /**
@@ -61,9 +71,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        logger.error("GlobalExceptionHandler.handleMethodArgumentNotValid(): ");
         Map<String, String> errors = new HashMap<>();
-
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = "Method argument not valid";
             if (error instanceof FieldError) {
@@ -81,7 +89,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             }
             String message = error.getDefaultMessage();
             errors.put(fieldName, message);
-            logger.error("{}: {}", fieldName, message);
+            logger.error("{}: {} - {}", fieldName, message, HttpStatus.BAD_REQUEST.value());
         });
 
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);

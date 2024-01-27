@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
@@ -29,8 +30,12 @@ import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -141,6 +146,7 @@ class HttpRefControllerTest {
         mockMvc.perform(post(URL.CUSTOM_HTTP_REFS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createHttpRequestDto)))
+
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.name", is("Size should be from 5 to 255 characters long")))
@@ -210,32 +216,178 @@ class HttpRefControllerTest {
                 .andDo(print());
     }
 
-    @Test
-    void getDefaultHttpRefsTest_shouldReturnDefaultHttpRefDtoListWith200_whenValidRequest() throws Exception {
+    @ParameterizedTest
+    @MethodSource("multipleValidFiltersDefaultHttpRefs")
+    void getDefaultHttpRefsWithFilterTest_shouldReturnDefaultHttpRefsWith200_whenValidRequest(
+            String name, String description, int totalElements, int totalPages, int numberOfElements) throws Exception {
         // Given
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
         HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+        HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        User user1 = dbUtil.createUser(1, role, country);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user1);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(5, user1);
 
-        User user = dbUtil.createUser(1);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user);
-        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user);
+        int pageNumber = 0;
+        int pageSize = 2;
+        String sortDirection = "ASC";
+        String sortField = "id";
 
         // When
-        MvcResult mvcResult = mockMvc.perform(get(URL.DEFAULT_HTTP_REFS).contentType(MediaType.APPLICATION_JSON))
+        MvcResult mvcResult = mockMvc.perform(get(URL.DEFAULT_HTTP_REFS)
+                        .param("name", name)
+                        .param("description", description)
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(totalElements)))
+                .andExpect(jsonPath("$.totalPages", is(totalPages)))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andExpect(jsonPath("$.numberOfElements", is(numberOfElements)))
                 .andDo(print())
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        List<HttpRefResponseDto> responseDto =
-                objectMapper.readValue(responseContent, new TypeReference<List<HttpRefResponseDto>>() {});
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<HttpRefResponseDto> httpRefResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<HttpRefResponseDto>>() {});
+        assertEquals(numberOfElements, httpRefResponseDtoList.size());
+    }
 
-        assertEquals(2, responseDto.size());
-        assertThat(responseDto)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                .isEqualTo(List.of(defaultHttpRef1, defaultHttpRef2));
+    static Stream<Arguments> multipleValidFiltersDefaultHttpRefs() {
+        return Stream.of(
+                // Default
+                Arguments.of("1", null, 1, 1, 1),
+                Arguments.of(null, "1", 1, 1, 1),
+                Arguments.of("1", "1", 1, 1, 1),
+                Arguments.of("1", "2", 0, 0, 0),
+                Arguments.of("Name", null, 3, 2, 2),
+                Arguments.of(null, "Desc", 3, 2, 2),
+                Arguments.of(null, null, 3, 2, 2));
+    }
+
+    @ParameterizedTest
+    @MethodSource("multipleFiltersDefaultSortAndOrder")
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getDefaultHttpRefsWithFilterTest_shouldReturnDefaultHttpRefsWith200_whenSortAndOrder(
+            String sortField, String sortDirection, Boolean isCustom) throws Exception {
+        // Given
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+        HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
+
+        User user = dbUtil.createUser(1);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user);
+
+        int pageNumber = 0;
+        int pageSize = 3;
+        int totalPages = 1;
+        String name = null;
+        String description = null;
+        int totalElements = 3;
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.DEFAULT_HTTP_REFS)
+                        .param("name", name)
+                        .param("description", description)
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(totalElements)))
+                .andExpect(jsonPath("$.totalPages", is(totalPages)))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andExpect(jsonPath("$.numberOfElements", is(totalElements)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<HttpRefResponseDto> httpRefResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<HttpRefResponseDto>>() {});
+        assertEquals(totalElements, httpRefResponseDtoList.size());
+
+        if (sortDirection.equals("ASC")) {
+            assertThat(httpRefResponseDtoList.get(0))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef1);
+
+            assertThat(httpRefResponseDtoList.get(1))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef2);
+
+            assertThat(httpRefResponseDtoList.get(2))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef3);
+        }
+
+        if (sortDirection.equals("DESC")) {
+            assertThat(httpRefResponseDtoList.get(0))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef3);
+
+            assertThat(httpRefResponseDtoList.get(1))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef2);
+
+            assertThat(httpRefResponseDtoList.get(2))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef1);
+        }
+    }
+
+    static Stream<Arguments> multipleFiltersDefaultSortAndOrder() {
+        return Stream.of(
+                // Default
+                Arguments.of("id", "ASC", false),
+                Arguments.of("name", "ASC", false),
+                Arguments.of("description", "ASC", false),
+                Arguments.of("id", "DESC", false),
+                Arguments.of("name", "DESC", false),
+                Arguments.of("description", "DESC", false));
+    }
+
+    @ParameterizedTest
+    @MethodSource("multipleInvalidFiltersDefaultHttpRefs")
+    void getDefaultHttpRefsWithFilterTest_shouldReturnValidationErrorMessageWith400_whenInvalidRequest(
+            String name, String description, String validationErrorMessage) throws Exception {
+        // When
+        mockMvc.perform(get(URL.DEFAULT_HTTP_REFS)
+                        .param("name", name)
+                        .param("description", description)
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(validationErrorMessage)))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
+    }
+
+    static Stream<Arguments> multipleInvalidFiltersDefaultHttpRefs() {
+        return Stream.of(
+                // Default
+                Arguments.of("!invalid-name", null, "name: Not allowed symbols"),
+                Arguments.of(null, "!invalid-description", "description: Not allowed symbols"));
     }
 
     @Test
@@ -323,81 +475,405 @@ class HttpRefControllerTest {
                 .andDo(print());
     }
 
-    @Test
+    @ParameterizedTest
+    @MethodSource("multipleValidFiltersDefaultOrCustom")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomHttpRefsTest_shouldReturnCustomHttpRefDtoListWith200_whenValidRequest() throws Exception {
+    void getHttpRefsWithFilterTest_shouldReturnDefaultOrCustomHttpRefs(
+            Boolean isCustom, String name, String description, int totalElements, int totalPages, int numberOfElements)
+            throws Exception {
         // Given
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+        HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
-
         User user1 = dbUtil.createUser(1, role, country);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(2, user1);
-        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(3, user1);
-
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user1);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(5, user1);
         User user2 = dbUtil.createUser(2, role, country);
-        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(3, user2);
-        HttpRef customHttpRef4 = dbUtil.createCustomHttpRef(4, user2);
+        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(6, user2);
+
+        int pageNumber = 0;
+        int pageSize = 2;
+        String sortDirection = "ASC";
+        String sortField = "id";
 
         // When
-        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_HTTP_REFS).contentType(MediaType.APPLICATION_JSON))
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_HTTP_REFS)
+                        .param("isCustom", String.valueOf(isCustom))
+                        .param("name", name)
+                        .param("description", description)
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(totalElements)))
+                .andExpect(jsonPath("$.totalPages", is(totalPages)))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andExpect(jsonPath("$.numberOfElements", is(numberOfElements)))
                 .andDo(print())
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        List<HttpRefResponseDto> responseDto =
-                objectMapper.readValue(responseContent, new TypeReference<List<HttpRefResponseDto>>() {});
-
-        assertEquals(2, responseDto.size());
-
-        assertThat(responseDto)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                .isEqualTo(List.of(customHttpRef1, customHttpRef2));
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<HttpRefResponseDto> httpRefResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<HttpRefResponseDto>>() {});
+        assertEquals(numberOfElements, httpRefResponseDtoList.size());
     }
 
-    @Test
+    static Stream<Arguments> multipleValidFiltersDefaultOrCustom() {
+        return Stream.of(
+                // Default
+                Arguments.of(false, "1", null, 1, 1, 1),
+                Arguments.of(false, null, "1", 1, 1, 1),
+                Arguments.of(false, "1", "1", 1, 1, 1),
+                Arguments.of(false, "1", "2", 0, 0, 0),
+                Arguments.of(false, "Name", null, 3, 2, 2),
+                Arguments.of(false, null, "Desc", 3, 2, 2),
+                Arguments.of(false, null, null, 3, 2, 2),
+
+                // Custom
+                Arguments.of(true, "4", null, 1, 1, 1),
+                Arguments.of(true, null, "4", 1, 1, 1),
+                Arguments.of(true, "4", "4", 1, 1, 1),
+                Arguments.of(true, "1", "2", 0, 0, 0),
+                Arguments.of(true, "Name", null, 2, 1, 2),
+                Arguments.of(true, null, "Desc", 2, 1, 2),
+                Arguments.of(true, null, null, 2, 1, 2));
+    }
+
+    @ParameterizedTest
+    @MethodSource("multipleFiltersDefaultOrCustomSortAndOrder")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomHttpRefsTest_shouldReturnEmptyListWith200_whenNoHttpRefsFound() throws Exception {
+    void getHttpRefsWithFilterTest_shouldReturnDefaultOrCustomHttpRefs_whenSortAndOrder(
+            String sortField, String sortDirection, Boolean isCustom) throws Exception {
         // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+        HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
 
-        User user1 = dbUtil.createUser(1, role, country);
+        User user = dbUtil.createUser(1);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(5, user);
+        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(6, user);
 
-        User user2 = dbUtil.createUser(2, role, country);
-        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(1, user2);
-        HttpRef customHttpRef4 = dbUtil.createCustomHttpRef(2, user2);
+        int pageNumber = 0;
+        int pageSize = 3;
+        int totalPages = 1;
+        String name = null;
+        String description = null;
+        int totalElements = 3;
 
         // When
-        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_HTTP_REFS).contentType(MediaType.APPLICATION_JSON))
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_HTTP_REFS)
+                        .param("isCustom", String.valueOf(isCustom))
+                        .param("name", name)
+                        .param("description", description)
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(totalElements)))
+                .andExpect(jsonPath("$.totalPages", is(totalPages)))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andExpect(jsonPath("$.numberOfElements", is(totalElements)))
                 .andDo(print())
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        List<HttpRefResponseDto> responseDto =
-                objectMapper.readValue(responseContent, new TypeReference<List<HttpRefResponseDto>>() {});
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<HttpRefResponseDto> httpRefResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<HttpRefResponseDto>>() {});
+        assertEquals(totalElements, httpRefResponseDtoList.size());
 
-        assertEquals(0, responseDto.size());
+        if (sortDirection.equals("ASC") && !isCustom) {
+            assertThat(httpRefResponseDtoList.get(0))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef1);
+
+            assertThat(httpRefResponseDtoList.get(1))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef2);
+
+            assertThat(httpRefResponseDtoList.get(2))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef3);
+        }
+
+        if (sortDirection.equals("DESC") && !isCustom) {
+            assertThat(httpRefResponseDtoList.get(0))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef3);
+
+            assertThat(httpRefResponseDtoList.get(1))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef2);
+
+            assertThat(httpRefResponseDtoList.get(2))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef1);
+        }
+
+        if (sortDirection.equals("ASC") && isCustom) {
+            assertThat(httpRefResponseDtoList.get(0))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef1);
+
+            assertThat(httpRefResponseDtoList.get(1))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef2);
+
+            assertThat(httpRefResponseDtoList.get(2))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef3);
+        }
+
+        if (sortDirection.equals("DESC") && isCustom) {
+            assertThat(httpRefResponseDtoList.get(0))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef3);
+
+            assertThat(httpRefResponseDtoList.get(1))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef2);
+
+            assertThat(httpRefResponseDtoList.get(2))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef1);
+        }
     }
 
-    @Test
-    void getCustomHttpRefsTest_shouldReturnVoidWith401_whenUserNotAuthorized() throws Exception {
+    static Stream<Arguments> multipleFiltersDefaultOrCustomSortAndOrder() {
+        return Stream.of(
+                // Default
+                Arguments.of("id", "ASC", false),
+                Arguments.of("name", "ASC", false),
+                Arguments.of("description", "ASC", false),
+                Arguments.of("id", "DESC", false),
+                Arguments.of("name", "DESC", false),
+                Arguments.of("description", "DESC", false),
+
+                // Custom
+                Arguments.of("id", "ASC", true),
+                Arguments.of("name", "ASC", true),
+                Arguments.of("description", "ASC", true),
+                Arguments.of("id", "DESC", true),
+                Arguments.of("name", "DESC", true),
+                Arguments.of("description", "DESC", true));
+    }
+
+    @ParameterizedTest
+    @MethodSource("multipleInvalidFiltersDefaultOrCustomHttpRefs")
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getHttpRefsWithFilterTest_shouldReturnValidationErrorMessageWith400_whenInvalidRequest(
+            String name, String description, String validationErrorMessage) throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+
         // When
-        mockMvc.perform(get(URL.CUSTOM_HTTP_REFS).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get(URL.CUSTOM_HTTP_REFS)
+                        .param("isCustom", String.valueOf(true))
+                        .param("name", name)
+                        .param("description", description)
+                        .contentType(MediaType.APPLICATION_JSON))
 
                 // Then
-                .andExpect(status().isUnauthorized())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(validationErrorMessage)))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
 
-    // todo: add parametrization for valid input
+    static Stream<Arguments> multipleInvalidFiltersDefaultOrCustomHttpRefs() {
+        return Stream.of(
+                Arguments.of("!invalid-name", null, "name: Not allowed symbols"),
+                Arguments.of(null, "!invalid-description", "description: Not allowed symbols"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("multipleValidFiltersDefaultAndCustom")
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getHttpRefsWithFilterTest_shouldReturnDefaultAndCustomHttpRefs(
+            String name, String description, int totalElements, int totalPages, int numberOfElements) throws Exception {
+        // Given
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+        HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        User user1 = dbUtil.createUser(1, role, country);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user1);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(5, user1);
+        User user2 = dbUtil.createUser(2, role, country);
+        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(6, user2);
+
+        int pageNumber = 0;
+        int pageSize = 2;
+        String sortDirection = "ASC";
+        String sortField = "id";
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_HTTP_REFS)
+                        .param("name", name)
+                        .param("description", description)
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(totalElements)))
+                .andExpect(jsonPath("$.totalPages", is(totalPages)))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andExpect(jsonPath("$.numberOfElements", is(numberOfElements)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<HttpRefResponseDto> httpRefResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<HttpRefResponseDto>>() {});
+        assertEquals(numberOfElements, httpRefResponseDtoList.size());
+    }
+
+    static Stream<Arguments> multipleValidFiltersDefaultAndCustom() {
+        return Stream.of(
+                Arguments.of("1", "2", 0, 0, 0),
+                Arguments.of("Name", null, 5, 3, 2),
+                Arguments.of(null, "Desc", 5, 3, 2),
+                Arguments.of(null, null, 5, 3, 2));
+    }
+
+    @ParameterizedTest
+    @MethodSource("multipleFiltersDefaultAndCustomSortAndOrder")
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getHttpRefsWithFilterTest_shouldReturnDefaultAndCustomHttpRefs_whenSortAndOrder(
+            String sortField, String sortDirection) throws Exception {
+        // Given
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        User user1 = dbUtil.createUser(1, role, country);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user1);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user1);
+        User user2 = dbUtil.createUser(2, role, country);
+        HttpRef customHttpRef4 = dbUtil.createCustomHttpRef(5, user2);
+
+        int pageNumber = 0;
+        int pageSize = 4;
+        String name = null;
+        String description = null;
+        int totalElements = 4;
+        int totalPages = 1;
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_HTTP_REFS)
+                        .param("name", name)
+                        .param("description", description)
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(totalElements)))
+                .andExpect(jsonPath("$.totalPages", is(totalPages)))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andExpect(jsonPath("$.numberOfElements", is(totalElements)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<HttpRefResponseDto> httpRefResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<HttpRefResponseDto>>() {});
+        assertEquals(totalElements, httpRefResponseDtoList.size());
+
+        if (sortDirection.equals("ASC")) {
+            assertThat(httpRefResponseDtoList.get(0))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef1);
+
+            assertThat(httpRefResponseDtoList.get(1))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef2);
+
+            assertThat(httpRefResponseDtoList.get(2))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef1);
+
+            assertThat(httpRefResponseDtoList.get(3))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef2);
+        }
+
+        if (sortDirection.equals("DESC")) {
+            assertThat(httpRefResponseDtoList.get(0))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef2);
+
+            assertThat(httpRefResponseDtoList.get(1))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(customHttpRef1);
+
+            assertThat(httpRefResponseDtoList.get(2))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef2);
+
+            assertThat(httpRefResponseDtoList.get(3))
+                    .usingRecursiveComparison()
+                    .ignoringFields("exercises", "user")
+                    .isEqualTo(defaultHttpRef1);
+        }
+    }
+
+    static Stream<Arguments> multipleFiltersDefaultAndCustomSortAndOrder() {
+        return Stream.of(
+                Arguments.of("id", "ASC"),
+                Arguments.of("name", "ASC"),
+                Arguments.of("description", "ASC"),
+                Arguments.of("id", "DESC"),
+                Arguments.of("name", "DESC"),
+                Arguments.of("description", "DESC"));
+    }
+
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
     void updateCustomHttpRefTest_shouldReturnHttpRefDtoWith200_whenValidRequest() throws Exception {

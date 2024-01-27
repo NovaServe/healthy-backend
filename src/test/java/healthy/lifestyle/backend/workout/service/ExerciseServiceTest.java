@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.Country;
 import healthy.lifestyle.backend.users.model.Role;
@@ -38,6 +39,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 
@@ -114,6 +116,131 @@ class ExerciseServiceTest {
         assertThat(List.of(customHttpRef, defaultHttpRef))
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
                 .isEqualTo(exerciseActual.getHttpRefs());
+    }
+
+    static Stream<Arguments> getExercisesWithFilter_multipleInputs() {
+        return Stream.of(Arguments.of(null, 1L), Arguments.of(true, 1L), Arguments.of(false, null));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getExercisesWithFilter_multipleInputs")
+    void getExercisesWithFilter_shouldReturnPageObject(Boolean isCustom, Long userId) {
+        // Given
+        int currentPageNumber = 0;
+        int itemsPerPage = 2;
+        String sortDirection = "ASC";
+        String sortField = "id";
+
+        if (isCustom == null) {
+            when(exerciseRepository.findDefaultAndCustomWithFilter(
+                            nullable(Long.class),
+                            nullable(String.class),
+                            nullable(String.class),
+                            nullable(Boolean.class),
+                            anyList(),
+                            any()))
+                    .thenReturn(Page.empty());
+        } else {
+            when(exerciseRepository.findDefaultOrCustomWithFilter(
+                            nullable(Boolean.class),
+                            nullable(Long.class),
+                            nullable(String.class),
+                            nullable(String.class),
+                            nullable(Boolean.class),
+                            anyList(),
+                            any()))
+                    .thenReturn(Page.empty());
+        }
+
+        // When
+        Page<ExerciseResponseDto> dtoPage = exerciseService.getExercisesWithFilter(
+                isCustom,
+                userId,
+                "title",
+                "desc",
+                true,
+                List.of(1L),
+                sortField,
+                sortDirection,
+                currentPageNumber,
+                itemsPerPage);
+
+        // Then
+        verify(bodyPartRepository, times(0)).findAll();
+        if (isCustom == null) {
+            verify(exerciseRepository, times(1))
+                    .findDefaultAndCustomWithFilter(
+                            nullable(Long.class),
+                            nullable(String.class),
+                            nullable(String.class),
+                            nullable(Boolean.class),
+                            anyList(),
+                            any());
+        } else {
+            verify(exerciseRepository, times(1))
+                    .findDefaultOrCustomWithFilter(
+                            nullable(Boolean.class),
+                            nullable(Long.class),
+                            nullable(String.class),
+                            nullable(String.class),
+                            nullable(Boolean.class),
+                            anyList(),
+                            any());
+        }
+    }
+
+    static Stream<Arguments> getExercisesWithFilter_invalidArgs() {
+        return Stream.of(Arguments.of(null, null), Arguments.of(false, 1L), Arguments.of(true, null));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getExercisesWithFilter_invalidArgs")
+    void getExercisesWithFilter_shouldThrowErrorWith400_whenInvalidArgs(Boolean isCustom, Long userId) {
+        // Given
+        int currentPageNumber = 0;
+        int itemsPerPage = 2;
+        String sortDirection = "ASC";
+        String sortField = "id";
+        ApiExceptionCustomMessage expectedException =
+                new ApiExceptionCustomMessage("Invalid args combination", HttpStatus.BAD_REQUEST);
+
+        // When
+        ApiExceptionCustomMessage actualException = assertThrows(
+                ApiExceptionCustomMessage.class,
+                () -> exerciseService.getExercisesWithFilter(
+                        isCustom,
+                        userId,
+                        "title",
+                        "desc",
+                        true,
+                        List.of(1L),
+                        sortField,
+                        sortDirection,
+                        currentPageNumber,
+                        itemsPerPage));
+
+        // Then
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
+
+        verify(bodyPartRepository, times(0)).findAll();
+        verify(exerciseRepository, times(0))
+                .findDefaultAndCustomWithFilter(
+                        nullable(Long.class),
+                        nullable(String.class),
+                        nullable(String.class),
+                        nullable(Boolean.class),
+                        anyList(),
+                        any());
+        verify(exerciseRepository, times(0))
+                .findDefaultOrCustomWithFilter(
+                        nullable(Boolean.class),
+                        nullable(Long.class),
+                        nullable(String.class),
+                        nullable(String.class),
+                        nullable(Boolean.class),
+                        anyList(),
+                        any());
     }
 
     @Test

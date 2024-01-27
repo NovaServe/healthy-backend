@@ -2,8 +2,7 @@ package healthy.lifestyle.backend.workout.controller;
 
 import static java.util.Objects.nonNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -12,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
@@ -349,71 +349,6 @@ class ExerciseControllerTest {
     }
 
     @Test
-    void getDefaultExercisesTest_shouldReturnDefaultExercisesDtoListWith200_whenValidRequest() throws Exception {
-        // Given
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
-        boolean defaultExerciseNeedsEquipment = true;
-        Exercise defaultExercise1 = dbUtil.createDefaultExercise(
-                1, defaultExerciseNeedsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-        Exercise defaultExercise2 = dbUtil.createDefaultExercise(
-                2, defaultExerciseNeedsEquipment, List.of(bodyPart2), List.of(defaultHttpRef2));
-
-        User user = dbUtil.createUser(1);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user);
-        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user);
-        boolean customExerciseNeedsEquipment = true;
-        Exercise customExercise1 = dbUtil.createCustomExercise(
-                3,
-                customExerciseNeedsEquipment,
-                List.of(bodyPart1, bodyPart2),
-                List.of(defaultHttpRef1, customHttpRef1),
-                user);
-        Exercise customExercise2 = dbUtil.createCustomExercise(
-                4,
-                customExerciseNeedsEquipment,
-                List.of(bodyPart1, bodyPart2),
-                List.of(defaultHttpRef2, customHttpRef2),
-                user);
-
-        // When
-        MvcResult mvcResult = mockMvc.perform(get(URL.DEFAULT_EXERCISES).contentType(MediaType.APPLICATION_JSON))
-
-                // Then
-                .andExpect(status().isOk())
-                .andDo(print())
-                .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        List<ExerciseResponseDto> responseDto =
-                objectMapper.readValue(responseContent, new TypeReference<List<ExerciseResponseDto>>() {});
-
-        assertEquals(2, responseDto.size());
-
-        assertThat(responseDto)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("bodyParts", "httpRefs", "user")
-                .isEqualTo(List.of(defaultExercise1, defaultExercise2));
-
-        assertThat(responseDto.get(0).getBodyParts())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(defaultExercise1.getBodyPartsSortedById());
-
-        assertThat(responseDto.get(1).getBodyParts())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(defaultExercise2.getBodyPartsSortedById());
-
-        assertThat(responseDto.get(0).getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                .isEqualTo(defaultExercise1.getHttpRefsSortedById());
-
-        assertThat(responseDto.get(1).getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                .isEqualTo(defaultExercise2.getHttpRefsSortedById());
-    }
-
-    @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
     void getCustomExerciseByIdTest_shouldReturnCustomExerciseDtoWith200_whenValidRequest() throws Exception {
         // Given
@@ -517,91 +452,524 @@ class ExerciseControllerTest {
                 .andDo(print());
     }
 
-    @Test
+    static Stream<Arguments> getExercisesWithFilter_multipleDefaultFilters() {
+        return Stream.of(
+                // Default, positive
+                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+
+                // Default, empty
+                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
+                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getExercisesWithFilter_multipleDefaultFilters")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomExercisesTest_shouldReturnCustomExercisesDtoListWith200_whenValidRequest() throws Exception {
+    void getExercisesWithFilterTest_shouldReturnDefaultFilteredExercisesWith200_whenValidFilters(
+            String title,
+            String description,
+            Boolean needsEquipment,
+            int pageSize,
+            int pageNumber,
+            int totalElements,
+            int totalPages,
+            int numberOfElementsCurrentPage,
+            List<Long> resultSeeds)
+            throws Exception {
         // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
         BodyPart bodyPart3 = dbUtil.createBodyPart(3);
         BodyPart bodyPart4 = dbUtil.createBodyPart(4);
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
-        boolean defaultExerciseNeedsEquipment = true;
-        Exercise defaultExercise1 = dbUtil.createDefaultExercise(
-                1, defaultExerciseNeedsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-        Exercise defaultExercise2 = dbUtil.createDefaultExercise(
-                2, defaultExerciseNeedsEquipment, List.of(bodyPart2), List.of(defaultHttpRef2));
 
+        Exercise defaultExercise1 =
+                dbUtil.createDefaultExercise(0, true, List.of(bodyPart1, bodyPart2), List.of(defaultHttpRef1));
+        Exercise defaultExercise2 =
+                dbUtil.createDefaultExercise(1, true, List.of(bodyPart3, bodyPart4), List.of(defaultHttpRef1));
+        Exercise defaultExercise3 =
+                dbUtil.createDefaultExercise(2, false, List.of(bodyPart3), List.of(defaultHttpRef1));
+        Exercise defaultExercise4 =
+                dbUtil.createDefaultExercise(3, false, List.of(bodyPart4), List.of(defaultHttpRef1));
+
+        User user = dbUtil.createUser(1);
+        Exercise customExercise1 =
+                dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user);
+        Exercise customExercise2 =
+                dbUtil.createCustomExercise(5, true, List.of(bodyPart2), List.of(defaultHttpRef1), user);
+
+        List<Exercise> expectedFilteredExercises = Stream.of(
+                        defaultExercise1,
+                        defaultExercise2,
+                        defaultExercise3,
+                        defaultExercise4,
+                        customExercise1,
+                        customExercise2)
+                .filter(exercise -> resultSeeds.stream()
+                        .anyMatch(seed -> exercise.getTitle().contains(String.valueOf(seed))))
+                .toList();
+
+        String sortDirection = "ASC";
+        String sortField = "id";
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_EXERCISES)
+                        .param("isCustom", String.valueOf(false))
+                        .param("title", title)
+                        .param("description", description)
+                        .param("needsEquipment", String.valueOf(needsEquipment))
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(totalElements)))
+                .andExpect(jsonPath("$.totalPages", is(totalPages)))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andExpect(jsonPath("$.numberOfElements", is(numberOfElementsCurrentPage)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<ExerciseResponseDto> exerciseResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<ExerciseResponseDto>>() {});
+        assertEquals(numberOfElementsCurrentPage, exerciseResponseDtoList.size());
+        assertThat(exerciseResponseDtoList)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
+                .isEqualTo(expectedFilteredExercises);
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getExercisesWithFilterTest_shouldReturnDefaultFilteredExercisesWith200_whenBodyPartsIdsGiven()
+            throws Exception {
+        // Given
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
+        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+
+        Exercise defaultExercise1 =
+                dbUtil.createDefaultExercise(0, true, List.of(bodyPart1, bodyPart2), List.of(defaultHttpRef1));
+        Exercise defaultExercise2 =
+                dbUtil.createDefaultExercise(1, true, List.of(bodyPart3, bodyPart4), List.of(defaultHttpRef1));
+        Exercise defaultExercise3 =
+                dbUtil.createDefaultExercise(2, false, List.of(bodyPart3), List.of(defaultHttpRef1));
+        Exercise defaultExercise4 =
+                dbUtil.createDefaultExercise(3, false, List.of(bodyPart4), List.of(defaultHttpRef1));
+
+        User user = dbUtil.createUser(1);
+        Exercise customExercise1 =
+                dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user);
+        Exercise customExercise2 =
+                dbUtil.createCustomExercise(5, true, List.of(bodyPart2), List.of(defaultHttpRef1), user);
+
+        List<Exercise> expectedFilteredExercises = List.of(defaultExercise1, defaultExercise2, defaultExercise3);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_EXERCISES)
+                        .param("isCustom", String.valueOf(false))
+                        .param(
+                                "bodyPartsIds",
+                                String.valueOf(bodyPart1.getId()) + "," + String.valueOf(bodyPart3.getId()))
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(3)))
+                .andExpect(jsonPath("$.totalPages", is(1)))
+                .andExpect(jsonPath("$.size", is(10)))
+                .andExpect(jsonPath("$.numberOfElements", is(3)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<ExerciseResponseDto> exerciseResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<ExerciseResponseDto>>() {});
+        assertEquals(3, exerciseResponseDtoList.size());
+        assertThat(exerciseResponseDtoList)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
+                .isEqualTo(expectedFilteredExercises);
+    }
+
+    static Stream<Arguments> getExercisesWithFilter_multipleCustomFilters() {
+        return Stream.of(
+                // Custom, positive
+                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+
+                // Custom, empty
+                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
+                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getExercisesWithFilter_multipleCustomFilters")
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getExercisesWithFilterTest_shouldReturnCustomFilteredExercisesWith200_whenValidFilters(
+            String title,
+            String description,
+            Boolean needsEquipment,
+            int pageSize,
+            int pageNumber,
+            int totalElements,
+            int totalPages,
+            int numberOfElementsCurrentPage,
+            List<Long> resultSeeds)
+            throws Exception {
+        // Given
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
+        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
+
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+
+        Exercise defaultExercise1 =
+                dbUtil.createDefaultExercise(0, true, List.of(bodyPart1, bodyPart2), List.of(defaultHttpRef1));
+        Exercise defaultExercise2 =
+                dbUtil.createDefaultExercise(1, true, List.of(bodyPart3, bodyPart4), List.of(defaultHttpRef1));
+        Exercise defaultExercise3 =
+                dbUtil.createDefaultExercise(2, false, List.of(bodyPart3), List.of(defaultHttpRef1));
+        Exercise defaultExercise4 =
+                dbUtil.createDefaultExercise(3, false, List.of(bodyPart4), List.of(defaultHttpRef1));
+
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
         User user1 = dbUtil.createUser(1, role, country);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user1);
-        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user1);
-        boolean customExerciseNeedsEquipment1 = true;
-        Exercise customExercise1 = dbUtil.createCustomExercise(
-                3,
-                customExerciseNeedsEquipment1,
-                List.of(bodyPart1, bodyPart2),
-                List.of(defaultHttpRef1, customHttpRef1),
-                user1);
-        Exercise customExercise2 = dbUtil.createCustomExercise(
-                4,
-                customExerciseNeedsEquipment1,
-                List.of(bodyPart1, bodyPart2),
-                List.of(defaultHttpRef2, customHttpRef2),
-                user1);
-
         User user2 = dbUtil.createUser(2, role, country);
-        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(5, user2);
-        HttpRef customHttpRef4 = dbUtil.createCustomHttpRef(6, user2);
-        boolean customExerciseNeedsEquipment2 = true;
-        Exercise customExercise3 = dbUtil.createCustomExercise(
-                5,
-                customExerciseNeedsEquipment2,
-                List.of(bodyPart1, bodyPart2),
-                List.of(defaultHttpRef1, customHttpRef3),
-                user2);
-        Exercise customExercise4 = dbUtil.createCustomExercise(
-                6,
-                customExerciseNeedsEquipment2,
-                List.of(bodyPart1, bodyPart2),
-                List.of(defaultHttpRef2, customHttpRef4),
-                user2);
+
+        Exercise customExercise1User1 =
+                dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user1);
+        Exercise customExercise2User1 =
+                dbUtil.createCustomExercise(5, true, List.of(bodyPart2), List.of(defaultHttpRef1), user1);
+        Exercise customExercise3User1 =
+                dbUtil.createCustomExercise(6, false, List.of(bodyPart3), List.of(defaultHttpRef1), user1);
+        Exercise customExercise4User1 =
+                dbUtil.createCustomExercise(7, false, List.of(bodyPart4), List.of(defaultHttpRef1), user1);
+
+        Exercise customExercise1User2 =
+                dbUtil.createCustomExercise(8, true, List.of(bodyPart1), List.of(defaultHttpRef1), user2);
+        Exercise customExercise2User2 =
+                dbUtil.createCustomExercise(9, false, List.of(bodyPart3), List.of(defaultHttpRef1), user2);
+
+        List<Exercise> expectedFilteredExercises = Stream.of(
+                        defaultExercise1,
+                        defaultExercise2,
+                        defaultExercise3,
+                        defaultExercise4,
+                        customExercise1User1,
+                        customExercise2User1,
+                        customExercise3User1,
+                        customExercise4User1,
+                        customExercise1User2,
+                        customExercise2User2)
+                .filter(exercise -> resultSeeds.stream()
+                        .anyMatch(seed -> exercise.getTitle().contains(String.valueOf(seed))))
+                .toList();
+
+        String sortDirection = "ASC";
+        String sortField = "id";
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_EXERCISES)
+                        .param("isCustom", String.valueOf(true))
+                        .param("title", title)
+                        .param("description", description)
+                        .param("needsEquipment", String.valueOf(needsEquipment))
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(totalElements)))
+                .andExpect(jsonPath("$.totalPages", is(totalPages)))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andExpect(jsonPath("$.numberOfElements", is(numberOfElementsCurrentPage)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<ExerciseResponseDto> exerciseResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<ExerciseResponseDto>>() {});
+        assertEquals(numberOfElementsCurrentPage, exerciseResponseDtoList.size());
+        assertThat(exerciseResponseDtoList)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
+                .isEqualTo(expectedFilteredExercises);
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getExercisesWithFilterTest_shouldReturnCustomFilteredExercisesWith200_whenBodyPartsIdsGiven()
+            throws Exception {
+        // Given
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
+        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
+
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+
+        Exercise defaultExercise1 =
+                dbUtil.createDefaultExercise(0, true, List.of(bodyPart1, bodyPart2), List.of(defaultHttpRef1));
+        Exercise defaultExercise2 =
+                dbUtil.createDefaultExercise(1, true, List.of(bodyPart3, bodyPart4), List.of(defaultHttpRef1));
+        Exercise defaultExercise3 =
+                dbUtil.createDefaultExercise(2, false, List.of(bodyPart3), List.of(defaultHttpRef1));
+        Exercise defaultExercise4 =
+                dbUtil.createDefaultExercise(3, false, List.of(bodyPart4), List.of(defaultHttpRef1));
+
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        User user1 = dbUtil.createUser(1, role, country);
+        User user2 = dbUtil.createUser(2, role, country);
+
+        Exercise customExercise1User1 =
+                dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user1);
+        Exercise customExercise2User1 =
+                dbUtil.createCustomExercise(5, true, List.of(bodyPart2), List.of(defaultHttpRef1), user1);
+        Exercise customExercise3User1 =
+                dbUtil.createCustomExercise(6, false, List.of(bodyPart3), List.of(defaultHttpRef1), user1);
+        Exercise customExercise4User1 =
+                dbUtil.createCustomExercise(7, false, List.of(bodyPart4), List.of(defaultHttpRef1), user1);
+
+        Exercise customExercise1User2 =
+                dbUtil.createCustomExercise(8, true, List.of(bodyPart1), List.of(defaultHttpRef1), user2);
+        Exercise customExercise2User2 =
+                dbUtil.createCustomExercise(9, false, List.of(bodyPart3), List.of(defaultHttpRef1), user2);
+
+        List<Exercise> expectedFilteredExercises = List.of(customExercise1User1, customExercise3User1);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_EXERCISES)
+                        .param("isCustom", String.valueOf(true))
+                        .param("bodyPartsIds", bodyPart1.getId() + "," + bodyPart3.getId())
+                        .param("pageSize", String.valueOf(2))
+                        .param("pageNumber", String.valueOf(0))
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(2)))
+                .andExpect(jsonPath("$.totalPages", is(1)))
+                .andExpect(jsonPath("$.size", is(2)))
+                .andExpect(jsonPath("$.numberOfElements", is(2)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<ExerciseResponseDto> exerciseResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<ExerciseResponseDto>>() {});
+        assertEquals(2, exerciseResponseDtoList.size());
+        assertThat(exerciseResponseDtoList)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
+                .isEqualTo(expectedFilteredExercises);
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getExercisesWithFilterTest_shouldReturnDefaultAndCustomFilteredExercisesWith200() throws Exception {
+        // Given
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
+        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
+
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+
+        Exercise defaultExercise1 =
+                dbUtil.createDefaultExercise(0, true, List.of(bodyPart1, bodyPart2), List.of(defaultHttpRef1));
+        Exercise defaultExercise2 =
+                dbUtil.createDefaultExercise(1, true, List.of(bodyPart3, bodyPart4), List.of(defaultHttpRef1));
+        Exercise defaultExercise3 =
+                dbUtil.createDefaultExercise(2, false, List.of(bodyPart3), List.of(defaultHttpRef1));
+        Exercise defaultExercise4 =
+                dbUtil.createDefaultExercise(3, false, List.of(bodyPart4), List.of(defaultHttpRef1));
+
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        User user1 = dbUtil.createUser(1, role, country);
+        User user2 = dbUtil.createUser(2, role, country);
+
+        Exercise customExercise1User1 =
+                dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user1);
+        Exercise customExercise2User1 =
+                dbUtil.createCustomExercise(5, true, List.of(bodyPart2), List.of(defaultHttpRef1), user1);
+        Exercise customExercise3User1 =
+                dbUtil.createCustomExercise(6, false, List.of(bodyPart3), List.of(defaultHttpRef1), user1);
+        Exercise customExercise4User1 =
+                dbUtil.createCustomExercise(7, false, List.of(bodyPart4), List.of(defaultHttpRef1), user1);
+
+        Exercise customExercise1User2 =
+                dbUtil.createCustomExercise(8, true, List.of(bodyPart1), List.of(defaultHttpRef1), user2);
+        Exercise customExercise2User2 =
+                dbUtil.createCustomExercise(9, false, List.of(bodyPart3), List.of(defaultHttpRef1), user2);
+
+        List<Exercise> expectedFilteredExercises = List.of(
+                defaultExercise1,
+                defaultExercise2,
+                defaultExercise3,
+                defaultExercise4,
+                customExercise1User1,
+                customExercise2User1,
+                customExercise3User1,
+                customExercise4User1);
 
         // When
         MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_EXERCISES).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(8)))
+                .andExpect(jsonPath("$.totalPages", is(1)))
+                .andExpect(jsonPath("$.size", is(10)))
+                .andExpect(jsonPath("$.numberOfElements", is(8)))
                 .andDo(print())
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        List<ExerciseResponseDto> responseDto =
-                objectMapper.readValue(responseContent, new TypeReference<List<ExerciseResponseDto>>() {});
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<ExerciseResponseDto> exerciseResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<ExerciseResponseDto>>() {});
+        assertEquals(8, exerciseResponseDtoList.size());
+        assertThat(exerciseResponseDtoList)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
+                .isEqualTo(expectedFilteredExercises);
+    }
 
-        assertEquals(2, responseDto.size());
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getExercisesWithFilterTest_shouldReturnDefaultAndCustomFilteredExercisesWith200_whenBodyPartsIdsGiven()
+            throws Exception {
+        // Given
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
+        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
 
-        assertThat(responseDto)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("bodyParts", "httpRefs", "user")
-                .isEqualTo(List.of(customExercise1, customExercise2));
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
 
-        assertThat(responseDto.get(0).getBodyParts())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(customExercise1.getBodyPartsSortedById());
+        Exercise defaultExercise1 =
+                dbUtil.createDefaultExercise(0, true, List.of(bodyPart1, bodyPart2), List.of(defaultHttpRef1));
+        Exercise defaultExercise2 =
+                dbUtil.createDefaultExercise(1, true, List.of(bodyPart3, bodyPart4), List.of(defaultHttpRef1));
+        Exercise defaultExercise3 =
+                dbUtil.createDefaultExercise(2, false, List.of(bodyPart3), List.of(defaultHttpRef1));
+        Exercise defaultExercise4 =
+                dbUtil.createDefaultExercise(3, false, List.of(bodyPart4), List.of(defaultHttpRef1));
 
-        assertThat(responseDto.get(1).getBodyParts())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                .isEqualTo(customExercise2.getBodyPartsSortedById());
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        User user1 = dbUtil.createUser(1, role, country);
+        User user2 = dbUtil.createUser(2, role, country);
 
-        assertThat(responseDto.get(0).getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                .isEqualTo(customExercise1.getHttpRefsSortedById());
+        Exercise customExercise1User1 =
+                dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user1);
+        Exercise customExercise2User1 =
+                dbUtil.createCustomExercise(5, true, List.of(bodyPart2), List.of(defaultHttpRef1), user1);
+        Exercise customExercise3User1 =
+                dbUtil.createCustomExercise(6, false, List.of(bodyPart3), List.of(defaultHttpRef1), user1);
+        Exercise customExercise4User1 =
+                dbUtil.createCustomExercise(7, false, List.of(bodyPart4), List.of(defaultHttpRef1), user1);
 
-        assertThat(responseDto.get(1).getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
-                .isEqualTo(customExercise2.getHttpRefsSortedById());
+        Exercise customExercise1User2 =
+                dbUtil.createCustomExercise(8, true, List.of(bodyPart1), List.of(defaultHttpRef1), user2);
+        Exercise customExercise2User2 =
+                dbUtil.createCustomExercise(9, false, List.of(bodyPart3), List.of(defaultHttpRef1), user2);
+
+        List<Exercise> expectedFilteredExercises = List.of(
+                defaultExercise1, defaultExercise2, defaultExercise3, customExercise1User1, customExercise3User1);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_EXERCISES)
+                        .param("bodyPartsIds", bodyPart1.getId() + "," + bodyPart3.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(5)))
+                .andExpect(jsonPath("$.totalPages", is(1)))
+                .andExpect(jsonPath("$.size", is(10)))
+                .andExpect(jsonPath("$.numberOfElements", is(5)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<ExerciseResponseDto> exerciseResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<ExerciseResponseDto>>() {});
+        assertEquals(5, exerciseResponseDtoList.size());
+        assertThat(exerciseResponseDtoList)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
+                .isEqualTo(expectedFilteredExercises);
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getExercisesWithFilterTest_shouldReturnValidationErrorMessageWith400_whenInvalidFilterArgs() throws Exception {
+        // Given
+        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
+        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
+        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
+        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+
+        Exercise defaultExercise1 =
+                dbUtil.createDefaultExercise(0, true, List.of(bodyPart1, bodyPart2), List.of(defaultHttpRef1));
+        Exercise defaultExercise2 =
+                dbUtil.createDefaultExercise(1, true, List.of(bodyPart3, bodyPart4), List.of(defaultHttpRef1));
+        Exercise defaultExercise3 =
+                dbUtil.createDefaultExercise(2, false, List.of(bodyPart3), List.of(defaultHttpRef1));
+        Exercise defaultExercise4 =
+                dbUtil.createDefaultExercise(3, false, List.of(bodyPart4), List.of(defaultHttpRef1));
+
+        User user = dbUtil.createUser(1);
+        Exercise customExercise1 =
+                dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user);
+        Exercise customExercise2 =
+                dbUtil.createCustomExercise(5, true, List.of(bodyPart2), List.of(defaultHttpRef1), user);
+
+        // When
+        mockMvc.perform(get(URL.CUSTOM_EXERCISES)
+                        .param("title", "!@#")
+                        .param("description", "!@#")
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Not allowed symbols")))
+                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
+                .andDo(print());
     }
 
     @ParameterizedTest

@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.workout.service;
 
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
@@ -8,10 +9,14 @@ import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.Workout;
+import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
 import java.util.*;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +28,8 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     private final ExerciseRepository exerciseRepository;
 
+    private final BodyPartRepository bodyPartRepository;
+
     private final UserService userService;
 
     private final ModelMapper modelMapper;
@@ -30,10 +37,12 @@ public class WorkoutServiceImpl implements WorkoutService {
     public WorkoutServiceImpl(
             WorkoutRepository workoutRepository,
             ExerciseRepository exerciseRepository,
+            BodyPartRepository bodyPartRepository,
             UserService userService,
             ModelMapper modelMapper) {
         this.workoutRepository = workoutRepository;
         this.exerciseRepository = exerciseRepository;
+        this.bodyPartRepository = bodyPartRepository;
         this.userService = userService;
         this.modelMapper = modelMapper;
     }
@@ -142,6 +151,68 @@ public class WorkoutServiceImpl implements WorkoutService {
 
         workoutDto.setNeedsEquipment(workoutNeedsEquipment);
         return workoutDto;
+    }
+
+    @Override
+    @Transactional
+    public Page<WorkoutResponseDto> getWorkoutsWithFilter(
+            Boolean isCustom,
+            Long userId,
+            String title,
+            String description,
+            Boolean needsEquipment,
+            List<Long> bodyPartsIds,
+            String sortField,
+            String sortDirection,
+            int currentPageNumber,
+            int pageSize) {
+
+        Pageable pageable = PageRequest.of(
+                currentPageNumber, pageSize, Sort.by(Sort.Direction.fromString(sortDirection), sortField));
+
+        if (bodyPartsIds == null || bodyPartsIds.size() == 0) {
+            bodyPartsIds =
+                    bodyPartRepository.findAll().stream().map(BodyPart::getId).toList();
+        }
+
+        Page<Workout> entitiesPage = null;
+
+        // Default and custom, with equipment filter
+        if (isCustom == null && userId != null && needsEquipment != null) {
+            entitiesPage = workoutRepository.findDefaultAndCustomNeedsEquipmentWithFilter(
+                    userId, title, description, needsEquipment, bodyPartsIds, pageable);
+        }
+        // Default and custom, without equipment filter
+        else if (isCustom == null && userId != null && needsEquipment == null) {
+            entitiesPage = workoutRepository.findDefaultAndCustomWithFilter(
+                    userId, title, description, bodyPartsIds, pageable);
+        }
+        // Default only, with equipment filter
+        else if (isCustom != null && !isCustom && userId == null && needsEquipment != null) {
+            entitiesPage = workoutRepository.findDefaultOrCustomNeedsEquipmentWithFilter(
+                    false, null, title, description, needsEquipment, bodyPartsIds, pageable);
+        }
+        // Default only, without equipment filter
+        else if (isCustom != null && !isCustom && userId == null && needsEquipment == null) {
+            entitiesPage = workoutRepository.findDefaultOrCustomWithFilter(
+                    false, null, title, description, bodyPartsIds, pageable);
+        }
+        // Custom only, with equipment filter
+        else if (isCustom != null && isCustom && userId != null && needsEquipment != null) {
+            entitiesPage = workoutRepository.findDefaultOrCustomNeedsEquipmentWithFilter(
+                    true, userId, title, description, needsEquipment, bodyPartsIds, pageable);
+        }
+        // Custom only, without equipment filter
+        else if (isCustom != null && isCustom && userId != null && needsEquipment == null) {
+            entitiesPage = workoutRepository.findDefaultOrCustomWithFilter(
+                    true, userId, title, description, bodyPartsIds, pageable);
+        } else {
+            throw new ApiExceptionCustomMessage("Invalid args combination", HttpStatus.BAD_REQUEST);
+        }
+
+        Page<WorkoutResponseDto> dtoPage =
+                entitiesPage.map(entity -> modelMapper.map(entity, WorkoutResponseDto.class));
+        return dtoPage;
     }
 
     @Override
