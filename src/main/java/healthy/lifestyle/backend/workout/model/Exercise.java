@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.workout.model;
 import healthy.lifestyle.backend.users.model.User;
 import jakarta.persistence.*;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.*;
@@ -74,5 +75,12 @@ public class Exercise {
 
     public List<Long> getHttpRefsIdsSorted() {
         return this.getHttpRefsSortedById().stream().map(HttpRef::getId).toList();
+    }
+
+    public void addBodyPart(BodyPart bodyPart) {
+        if (this.getBodyParts() == null) {
+            this.setBodyParts(new HashSet<>());
+        }
+        this.getBodyParts().add(bodyPart);
     }
 }

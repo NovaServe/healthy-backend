@@ -1,12 +1,15 @@
 package healthy.lifestyle.backend.workout.controller;
 
 import healthy.lifestyle.backend.users.service.AuthService;
+import healthy.lifestyle.backend.validation.DescriptionValidation;
+import healthy.lifestyle.backend.validation.TitleValidation;
 import healthy.lifestyle.backend.workout.dto.WorkoutCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutResponseDto;
 import healthy.lifestyle.backend.workout.dto.WorkoutUpdateRequestDto;
 import healthy.lifestyle.backend.workout.service.WorkoutService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -50,25 +53,57 @@ public class WorkoutController {
     }
 
     @GetMapping("/default")
-    public ResponseEntity<List<WorkoutResponseDto>> getDefaultWorkouts(
-            @RequestParam(value = "sortBy", required = false) String sortBy) {
-        if (sortBy == null) sortBy = "id";
-        boolean isDefault = true;
-        Long userId = null;
-        List<WorkoutResponseDto> responseDtoList = workoutService.getWorkouts(sortBy, isDefault, userId);
-        return ResponseEntity.ok(responseDtoList);
+    public ResponseEntity<Page<WorkoutResponseDto>> getDefaultWorkouts(
+            @RequestParam(required = false) @TitleValidation String title,
+            @RequestParam(required = false) @DescriptionValidation String description,
+            @RequestParam(required = false) Boolean needsEquipment,
+            @RequestParam(required = false) List<Long> bodyPartsIds,
+            @RequestParam(required = false, defaultValue = "title") String sortField,
+            @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false, defaultValue = "10") int pageSize,
+            @RequestParam(required = false, defaultValue = "0") int pageNumber) {
+        Page<WorkoutResponseDto> dtoPage = workoutService.getWorkoutsWithFilter(
+                false,
+                null,
+                title,
+                description,
+                needsEquipment,
+                bodyPartsIds,
+                sortField,
+                sortDirection,
+                pageNumber,
+                pageSize);
+        return ResponseEntity.ok(dtoPage);
     }
 
     @GetMapping()
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<List<WorkoutResponseDto>> getCustomWorkouts(
-            @RequestParam(value = "sortBy", required = false) String sortBy) {
-        if (sortBy == null) sortBy = "id";
-        boolean isDefault = false;
-        Long userId = authService.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        List<WorkoutResponseDto> responseDtoList = workoutService.getWorkouts(sortBy, isDefault, userId);
-        return ResponseEntity.ok(responseDtoList);
+    public ResponseEntity<Page<WorkoutResponseDto>> getWorkouts(
+            @RequestParam(required = false) Boolean isCustom,
+            @RequestParam(required = false) @TitleValidation String title,
+            @RequestParam(required = false) @DescriptionValidation String description,
+            @RequestParam(required = false) Boolean needsEquipment,
+            @RequestParam(required = false) List<Long> bodyPartsIds,
+            @RequestParam(required = false, defaultValue = "title") String sortField,
+            @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false, defaultValue = "10") int pageSize,
+            @RequestParam(required = false, defaultValue = "0") int pageNumber) {
+        Long userId = null;
+        if (isCustom == null || isCustom)
+            userId = authService.getUserIdFromAuthentication(
+                    SecurityContextHolder.getContext().getAuthentication());
+        Page<WorkoutResponseDto> dtoPage = workoutService.getWorkoutsWithFilter(
+                isCustom,
+                userId,
+                title,
+                description,
+                needsEquipment,
+                bodyPartsIds,
+                sortField,
+                sortDirection,
+                pageNumber,
+                pageSize);
+        return ResponseEntity.ok(dtoPage);
     }
 
     @PatchMapping("/{workoutId}")

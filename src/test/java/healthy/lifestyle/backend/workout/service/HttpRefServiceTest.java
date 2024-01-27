@@ -16,18 +16,23 @@ import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
@@ -228,6 +233,66 @@ class HttpRefServiceTest {
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
         assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
+    }
+
+    @ParameterizedTest
+    @MethodSource("multipleValidFilters")
+    void getHttpRefsTest_shouldReturnHttpRefs(
+            Boolean isCustom,
+            Long userId,
+            String name,
+            String description,
+            int totalElements,
+            int totalPages,
+            int numberOfElements,
+            List<Long> resultSeeds) {
+        // Given
+        User user = testUtil.createUser(1);
+        List<HttpRef> httpRefs = Arrays.asList(testUtil.createDefaultHttpRef(1), testUtil.createCustomHttpRef(2, user));
+        List<HttpRef> filteredHttpRefs = httpRefs.stream()
+                .filter(httpRef -> resultSeeds.contains(httpRef.getId()))
+                .toList();
+
+        if (userId != null) userId = user.getId();
+        int currentPageNumber = 0;
+        int itemsPerPage = 2;
+        String orderBy = "ASC";
+        String sortBy = "id";
+        Pageable pageable =
+                PageRequest.of(currentPageNumber, itemsPerPage, Sort.by(Sort.Direction.fromString(orderBy), sortBy));
+        Page<HttpRef> mockHttpRefPage = new PageImpl<>(filteredHttpRefs, pageable, totalElements);
+        if (isCustom != null)
+            when(httpRefRepository.findDefaultOrCustomWithFilter(isCustom, userId, name, description, pageable))
+                    .thenReturn(mockHttpRefPage);
+        else
+            when(httpRefRepository.findDefaultAndCustomWithFilter(userId, name, description, pageable))
+                    .thenReturn(mockHttpRefPage);
+
+        // When
+        Page<HttpRefResponseDto> httpRefPage = httpRefService.getHttpRefs(
+                isCustom, userId, name, description, sortBy, orderBy, currentPageNumber, itemsPerPage);
+
+        // Then
+        if (isCustom != null)
+            verify(httpRefRepository, times(1))
+                    .findDefaultOrCustomWithFilter(eq(isCustom), eq(userId), eq(name), eq(description), any());
+        else
+            verify(httpRefRepository, times(1))
+                    .findDefaultAndCustomWithFilter(eq(userId), eq(name), eq(description), any());
+        verify(modelMapper, times(resultSeeds.size())).map(any(), eq(HttpRefResponseDto.class));
+
+        assertEquals(totalElements, httpRefPage.getTotalElements());
+        assertEquals(totalPages, httpRefPage.getTotalPages());
+        assertEquals(numberOfElements, httpRefPage.getNumberOfElements());
+        assertEquals(numberOfElements, httpRefPage.getContent().size());
+        assertEquals(currentPageNumber, httpRefPage.getNumber());
+    }
+
+    static Stream<Arguments> multipleValidFilters() {
+        return Stream.of(
+                Arguments.of(false, null, "Name", "Desc", 1, 1, 1, List.of(1L)),
+                Arguments.of(true, 0L, "Name", "Desc", 1, 1, 1, List.of(2L)),
+                Arguments.of(null, 0L, "Name", "Desc", 2, 1, 2, List.of(1L, 2L)));
     }
 
     @Test

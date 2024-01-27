@@ -12,6 +12,9 @@ import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.List;
 import java.util.Optional;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -68,6 +71,30 @@ public class HttpRefServiceImpl implements HttpRefService {
 
         HttpRefResponseDto responseDto = modelMapper.map(httpRef, HttpRefResponseDto.class);
         return responseDto;
+    }
+
+    @Override
+    public Page<HttpRefResponseDto> getHttpRefs(
+            Boolean isCustom,
+            Long userId,
+            String name,
+            String description,
+            String sortField,
+            String sortDirection,
+            int pageNumber,
+            int pageSize) {
+        Pageable pageable =
+                PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.fromString(sortDirection), sortField));
+
+        Page<HttpRef> httpRefPage = null;
+        if (isCustom != null)
+            httpRefPage =
+                    httpRefRepository.findDefaultOrCustomWithFilter(isCustom, userId, name, description, pageable);
+        else httpRefPage = httpRefRepository.findDefaultAndCustomWithFilter(userId, name, description, pageable);
+
+        Page<HttpRefResponseDto> httpRefResponseDtoPage =
+                httpRefPage.map(httpRef -> modelMapper.map(httpRef, HttpRefResponseDto.class));
+        return httpRefResponseDtoPage;
     }
 
     @Override

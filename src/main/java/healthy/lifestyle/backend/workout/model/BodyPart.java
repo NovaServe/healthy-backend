@@ -24,6 +24,6 @@ public class BodyPart {
     private String name;
 
     @ManyToMany(mappedBy = "bodyParts")
-    @OrderBy("id")
+    //    @OrderBy("id")
     private Set<Exercise> exercises;
 }

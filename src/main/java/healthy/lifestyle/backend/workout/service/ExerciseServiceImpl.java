@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.workout.service;
 import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
@@ -15,6 +16,9 @@ import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.*;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -138,6 +142,53 @@ public class ExerciseServiceImpl implements ExerciseService {
         exerciseRespondDto.setBodyParts(bodyPartsSorted);
         exerciseRespondDto.setHttpRefs(httpRefsSorted);
         return exerciseRespondDto;
+    }
+
+    @Override
+    @Transactional
+    public Page<ExerciseResponseDto> getExercisesWithFilter(
+            Boolean isCustom,
+            Long userId,
+            String title,
+            String description,
+            Boolean needsEquipment,
+            List<Long> bodyPartsIds,
+            String sortField,
+            String sortDirection,
+            int currentPageNumber,
+            int pageSize) {
+
+        Pageable pageable = PageRequest.of(
+                currentPageNumber, pageSize, Sort.by(Sort.Direction.fromString(sortDirection), sortField));
+
+        if (bodyPartsIds == null || bodyPartsIds.size() == 0) {
+            bodyPartsIds =
+                    bodyPartRepository.findAll().stream().map(BodyPart::getId).toList();
+        }
+
+        Page<Exercise> entitiesPage = null;
+
+        // Default and custom
+        if (isCustom == null && userId != null) {
+            entitiesPage = exerciseRepository.findDefaultAndCustomWithFilter(
+                    userId, title, description, needsEquipment, bodyPartsIds, pageable);
+        }
+        // Default only
+        else if (isCustom != null && !isCustom && userId == null) {
+            entitiesPage = exerciseRepository.findDefaultOrCustomWithFilter(
+                    false, null, title, description, needsEquipment, bodyPartsIds, pageable);
+        }
+        // Custom only
+        else if (isCustom != null && isCustom && userId != null) {
+            entitiesPage = exerciseRepository.findDefaultOrCustomWithFilter(
+                    true, userId, title, description, needsEquipment, bodyPartsIds, pageable);
+        } else {
+            throw new ApiExceptionCustomMessage("Invalid args combination", HttpStatus.BAD_REQUEST);
+        }
+
+        Page<ExerciseResponseDto> dtoPage =
+                entitiesPage.map(entity -> modelMapper.map(entity, ExerciseResponseDto.class));
+        return dtoPage;
     }
 
     @Override
