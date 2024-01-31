@@ -71,6 +71,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/error/**")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, apiUrl.getDefaultMentalsUrl())
+                        .permitAll()
                         .anyRequest()
                         .authenticated());
 
