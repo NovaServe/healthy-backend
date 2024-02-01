@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.workout.model;
 
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -12,13 +12,13 @@ import lombok.*;
  * exercises table preserves both default and custom exercises.
  * If exercise is default then is_custom is false, otherwise is true.
  */
-@Entity
-@Table(name = "exercises")
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "exercises")
 public class Exercise {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

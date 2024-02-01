@@ -1,8 +1,6 @@
 package healthy.lifestyle.backend.util;
 
 public class URL {
-    public static final String SIGNUP = "/api/v1/users/auth/signup";
-
     public static final String LOGIN = "/api/v1/users/auth/login";
 
     public static final String VALIDATE = "/api/v1/users/auth/validate";

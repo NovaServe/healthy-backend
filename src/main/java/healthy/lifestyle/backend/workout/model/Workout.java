@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.workout.model;
 
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -12,13 +12,13 @@ import lombok.*;
  * workouts table preserves both default and custom workouts.
  * If workout is default then is_custom is false, otherwise is true.
  */
-@Entity
-@Table(name = "workouts")
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "workouts")
 public class Workout {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,6 +50,10 @@ public class Workout {
         return this.getExercises().stream()
                 .sorted(Comparator.comparingLong(Exercise::getId))
                 .toList();
+    }
+
+    public List<Long> getSortedExercisesIds() {
+        return this.getExercisesSortedById().stream().map(Exercise::getId).toList();
     }
 
     public List<BodyPart> getDistinctBodyPartsSortedById() {

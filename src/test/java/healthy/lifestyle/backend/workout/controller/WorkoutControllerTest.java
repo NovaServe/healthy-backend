@@ -18,9 +18,9 @@ import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.Country;
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.Country;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.TestUtil;
@@ -160,7 +160,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
     }
@@ -183,7 +182,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
     }
@@ -221,7 +219,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
     }
@@ -270,7 +267,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
     }
@@ -300,7 +296,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
     }
@@ -362,7 +357,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print())
                 .andReturn();
     }
@@ -424,7 +418,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnErrorMessageWith400_whenEmptyRequest() throws Exception {
+    void updateCustomWorkoutTest_shouldReturnErrorMessageWith400_whenRequestWithoutUpdates() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -439,7 +433,9 @@ class WorkoutControllerTest {
         Workout customWorkout = dbUtil.createCustomWorkout(1, List.of(defaultExercise, customExercise), user);
 
         WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDtoEmpty();
-        ApiException expectedException = new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
+        requestDto.setExerciseIds(List.of(defaultExercise.getId(), customExercise.getId()));
+        ApiException expectedException =
+                new ApiException(ErrorMessage.NO_UPDATES_REQUEST, null, HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_WORKOUT_ID, customWorkout.getId())
@@ -449,7 +445,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -477,7 +472,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -513,7 +507,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -548,7 +541,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -582,7 +574,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -623,7 +614,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -697,7 +687,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
 
         assertNotNull(dbUtil.getWorkoutById(defaultWorkoutId));
@@ -722,7 +711,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -763,7 +751,6 @@ class WorkoutControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
 
         assertNotNull(dbUtil.getWorkoutById(customWorkoutId));

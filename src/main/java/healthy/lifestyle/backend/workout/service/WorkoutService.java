@@ -23,9 +23,8 @@ public interface WorkoutService {
             int currentPageNumber,
             int pageSize);
 
-    List<WorkoutResponseDto> getWorkouts(String sortBy, boolean isDefault, Long userId);
-
-    WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, WorkoutUpdateRequestDto requestDto);
+    WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, WorkoutUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException;
 
     void deleteCustomWorkout(long userId, long workoutId);
 }

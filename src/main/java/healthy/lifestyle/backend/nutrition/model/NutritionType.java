@@ -4,13 +4,13 @@ import jakarta.persistence.*;
 import java.util.Set;
 import lombok.*;
 
-@Entity
-@Table(name = "nutrition_types")
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "nutrition_types")
 public class NutritionType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

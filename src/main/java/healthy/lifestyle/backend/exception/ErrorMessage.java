@@ -4,7 +4,7 @@ public enum ErrorMessage {
     AUTHENTICATION_ERROR("Authentication error"),
     INVALID_TOKEN("Invalid token"),
     ALREADY_EXISTS("Already exists"),
-    TITLE_DUPLICATE("Title duplicate"),
+    TITLE_DUPLICATE("Entity with this title/name already exists"),
     HTTP_REF_NOT_FOUND("Http ref with id %d not found"),
     BODY_PART_NOT_FOUND("Body part with id %d not found"),
     COUNTRY_NOT_FOUND("Country with id %d not found"),
@@ -23,7 +23,7 @@ public enum ErrorMessage {
     USER_NUTRITION_MISMATCH("Nutrition with id %d doesn't belong to the user"),
     USER_REQUESTED_ANOTHER_USER_PROFILE("User has been requested another user profile"),
     EMPTY_REQUEST("Empty request"),
-    NO_UPDATES_REQUEST("No updates request"),
+    NO_UPDATES_REQUEST("You have sent the request with no updates"),
     TITLE_IS_NOT_DIFFERENT("Title is not different"),
     DESCRIPTION_IS_NOT_DIFFERENT("Description is not different"),
     NEEDS_EQUIPMENT_IS_NOT_DIFFERENT("Needs equipment is not different"),
@@ -33,7 +33,10 @@ public enum ErrorMessage {
     AGE_IS_NOT_DIFFERENT("Age is not different"),
     PASSWORD_IS_NOT_DIFFERENT("Password is not different"),
     USER_MENTAL_MISMATCH("Mental with id %d doesn't belong to the user"),
-    MENTAL_NOT_FOUND("Mental with id %d not found");
+    MENTAL_NOT_FOUND("Mental with id %d not found"),
+    FIELDS_VALUES_ARE_NOT_DIFFERENT(
+            "Existent values of the following fields don't differ from the updated values you have sent: "),
+    WORKOUT_SHOULD_HAVE_EXERCISES("Workout should have at least one exercise");
 
     private final String name;
 

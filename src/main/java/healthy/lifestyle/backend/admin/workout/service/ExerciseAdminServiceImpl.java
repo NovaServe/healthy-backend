@@ -23,11 +23,11 @@ public class ExerciseAdminServiceImpl implements ExerciseAdminService {
     }
 
     @Override
-    public List<ExerciseResponseDto> getExercisesByFilters(
+    public List<ExerciseResponseDto> getExercisesWithFilter(
             String title, String description, Boolean isCustom, Boolean needsEquipment) {
 
         List<Exercise> exercises = exerciseAdminRepository
-                .findByFilters(title, description, isCustom, needsEquipment)
+                .findWithFilter(title, description, isCustom, needsEquipment)
                 .orElseThrow(() -> new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND));
 
         return exercises.stream()

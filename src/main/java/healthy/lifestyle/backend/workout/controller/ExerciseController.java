@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.workout.controller;
 
-import healthy.lifestyle.backend.users.service.AuthService;
+import healthy.lifestyle.backend.user.service.AuthUtil;
 import healthy.lifestyle.backend.validation.DescriptionValidation;
 import healthy.lifestyle.backend.validation.TitleValidation;
 import healthy.lifestyle.backend.workout.dto.ExerciseCreateRequestDto;
@@ -24,18 +24,18 @@ import org.springframework.web.bind.annotation.*;
 public class ExerciseController {
     private final ExerciseService exerciseService;
 
-    private final AuthService authService;
+    private final AuthUtil authUtil;
 
-    public ExerciseController(ExerciseService exerciseService, AuthService authService) {
+    public ExerciseController(ExerciseService exerciseService, AuthUtil authUtil) {
         this.exerciseService = exerciseService;
-        this.authService = authService;
+        this.authUtil = authUtil;
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<ExerciseResponseDto> createCustomExercise(
             @Valid @RequestBody ExerciseCreateRequestDto requestDto) {
-        Long userId = authService.getUserIdFromAuthentication(
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         ExerciseResponseDto responseDto = exerciseService.createCustomExercise(requestDto, userId);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
@@ -50,7 +50,7 @@ public class ExerciseController {
     @GetMapping("/{exercise_id}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<ExerciseResponseDto> getCustomExerciseById(@PathVariable("exercise_id") long exercise_id) {
-        Long userId = authService.getUserIdFromAuthentication(
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         ExerciseResponseDto responseDto = exerciseService.getExerciseById(exercise_id, false, userId);
         return ResponseEntity.ok(responseDto);
@@ -70,7 +70,7 @@ public class ExerciseController {
             @RequestParam(required = false, defaultValue = "0") int pageNumber) {
         Long userId = null;
         if (isCustom == null || isCustom)
-            userId = authService.getUserIdFromAuthentication(
+            userId = authUtil.getUserIdFromAuthentication(
                     SecurityContextHolder.getContext().getAuthentication());
         Page<ExerciseResponseDto> dtoPage = exerciseService.getExercisesWithFilter(
                 isCustom,
@@ -110,20 +110,13 @@ public class ExerciseController {
         return ResponseEntity.ok(dtoPage);
     }
 
-    //        @GetMapping
-    //        @PreAuthorize("hasRole('ROLE_USER')")
-    //        public ResponseEntity<List<ExerciseResponseDto>> getCustomExercises() {
-    //            Long userId = authService.getUserIdFromAuthentication(
-    //                    SecurityContextHolder.getContext().getAuthentication());
-    //            List<ExerciseResponseDto> responseDtoList = exerciseService.getCustomExercises(userId);
-    //            return ResponseEntity.ok(responseDtoList);
-    //        }
-
     @PatchMapping("/{exerciseId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<ExerciseResponseDto> updateCustomExercise(
-            @PathVariable("exerciseId") long exerciseId, @Valid @RequestBody ExerciseUpdateRequestDto requestDto) {
-        Long userId = authService.getUserIdFromAuthentication(
+            @PathVariable("exerciseId") long exerciseId, @Valid @RequestBody ExerciseUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException {
+
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         ExerciseResponseDto responseDto = exerciseService.updateCustomExercise(exerciseId, userId, requestDto);
         return ResponseEntity.ok(responseDto);
@@ -132,7 +125,7 @@ public class ExerciseController {
     @DeleteMapping("/{exerciseId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> deleteCustomExercise(@PathVariable("exerciseId") long exerciseId) {
-        Long userId = authService.getUserIdFromAuthentication(
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         exerciseService.deleteCustomExercise(exerciseId, userId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

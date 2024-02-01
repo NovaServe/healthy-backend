@@ -17,9 +17,9 @@ import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.Country;
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.Country;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.TestUtil;
@@ -243,7 +243,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -269,7 +268,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -344,7 +342,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -421,7 +418,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -448,25 +444,7 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
-    }
-
-    static Stream<Arguments> getExercisesWithFilter_multipleDefaultFilters() {
-        return Stream.of(
-                // Default, positive
-                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-
-                // Default, empty
-                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
-                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
     }
 
     @ParameterizedTest
@@ -551,6 +529,23 @@ class ExerciseControllerTest {
                 .isEqualTo(expectedFilteredExercises);
     }
 
+    static Stream<Arguments> getExercisesWithFilter_multipleDefaultFilters() {
+        return Stream.of(
+                // Default, positive
+                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+
+                // Default, empty
+                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
+                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
+    }
+
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
     void getExercisesWithFilterTest_shouldReturnDefaultFilteredExercisesWith200_whenBodyPartsIdsGiven()
@@ -605,23 +600,6 @@ class ExerciseControllerTest {
         assertThat(exerciseResponseDtoList)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
                 .isEqualTo(expectedFilteredExercises);
-    }
-
-    static Stream<Arguments> getExercisesWithFilter_multipleCustomFilters() {
-        return Stream.of(
-                // Custom, positive
-                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-
-                // Custom, empty
-                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
-                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
     }
 
     @ParameterizedTest
@@ -722,6 +700,23 @@ class ExerciseControllerTest {
         assertThat(exerciseResponseDtoList)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
                 .isEqualTo(expectedFilteredExercises);
+    }
+
+    static Stream<Arguments> getExercisesWithFilter_multipleCustomFilters() {
+        return Stream.of(
+                // Custom, positive
+                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+
+                // Custom, empty
+                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
+                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
     }
 
     @Test
@@ -968,7 +963,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", containsString("Not allowed symbols")))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
 
@@ -1214,7 +1208,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -1251,7 +1244,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -1285,7 +1277,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -1317,7 +1308,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -1353,7 +1343,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -1379,10 +1368,10 @@ class ExerciseControllerTest {
         requestDto.setNeedsEquipment(updateNeedsEquipment);
 
         String errorMessage = nonNull(updateTitle)
-                ? ErrorMessage.TITLE_IS_NOT_DIFFERENT.getName()
+                ? ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + "title"
                 : nonNull(updateDescription)
-                        ? ErrorMessage.DESCRIPTION_IS_NOT_DIFFERENT.getName()
-                        : ErrorMessage.NEEDS_EQUIPMENT_IS_NOT_DIFFERENT.getName();
+                        ? ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + "description"
+                        : ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + "needsEquipment";
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_EXERCISE_ID, customExercise.getId())
@@ -1448,7 +1437,6 @@ class ExerciseControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 }

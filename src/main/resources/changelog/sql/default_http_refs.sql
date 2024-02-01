@@ -2,7 +2,7 @@ INSERT INTO http_refs(id, name, ref, description, is_custom) VALUES
 (1, 'Reverse Snow Angel', 'https://www.youtube.com/watch?v=NQhC-An2ZxE', 'Video How-To', false),
 (2, 'Side Bends', 'https://www.youtube.com/watch?v=2nG52Nl6fL8', 'Video How-To', false),
 (3, 'Superman Elbow to Knee Touch', 'https://www.youtube.com/watch?v=uGPLO36Yxac', 'Video How-To', false),
-(4, 'Superman Elbow to Knee Touch', 'https://www.youtube.com/watch?v=vkMvGpU2YCQ', 'Video How-To', false),
+(4, 'Superman Elbow to Knee Touch (2)', 'https://www.youtube.com/watch?v=vkMvGpU2YCQ', 'Video How-To', false),
 
 (5, 'Diamond Push Ups', 'https://youtu.be/JBJIhBl--pc?feature=shared&t=323',  'Video How-To', false),
 (6, 'Tricep Dips', 'https://youtu.be/JBJIhBl--pc?feature=shared&t=82',  'Video How-To', false),
@@ -18,7 +18,7 @@ INSERT INTO http_refs(id, name, ref, description, is_custom) VALUES
 (14, 'Squats', 'https://youtu.be/G5nxGTFBauM?feature=shared&t=69',  'Video How-To', false),
 (15, 'Assisted Pistol Squats', 'https://youtu.be/G5nxGTFBauM?feature=shared&t=196',  'Video How-To', false),
 (16, 'Forward Lunges', 'https://www.youtube.com/watch?v=QE_hU8XX48I',  'Video How-To', false),
-(17, 'Forward Lunges', 'https://youtu.be/q7rCeOa_m58?feature=shared&t=482',  'Video How-To', false),
+(17, 'Forward Lunges (2)', 'https://youtu.be/q7rCeOa_m58?feature=shared&t=482',  'Video How-To', false),
 (18, 'Calves Exercises', 'https://www.youtube.com/watch?v=-tJSMx4n6-g',  'Video How-To', false),
 (19, 'Knees Rotation', 'https://www.youtube.com/watch?v=mA6gebOJUIw',  'Video How-To', false),
 

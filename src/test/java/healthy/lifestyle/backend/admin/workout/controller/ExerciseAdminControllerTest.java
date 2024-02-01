@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.URL;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
@@ -71,7 +71,7 @@ class ExerciseAdminControllerTest {
     @ParameterizedTest
     @MethodSource("multipleFilters")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "ADMIN")
-    void getExercisesByFilterTest_shouldReturnFilteredExercisesDtoListWith200_whenValidRequest(
+    void getExercisesWithFilterTest_shouldReturnFilteredExercisesDtoListWith200_whenValidRequest(
             String title, String description, Boolean isCustom, Boolean needsEquipment, List<Integer> resultSeeds)
             throws Exception {
         // Given

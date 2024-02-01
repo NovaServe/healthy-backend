@@ -19,9 +19,9 @@ import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.Country;
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.Country;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.URL;
@@ -128,7 +128,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -379,7 +378,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(validationErrorMessage)))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
 
@@ -427,7 +425,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -447,7 +444,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -471,7 +467,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -702,7 +697,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(validationErrorMessage)))
-                .andExpect(jsonPath("$.code", is(HttpStatus.BAD_REQUEST.value())))
                 .andDo(print());
     }
 
@@ -916,7 +910,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -939,7 +932,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -968,19 +960,19 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenEmptyRequest() throws Exception {
+    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenRequestWithNoUpdates() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user);
 
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDtoEmpty();
-        ApiException expectedException = new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.NO_UPDATES_REQUEST, null, HttpStatus.BAD_REQUEST);
 
         // When
         mockMvc.perform(patch(URL.CUSTOM_HTTP_REF_ID, customHttpRef.getId())
@@ -990,7 +982,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -1027,7 +1018,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -1047,7 +1037,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 
@@ -1073,7 +1062,6 @@ class HttpRefControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 }

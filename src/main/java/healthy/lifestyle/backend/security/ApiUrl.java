@@ -13,8 +13,14 @@ import org.springframework.stereotype.Service;
 @Getter
 @Setter
 public class ApiUrl {
+    @Value("/error/**")
+    private String errorUrl;
+
     @Value("${api.basePath}/${api.version}/users/auth/**")
     private String authUrl;
+
+    @Value("${api.basePath}/${api.version}/users")
+    private String signupUrl;
 
     @Value("${api.basePath}/${api.version}/workouts/bodyParts")
     private String bodyPartsUrl;
@@ -39,9 +45,6 @@ public class ApiUrl {
 
     @Value("${api.basePath}/${api.version}/nutritions/default/{nutrition_id}")
     private String defaultNutritionDetailsUrl;
-
-    @Value("${api.basePath}/${api.version}/admin/hello-world")
-    private String adminHelloWorldUrl;
 
     @Value("${api.basePath}/${api.version}/mentals/default/{mental_id}")
     private String defaultMentalDetailsUrl;

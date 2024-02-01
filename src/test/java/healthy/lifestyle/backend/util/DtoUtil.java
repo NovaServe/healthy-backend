@@ -1,8 +1,8 @@
 package healthy.lifestyle.backend.util;
 
-import healthy.lifestyle.backend.users.dto.LoginRequestDto;
-import healthy.lifestyle.backend.users.dto.SignupRequestDto;
-import healthy.lifestyle.backend.users.dto.UserUpdateRequestDto;
+import healthy.lifestyle.backend.user.dto.LoginRequestDto;
+import healthy.lifestyle.backend.user.dto.SignupRequestDto;
+import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.workout.dto.*;
 import java.util.Collections;
 import java.util.List;
@@ -103,15 +103,14 @@ public class DtoUtil {
     }
 
     public LoginRequestDto loginRequestDto(int seed) {
-        return new LoginRequestDto.Builder()
+        return LoginRequestDto.builder()
                 .usernameOrEmail("email-" + seed + "@email.com")
                 .password("Password-" + seed)
-                .confirmPassword("Password-" + seed)
                 .build();
     }
 
     public LoginRequestDto loginRequestDtoEmpty() {
-        return new LoginRequestDto.Builder().build();
+        return LoginRequestDto.builder().build();
     }
 
     public UserUpdateRequestDto userUpdateRequestDto(String seed, Long countryId, Integer age) {
