@@ -1,14 +1,15 @@
 package healthy.lifestyle.backend.workout.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.service.UserService;
+import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.workout.dto.HttpRefCreateRequestDto;
@@ -17,10 +18,10 @@ import healthy.lifestyle.backend.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,6 +50,9 @@ class HttpRefServiceTest {
     @Spy
     ModelMapper modelMapper;
 
+    @Spy
+    Util util;
+
     TestUtil testUtil = new TestUtil();
 
     DtoUtil dtoUtil = new DtoUtil();
@@ -60,8 +64,8 @@ class HttpRefServiceTest {
         HttpRefCreateRequestDto requestDto = dtoUtil.httpRefCreateRequestDto(1);
 
         when(userService.getUserById(user.getId())).thenReturn(user);
-        when(httpRefRepository.findCustomByNameAndUserId(requestDto.getName(), user.getId()))
-                .thenReturn(Optional.empty());
+        when(httpRefRepository.findDefaultAndCustomByNameAndUserId(requestDto.getName(), user.getId()))
+                .thenReturn(Collections.emptyList());
         when(httpRefRepository.save(org.mockito.ArgumentMatchers.any(HttpRef.class)))
                 .thenAnswer(invocation -> {
                     Object[] args = invocation.getArguments();
@@ -75,7 +79,7 @@ class HttpRefServiceTest {
 
         // Then
         verify(userService, times(1)).getUserById(user.getId());
-        verify(httpRefRepository, times(1)).findCustomByNameAndUserId(requestDto.getName(), user.getId());
+        verify(httpRefRepository, times(1)).findDefaultAndCustomByNameAndUserId(requestDto.getName(), user.getId());
         verify(httpRefRepository, times(1)).save(org.mockito.ArgumentMatchers.any(HttpRef.class));
 
         assertThat(responseDto)
@@ -117,8 +121,8 @@ class HttpRefServiceTest {
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
         ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
         when(userService.getUserById(user.getId())).thenReturn(user);
-        when(httpRefRepository.findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId()))
-                .thenReturn(Optional.of(httpRef));
+        when(httpRefRepository.findDefaultAndCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId()))
+                .thenReturn(List.of(httpRef));
 
         // When
         ApiException actualException = assertThrows(
@@ -126,33 +130,12 @@ class HttpRefServiceTest {
 
         // Then
         verify(userService, times(1)).getUserById(user.getId());
-        verify(httpRefRepository, times(1)).findCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId());
+        verify(httpRefRepository, times(1))
+                .findDefaultAndCustomByNameAndUserId(createHttpRequestDto.getName(), user.getId());
         verify(httpRefRepository, times(0)).save(org.mockito.ArgumentMatchers.any(HttpRef.class));
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
         assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
-    }
-
-    @Test
-    void getDefaultHttpRefsTest_shouldReturnDefaultHttpRefResponseDtoList() {
-        // Given
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        HttpRef httpRef1 = testUtil.createDefaultHttpRef(1);
-        HttpRef httpRef2 = testUtil.createDefaultHttpRef(2);
-        List<HttpRef> httpRefsDefault = List.of(httpRef1, httpRef2);
-        when(httpRefRepository.findAllDefault(sort)).thenReturn(httpRefsDefault);
-
-        // When
-        List<HttpRefResponseDto> httpRefsActual = httpRefService.getDefaultHttpRefs(sort);
-
-        // Then
-        verify(httpRefRepository, times(1)).findAllDefault(sort);
-
-        org.hamcrest.MatcherAssert.assertThat(httpRefsActual, hasSize(httpRefsDefault.size()));
-
-        Assertions.assertThat(httpRefsDefault)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
-                .isEqualTo(httpRefsActual);
     }
 
     @Test
@@ -269,7 +252,7 @@ class HttpRefServiceTest {
                     .thenReturn(mockHttpRefPage);
 
         // When
-        Page<HttpRefResponseDto> httpRefPage = httpRefService.getHttpRefs(
+        Page<HttpRefResponseDto> httpRefPage = httpRefService.getHttpRefsWithFilter(
                 isCustom, userId, name, description, sortBy, orderBy, currentPageNumber, itemsPerPage);
 
         // Then
@@ -296,33 +279,8 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void getCustomHttpRefsTest_shouldReturnCustomHttpRefResponseDtoList() {
-        // Given
-        HttpRef httpRef1 = testUtil.createDefaultHttpRef(1);
-        HttpRef httpRef2 = testUtil.createDefaultHttpRef(2);
-        HttpRef httpRef3 = testUtil.createDefaultHttpRef(3);
-        HttpRef httpRef4 = testUtil.createDefaultHttpRef(4);
-        List<HttpRef> httpRefs = List.of(httpRef1, httpRef2, httpRef3, httpRef4);
-        long userId = 1L;
-        String sortBy = "id";
-        Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
-        when(httpRefRepository.findCustomByUserId(userId, sort)).thenReturn(httpRefs);
-
-        // When
-        List<HttpRefResponseDto> httpRefsActual = httpRefService.getCustomHttpRefs(userId, "id");
-
-        // Then
-        verify(httpRefRepository, times(1)).findCustomByUserId(userId, sort);
-
-        org.hamcrest.MatcherAssert.assertThat(httpRefsActual, hasSize(httpRefs.size()));
-
-        assertThat(httpRefs)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
-                .isEqualTo(httpRefsActual);
-    }
-
-    @Test
-    void updateCustomHttpRefTest_shouldReturnUpdatedHttpRefResponseDto() {
+    void updateCustomHttpRefTest_shouldReturnUpdatedHttpRefResponseDto()
+            throws NoSuchFieldException, IllegalAccessException {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
@@ -419,22 +377,24 @@ class HttpRefServiceTest {
     @Test
     void updateCustomHttpRefTest_shouldThrowErrorWith400_whenEmptyRequest() {
         // Given
+        User user = testUtil.createUser(1);
+        HttpRef customHttpRef = testUtil.createCustomHttpRef(1, user);
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDtoEmpty();
-        long randomUserId = 1000L;
-        long randomHttpRefId = 1000L;
-        ApiException expectedException = new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
+        when(httpRefRepository.findById(anyLong())).thenReturn(Optional.ofNullable(customHttpRef));
+
+        ApiExceptionCustomMessage expectedException =
+                new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
 
         // When
-        ApiException actualException = assertThrows(
-                ApiException.class,
-                () -> httpRefService.updateCustomHttpRef(randomUserId, randomHttpRefId, requestDto));
+        ApiExceptionCustomMessage actualException = assertThrows(
+                ApiExceptionCustomMessage.class,
+                () -> httpRefService.updateCustomHttpRef(user.getId(), customHttpRef.getId(), requestDto));
 
         // Then
-        verify(httpRefRepository, times(0)).findById(anyLong());
+        verify(httpRefRepository, times(1)).findById(anyLong());
         verify(httpRefRepository, times(0)).save(ArgumentMatchers.any(HttpRef.class));
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
-        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test

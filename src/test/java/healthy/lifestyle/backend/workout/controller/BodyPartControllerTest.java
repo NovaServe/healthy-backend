@@ -99,7 +99,6 @@ class BodyPartControllerTest {
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
                 .andDo(print());
     }
 }

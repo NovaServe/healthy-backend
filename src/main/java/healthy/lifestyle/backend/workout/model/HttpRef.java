@@ -1,8 +1,8 @@
 package healthy.lifestyle.backend.workout.model;
 
-import healthy.lifestyle.backend.mentals.model.Mental;
+import healthy.lifestyle.backend.mental.model.Mental;
 import healthy.lifestyle.backend.nutrition.model.Nutrition;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
 import java.util.Set;
 import lombok.*;
@@ -11,13 +11,13 @@ import lombok.*;
  * http_refs table preserves both default and custom http references.
  * If http reference is default then is_custom is false, otherwise is true.
  */
-@Entity
-@Table(name = "http_refs")
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "http_refs")
 public class HttpRef {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

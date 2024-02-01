@@ -5,9 +5,9 @@ import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.service.AuthService;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.service.UserUtilImpl;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +23,7 @@ class JwtTokenProviderTest {
     SecurityProps securityProps;
 
     @Mock
-    AuthService authService;
+    UserUtilImpl userUtil;
 
     @InjectMocks
     JwtTokenProvider jwtTokenProvider;
@@ -89,7 +89,7 @@ class JwtTokenProviderTest {
                 .role(role)
                 .build();
 
-        when(authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail))
+        when(userUtil.getUserByUsernameOrEmail(usernameOrEmail, usernameOrEmail))
                 .thenReturn(Optional.of(user));
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(usernameOrEmail, password);
@@ -100,7 +100,7 @@ class JwtTokenProviderTest {
 
         // Then
         assertTrue(isValidated);
-        verify(authService, times(1)).findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
+        verify(userUtil, times(1)).getUserByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
     }
 
     @Test
@@ -114,7 +114,7 @@ class JwtTokenProviderTest {
         String usernameOrEmail = "test@email.com";
         String password = "test-password";
 
-        when(authService.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail))
+        when(userUtil.getUserByUsernameOrEmail(usernameOrEmail, usernameOrEmail))
                 .thenReturn(Optional.empty());
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(usernameOrEmail, password);

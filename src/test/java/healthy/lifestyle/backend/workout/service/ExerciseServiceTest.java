@@ -2,7 +2,6 @@ package healthy.lifestyle.backend.workout.service;
 
 import static java.util.Objects.nonNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -12,10 +11,11 @@ import static org.mockito.Mockito.*;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.Country;
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.service.UserServiceImpl;
+import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.user.model.Country;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.service.UserServiceImpl;
 import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.workout.dto.*;
@@ -26,7 +26,6 @@ import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.*;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -40,7 +39,6 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,6 +57,9 @@ class ExerciseServiceTest {
 
     @Spy
     ModelMapper modelMapper;
+
+    @Spy
+    Util util;
 
     @InjectMocks
     ExerciseServiceImpl exerciseService;
@@ -87,8 +88,8 @@ class ExerciseServiceTest {
         when(httpRefRepository.findById(customHttpRef.getId())).thenReturn(Optional.of(customHttpRef));
         when(httpRefRepository.findById(defaultHttpRef.getId())).thenReturn(Optional.of(defaultHttpRef));
 
-        when(exerciseRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
-                .thenReturn(Optional.empty());
+        when(exerciseRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
+                .thenReturn(Collections.emptyList());
         when(exerciseRepository.save(any(Exercise.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
 
@@ -100,7 +101,8 @@ class ExerciseServiceTest {
         // Then
         verify(bodyPartRepository, times(2)).findById(anyLong());
         verify(httpRefRepository, times(2)).findById(anyLong());
-        verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(eq(requestDto.getTitle()), eq(user.getId()));
+        verify(exerciseRepository, times(1))
+                .findDefaultAndCustomByTitleAndUserId(eq(requestDto.getTitle()), eq(user.getId()));
         verify(exerciseRepository, times(1)).save(any(Exercise.class));
         verify(userService, times(1)).addExerciseToUser(eq(user.getId()), any());
 
@@ -241,105 +243,6 @@ class ExerciseServiceTest {
                         nullable(Boolean.class),
                         anyList(),
                         any());
-    }
-
-    @Test
-    void getDefaultExercisesTest_shouldReturnDefaultExercisesDtoList() {
-        // Given
-        BodyPart bodyPart1 = testUtil.createBodyPart(1);
-        BodyPart bodyPart2 = testUtil.createBodyPart(2);
-        HttpRef defaultHttpRef1 = testUtil.createDefaultHttpRef(1);
-        HttpRef defaultHttpRef2 = testUtil.createDefaultHttpRef(2);
-        boolean needsEquipment = true;
-        Exercise exercise1 =
-                testUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-        Exercise exercise2 =
-                testUtil.createDefaultExercise(2, needsEquipment, List.of(bodyPart2), List.of(defaultHttpRef2));
-        List<Exercise> exercises = List.of(exercise1, exercise2);
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-
-        when(exerciseRepository.findAllDefault(sort)).thenReturn(exercises);
-
-        // When
-        List<ExerciseResponseDto> exercisesDtoActual = exerciseService.getDefaultExercises();
-
-        // Then
-        verify(exerciseRepository, times(1)).findAllDefault(sort);
-
-        org.hamcrest.MatcherAssert.assertThat(exercisesDtoActual, hasSize(exercises.size()));
-
-        assertThat(exercises)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
-                .isEqualTo(exercisesDtoActual);
-
-        IntStream.range(0, exercises.size()).forEach(id -> {
-            List<BodyPart> bodyParts_ = exercises.get(id).getBodyParts().stream()
-                    .sorted(Comparator.comparingLong(BodyPart::getId))
-                    .toList();
-
-            assertThat(bodyParts_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                    .isEqualTo(exercisesDtoActual.get(id).getBodyParts());
-
-            List<HttpRef> httpRefs_ = exercises.get(id).getHttpRefs().stream()
-                    .sorted(Comparator.comparingLong(HttpRef::getId))
-                    .toList();
-
-            assertThat(httpRefs_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                            "exercises", "user", "mentals", "nutritions")
-                    .isEqualTo(exercisesDtoActual.get(id).getHttpRefs());
-        });
-    }
-
-    @Test
-    void getCustomExercisesTest_shouldReturnCustomExercisesDtoList() {
-        // Given
-        User user = testUtil.createUser(1);
-        BodyPart bodyPart1 = testUtil.createBodyPart(1);
-        BodyPart bodyPart2 = testUtil.createBodyPart(2);
-        HttpRef defaultHttpRef1 = testUtil.createDefaultHttpRef(1);
-        HttpRef defaultHttpRef2 = testUtil.createDefaultHttpRef(2);
-        boolean needsEquipment = true;
-        Exercise customExercise1 =
-                testUtil.createCustomExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1), user);
-        Exercise customExercise2 =
-                testUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(defaultHttpRef2), user);
-        List<Exercise> customExercises = List.of(customExercise1, customExercise2);
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-
-        when(exerciseRepository.findCustomByUserId(user.getId(), sort)).thenReturn(customExercises);
-
-        // When
-        List<ExerciseResponseDto> exercisesDtoActual = exerciseService.getCustomExercises(user.getId());
-
-        // Then
-        verify((exerciseRepository), times(1)).findCustomByUserId(user.getId(), sort);
-
-        assertEquals(customExercises.size(), exercisesDtoActual.size());
-
-        assertThat(customExercises)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
-                .isEqualTo(exercisesDtoActual);
-
-        IntStream.range(0, customExercises.size()).forEach(id -> {
-            List<BodyPart> bodyParts_ = customExercises.get(id).getBodyParts().stream()
-                    .sorted(Comparator.comparingLong(BodyPart::getId))
-                    .toList();
-
-            assertThat(bodyParts_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
-                    .isEqualTo(exercisesDtoActual.get(id).getBodyParts());
-
-            List<HttpRef> httpRefs_ = customExercises.get(id).getHttpRefs().stream()
-                    .sorted(Comparator.comparingLong(HttpRef::getId))
-                    .toList();
-
-            assertThat(httpRefs_)
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                            "exercises", "user", "mentals", "nutritions")
-                    .isEqualTo(exercisesDtoActual.get(id).getHttpRefs());
-        });
     }
 
     @Test
@@ -504,7 +407,8 @@ class ExerciseServiceTest {
     @ParameterizedTest
     @MethodSource("updateCustomExerciseMultipleValidInputs")
     void updateCustomExerciseTest_shouldReturnUpdatedExerciseDto_whenValidRequest(
-            String updateTitle, String updateDescription, Boolean updateNeedsEquipment) {
+            String updateTitle, String updateDescription, Boolean updateNeedsEquipment)
+            throws NoSuchFieldException, IllegalAccessException {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -551,8 +455,8 @@ class ExerciseServiceTest {
         when(userService.getUserById(user.getId())).thenReturn(user);
 
         if (nonNull(updateTitle)) {
-            when(exerciseRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
-                    .thenReturn(Optional.empty());
+            when(exerciseRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
+                    .thenReturn(Collections.emptyList());
         }
 
         when(bodyPartRepository.findById(bodyPart2.getId())).thenReturn(Optional.of(bodyPart2));
@@ -573,7 +477,8 @@ class ExerciseServiceTest {
         verify(userService, times(1)).getUserById(user.getId());
 
         if (nonNull(updateTitle)) {
-            verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
+            verify(exerciseRepository, times(1))
+                    .findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         }
         verify(bodyPartRepository, times(2)).findById(anyLong());
         verify(httpRefRepository, times(4)).findById(anyLong());
@@ -606,7 +511,8 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldReturnUpdatedExerciseDto_whenEmptyHttpRefsIdsListGiven() {
+    void updateCustomExerciseTest_shouldReturnUpdatedExerciseDto_whenEmptyHttpRefsIdsListGiven()
+            throws NoSuchFieldException, IllegalAccessException {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -669,15 +575,15 @@ class ExerciseServiceTest {
         requestDto.setBodyPartIds(customExercise.getBodyPartsIdsSorted());
         requestDto.setHttpRefIds(customExercise.getHttpRefsIdsSorted());
 
-        ApiException expectedException =
-                new ApiException(ErrorMessage.NO_UPDATES_REQUEST, null, HttpStatus.BAD_REQUEST);
+        ApiExceptionCustomMessage expectedException =
+                new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
 
         // Mocking
         when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
 
         // When
-        ApiException actualException = assertThrows(
-                ApiException.class,
+        ApiExceptionCustomMessage actualException = assertThrows(
+                ApiExceptionCustomMessage.class,
                 () -> exerciseService.updateCustomExercise(customExercise.getId(), user.getId(), requestDto));
 
         // Then
@@ -688,7 +594,6 @@ class ExerciseServiceTest {
         verify(httpRefRepository, times(0)).findById(anyLong());
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
-        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -784,9 +689,8 @@ class ExerciseServiceTest {
         ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
 
         when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
-        when(userService.getUserById(user.getId())).thenReturn(user);
-        when(exerciseRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
-                .thenReturn(Optional.of(alreadyExistedCustomExercise));
+        when(exerciseRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
+                .thenReturn(List.of(alreadyExistedCustomExercise));
 
         // When
         ApiException actualException = assertThrows(
@@ -795,8 +699,7 @@ class ExerciseServiceTest {
 
         // Then
         verify(exerciseRepository, times(1)).findById(customExercise.getId());
-        verify(userService, times(1)).getUserById(user.getId());
-        verify(exerciseRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
+        verify(exerciseRepository, times(1)).findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
@@ -824,7 +727,6 @@ class ExerciseServiceTest {
                 new ApiException(ErrorMessage.BODY_PART_NOT_FOUND, nonExistingBodyPartId, HttpStatus.NOT_FOUND);
 
         when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
-        when(userService.getUserById(user.getId())).thenReturn(user);
 
         // When
         ApiException actualException = assertThrows(
@@ -833,7 +735,6 @@ class ExerciseServiceTest {
 
         // Then
         verify(exerciseRepository, times(1)).findById(customExercise.getId());
-        verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(1)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
@@ -906,27 +807,28 @@ class ExerciseServiceTest {
         requestDto.setNeedsEquipment(updateNeedsEquipment);
 
         when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
-        when(userService.getUserById(user.getId())).thenReturn(user);
 
         // When
-        ApiException exception = assertThrows(
-                ApiException.class,
+        ApiExceptionCustomMessage exception = assertThrows(
+                ApiExceptionCustomMessage.class,
                 () -> exerciseService.updateCustomExercise(customExercise.getId(), user.getId(), requestDto));
 
         // Then
         verify(exerciseRepository, times(1)).findById(customExercise.getId());
-        verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(0)).findCustomByTitleAndUserId(anyString(), anyLong());
         verify(bodyPartRepository, times(0)).findById(anyLong());
         verify(httpRefRepository, times(0)).findById(anyLong());
 
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
 
-        if (nonNull(updateTitle)) assertEquals(ErrorMessage.TITLE_IS_NOT_DIFFERENT.getName(), exception.getMessage());
+        if (nonNull(updateTitle))
+            assertEquals(ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + "title", exception.getMessage());
         if (nonNull(updateDescription))
-            assertEquals(ErrorMessage.DESCRIPTION_IS_NOT_DIFFERENT.getName(), exception.getMessage());
+            assertEquals(
+                    ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + "description", exception.getMessage());
         if (nonNull(updateNeedsEquipment))
-            assertEquals(ErrorMessage.NEEDS_EQUIPMENT_IS_NOT_DIFFERENT.getName(), exception.getMessage());
+            assertEquals(
+                    ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + "needsEquipment", exception.getMessage());
     }
 
     static Stream<Arguments> updateCustomExerciseMultipleValidButNotDifferentInputs() {
@@ -950,7 +852,7 @@ class ExerciseServiceTest {
 
         when(exerciseRepository.findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId()))
                 .thenReturn(Optional.ofNullable(customExercise));
-        doNothing().when(userService).deleteUserExercise(eq(user.getId()), any(Exercise.class));
+        doNothing().when(userService).deleteExerciseFromUser(eq(user.getId()), any(Exercise.class));
         doNothing().when(exerciseRepository).delete(any(Exercise.class));
 
         // When
@@ -958,7 +860,7 @@ class ExerciseServiceTest {
 
         // Then
         verify(exerciseRepository, times(1)).findCustomByExerciseIdAndUserId(customExercise.getId(), user.getId());
-        verify(userService, times(1)).deleteUserExercise(eq(user.getId()), any(Exercise.class));
+        verify(userService, times(1)).deleteExerciseFromUser(eq(user.getId()), any(Exercise.class));
         verify(exerciseRepository, times(1)).delete(any(Exercise.class));
     }
 

@@ -3,11 +3,11 @@ package healthy.lifestyle.backend.workout.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class HttpRefResponseDto {
     private long id;
 

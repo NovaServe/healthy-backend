@@ -8,8 +8,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
 @Validated
+@Controller
 @RequestMapping("${api.basePath}/${api.version}/nutritions")
 public class NutritionController {
 

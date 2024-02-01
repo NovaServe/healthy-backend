@@ -12,7 +12,7 @@ public interface ExerciseAdminRepository extends JpaRepository<Exercise, Long> {
             + "(:description is NULL OR e.description LIKE %:description%) AND "
             + "(:isCustom is NULL OR e.isCustom = :isCustom) AND "
             + "(:needsEquipment is NULL OR e.needsEquipment = :needsEquipment)")
-    Optional<List<Exercise>> findByFilters(
+    Optional<List<Exercise>> findWithFilter(
             @Param("title") String title,
             @Param("description") String description,
             @Param("isCustom") Boolean isCustom,

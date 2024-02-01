@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.users.model.Country;
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.Country;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.Sort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -50,50 +49,6 @@ class WorkoutRepositoryTest {
     @BeforeEach
     void beforeEach() {
         dbUtil.deleteAll();
-    }
-
-    @Test
-    void findAllCustomByUserId() {
-        // Given
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        boolean needsEquipment = true;
-        Exercise defaultExercise1 =
-                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-        Workout defaultWorkout1 = dbUtil.createDefaultWorkout(1, List.of(defaultExercise1));
-
-        Role userRole = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-
-        User user1 = dbUtil.createUser(1, userRole, country);
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(2, user1);
-        Exercise customExercise1 =
-                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user1);
-        Workout customWorkout1 = dbUtil.createCustomWorkout(2, List.of(customExercise1), user1);
-
-        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
-        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(3, user1);
-        Exercise customExercise2 =
-                dbUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart3), List.of(customHttpRef2), user1);
-        Workout customWorkout2 = dbUtil.createCustomWorkout(3, List.of(customExercise2), user1);
-
-        User user2 = dbUtil.createUser(2, userRole, country);
-        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
-        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(4, user1);
-        Exercise customExercise3 =
-                dbUtil.createCustomExercise(4, needsEquipment, List.of(bodyPart4), List.of(customHttpRef3), user2);
-        Workout customWorkout3 = dbUtil.createCustomWorkout(4, List.of(customExercise3), user2);
-
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-
-        // When
-        List<Workout> actualWorkouts = workoutRepository.findAllCustomByUserId(sort, user1.getId());
-
-        // Then
-        assertEquals(2, actualWorkouts.size());
-        assertEquals(customWorkout1.getId(), actualWorkouts.get(0).getId());
-        assertEquals(customWorkout2.getId(), actualWorkouts.get(1).getId());
     }
 
     @Test
@@ -192,100 +147,6 @@ class WorkoutRepositoryTest {
 
         // When
         List<Workout> workouts = workoutRepository.findCustomByTitleAndUserId(defaultWorkout.getTitle(), user.getId());
-
-        // Then
-        assertEquals(0, workouts.size());
-    }
-
-    @Test
-    void findCustomByWorkoutIdAndUserIdTest_shouldReturnWorkout() {
-        // Given
-        User user = dbUtil.createUser(1);
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(2, user);
-        boolean exerciseNeedsEquipment = false;
-        Exercise defaultExercise1 =
-                dbUtil.createDefaultExercise(1, exerciseNeedsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-        Exercise customExercise1 = dbUtil.createCustomExercise(
-                2, exerciseNeedsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user);
-        Workout customWorkout = dbUtil.createCustomWorkout(1, List.of(defaultExercise1, customExercise1), user);
-
-        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
-        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(3);
-        Exercise defaultExercise2 =
-                dbUtil.createDefaultExercise(3, exerciseNeedsEquipment, List.of(bodyPart3), List.of(defaultHttpRef2));
-        Workout defaultWorkout = dbUtil.createDefaultWorkout(2, List.of(defaultExercise2));
-
-        // When
-        List<Workout> workouts = workoutRepository.findCustomByWorkoutIdAndUserId(customWorkout.getId(), user.getId());
-
-        // Then
-        assertEquals(1, workouts.size());
-        assertEquals(customWorkout.getId(), workouts.get(0).getId());
-    }
-
-    @Test
-    void findCustomByWorkoutIdAndUserIdTest_shouldReturnEmptyList_whenWorkoutBelongsToAnotherUser() {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-
-        User user1 = dbUtil.createUser(1, role, country);
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(2, user1);
-        boolean exerciseNeedsEquipment = false;
-        Exercise defaultExercise1 =
-                dbUtil.createDefaultExercise(1, exerciseNeedsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-        Exercise customExercise1 = dbUtil.createCustomExercise(
-                2, exerciseNeedsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user1);
-        Workout customWorkout1 = dbUtil.createCustomWorkout(1, List.of(defaultExercise1, customExercise1), user1);
-
-        User user2 = dbUtil.createUser(2, role, country);
-        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
-        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
-        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(3);
-        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user2);
-        Exercise defaultExercise2 =
-                dbUtil.createDefaultExercise(3, exerciseNeedsEquipment, List.of(bodyPart3), List.of(defaultHttpRef2));
-        Exercise customExercise2 = dbUtil.createCustomExercise(
-                4, exerciseNeedsEquipment, List.of(bodyPart4), List.of(customHttpRef2), user2);
-        Workout customWorkout2 = dbUtil.createCustomWorkout(2, List.of(defaultExercise2, customExercise2), user2);
-
-        // When
-        List<Workout> workouts =
-                workoutRepository.findCustomByWorkoutIdAndUserId(customWorkout1.getId(), user2.getId());
-
-        // Then
-        assertEquals(0, workouts.size());
-    }
-
-    @Test
-    void findCustomByWorkoutIdAndUserIdTest_shouldReturnEmptyList_whenWorkoutIsDefault() {
-        // Given
-        User user = dbUtil.createUser(1);
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(2, user);
-        boolean exerciseNeedsEquipment = false;
-        Exercise defaultExercise1 =
-                dbUtil.createDefaultExercise(1, exerciseNeedsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-        Exercise customExercise1 = dbUtil.createCustomExercise(
-                2, exerciseNeedsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user);
-        Workout customWorkout = dbUtil.createCustomWorkout(1, List.of(defaultExercise1, customExercise1), user);
-
-        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
-        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(3);
-        Exercise defaultExercise2 =
-                dbUtil.createDefaultExercise(3, exerciseNeedsEquipment, List.of(bodyPart3), List.of(defaultHttpRef2));
-        Workout defaultWorkout = dbUtil.createDefaultWorkout(2, List.of(defaultExercise2));
-
-        // When
-        List<Workout> workouts = workoutRepository.findCustomByWorkoutIdAndUserId(defaultWorkout.getId(), user.getId());
 
         // Then
         assertEquals(0, workouts.size());

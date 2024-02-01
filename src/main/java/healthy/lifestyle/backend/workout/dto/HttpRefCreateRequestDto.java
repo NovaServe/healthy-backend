@@ -7,11 +7,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class HttpRefCreateRequestDto {
     @NotBlank
     @Size(min = 5, max = 255, message = "Size should be from 5 to 255 characters long")

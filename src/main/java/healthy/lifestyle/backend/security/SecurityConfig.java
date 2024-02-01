@@ -20,8 +20,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
+
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
+
     private final JwtAuthFilter jwtAuthFilter;
+
     private final ApiUrl apiUrl;
 
     @Bean
@@ -49,6 +52,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, apiUrl.getAuthUrl())
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, apiUrl.getSignupUrl())
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getBodyPartsUrl())
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getDefaultExercisesUrl())
@@ -65,11 +70,9 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getDefaultNutritionDetailsUrl())
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST, apiUrl.getAdminHelloWorldUrl())
-                        .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getDefaultMentalDetailsUrl())
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/error/**")
+                        .requestMatchers(HttpMethod.GET, apiUrl.getErrorUrl())
                         .permitAll()
                         .anyRequest()
                         .authenticated());

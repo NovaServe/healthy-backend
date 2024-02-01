@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.service.UserServiceImpl;
+import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.service.UserServiceImpl;
 import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.workout.dto.WorkoutCreateRequestDto;
@@ -27,7 +29,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,6 +47,9 @@ class WorkoutServiceTest {
 
     @Spy
     ModelMapper modelMapper;
+
+    @Spy
+    Util util;
 
     TestUtil testUtil = new TestUtil();
 
@@ -68,7 +72,7 @@ class WorkoutServiceTest {
         WorkoutCreateRequestDto requestDto =
                 dtoUtil.workoutCreateRequestDto(1, List.of(customExercise.getId(), defaultExercise.getId()));
 
-        when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
+        when(workoutRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
                 .thenReturn(Collections.emptyList());
         when(userService.getUserById(user.getId())).thenReturn(user);
         when(exerciseRepository.findById(defaultExercise.getId())).thenReturn(Optional.of(defaultExercise));
@@ -78,17 +82,17 @@ class WorkoutServiceTest {
             saved.setId(1L);
             return saved;
         });
-        doNothing().when(userService).addWorkout(any(User.class), any(Workout.class));
+        doNothing().when(userService).addWorkoutToUser(any(User.class), any(Workout.class));
 
         // When
         WorkoutResponseDto workoutResponseDto = workoutService.createCustomWorkout(user.getId(), requestDto);
 
         // Then
-        verify(workoutRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
+        verify(workoutRepository, times(1)).findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(2)).findById(anyLong());
         verify(workoutRepository, times(1)).save(any(Workout.class));
-        verify(userService, times(1)).addWorkout(any(User.class), any(Workout.class));
+        verify(userService, times(1)).addWorkoutToUser(any(User.class), any(Workout.class));
 
         assertEquals(1L, workoutResponseDto.getId());
         assertEquals(requestDto.getTitle(), workoutResponseDto.getTitle());
@@ -120,7 +124,7 @@ class WorkoutServiceTest {
 
         ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
 
-        when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
+        when(workoutRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
                 .thenReturn(List.of(alreadyExistedWorkout));
 
         // When
@@ -128,11 +132,11 @@ class WorkoutServiceTest {
                 assertThrows(ApiException.class, () -> workoutService.createCustomWorkout(user.getId(), requestDto));
 
         // Then
-        verify(workoutRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
+        verify(workoutRepository, times(1)).findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         verify(userService, times(0)).getUserById(user.getId());
         verify(exerciseRepository, times(0)).findById(anyLong());
         verify(workoutRepository, times(0)).save(any(Workout.class));
-        verify(userService, times(0)).addWorkout(any(User.class), any(Workout.class));
+        verify(userService, times(0)).addWorkoutToUser(any(User.class), any(Workout.class));
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
         assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
@@ -159,7 +163,7 @@ class WorkoutServiceTest {
         ApiException expectedException =
                 new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistingExerciseId, HttpStatus.NOT_FOUND);
 
-        when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
+        when(workoutRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
                 .thenReturn(Collections.emptyList());
         when(userService.getUserById(user.getId())).thenReturn(user);
         when(exerciseRepository.findById(defaultExercise.getId())).thenReturn(Optional.of(defaultExercise));
@@ -171,11 +175,11 @@ class WorkoutServiceTest {
                 assertThrows(ApiException.class, () -> workoutService.createCustomWorkout(user.getId(), requestDto));
 
         // Then
-        verify(workoutRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
+        verify(workoutRepository, times(1)).findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         verify(userService, times(1)).getUserById(user.getId());
         verify(exerciseRepository, times(3)).findById(anyLong());
         verify(workoutRepository, times(0)).save(any(Workout.class));
-        verify(userService, times(0)).addWorkout(any(User.class), any(Workout.class));
+        verify(userService, times(0)).addWorkoutToUser(any(User.class), any(Workout.class));
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
         assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
@@ -206,7 +210,7 @@ class WorkoutServiceTest {
         ApiException expectedException =
                 new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, customExercise2.getId(), HttpStatus.BAD_REQUEST);
 
-        when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user1.getId()))
+        when(workoutRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user1.getId()))
                 .thenReturn(Collections.emptyList());
         when(userService.getUserById(user1.getId())).thenReturn(user1);
         when(exerciseRepository.findById(defaultExercise.getId())).thenReturn(Optional.of(defaultExercise));
@@ -218,11 +222,11 @@ class WorkoutServiceTest {
                 assertThrows(ApiException.class, () -> workoutService.createCustomWorkout(user1.getId(), requestDto));
 
         // Then
-        verify(workoutRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user1.getId());
+        verify(workoutRepository, times(1)).findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user1.getId());
         verify(userService, times(1)).getUserById(user1.getId());
         verify(exerciseRepository, times(3)).findById(anyLong());
         verify(workoutRepository, times(0)).save(any(Workout.class));
-        verify(userService, times(0)).addWorkout(any(User.class), any(Workout.class));
+        verify(userService, times(0)).addWorkoutToUser(any(User.class), any(Workout.class));
 
         assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
         assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
@@ -298,39 +302,6 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void getWorkoutsTest_shouldReturnDefaultWorkouts() {
-        // Given
-        BodyPart bodyPart1 = testUtil.createBodyPart(1);
-        BodyPart bodyPart2 = testUtil.createBodyPart(2);
-        HttpRef defaultHttpRef1 = testUtil.createDefaultHttpRef(1);
-        HttpRef defaultHttpRef2 = testUtil.createDefaultHttpRef(2);
-        boolean needsEquipment = true;
-        Exercise defaultExercise1 =
-                testUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-        Exercise defaultExercise2 =
-                testUtil.createDefaultExercise(2, needsEquipment, List.of(bodyPart2), List.of(defaultHttpRef2));
-
-        Workout defaultWorkout1 = testUtil.createDefaultWorkout(1, List.of(defaultExercise1));
-        Workout defaultWorkout2 = testUtil.createDefaultWorkout(2, List.of(defaultExercise2));
-        List<Workout> defaultWorkouts = List.of(defaultWorkout1, defaultWorkout2);
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        boolean isDefault = true;
-        Long userId = null;
-
-        when(workoutRepository.findAllDefault(sort)).thenReturn(defaultWorkouts);
-
-        // When
-        List<WorkoutResponseDto> responseWorkouts = workoutService.getWorkouts("id", isDefault, userId);
-
-        // Then
-        verify(workoutRepository, times(1)).findAllDefault(sort);
-        assertEquals(2, responseWorkouts.size());
-        assertThat(defaultWorkouts)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "bodyParts", "user")
-                .isEqualTo(responseWorkouts);
-    }
-
-    @Test
     void getCustomWorkoutByIdTest_shouldReturnCustomWorkout() {
         // Given
         User user = testUtil.createUser(1);
@@ -382,47 +353,8 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void getWorkoutsTest_shouldReturnCustomWorkouts() {
-        // Given
-        BodyPart bodyPart1 = testUtil.createBodyPart(1);
-        HttpRef defaultHttpRef1 = testUtil.createDefaultHttpRef(1);
-        boolean needsEquipment = true;
-        Exercise defaultExercise1 =
-                testUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-        Workout defaultWorkout1 = testUtil.createDefaultWorkout(1, List.of(defaultExercise1));
-
-        User user = testUtil.createUser(1);
-        BodyPart bodyPart2 = testUtil.createBodyPart(2);
-        HttpRef customHttpRef1 = testUtil.createCustomHttpRef(2, user);
-        Exercise customExercise1 =
-                testUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user);
-        Workout customWorkout1 = testUtil.createCustomWorkout(2, List.of(customExercise1), user);
-
-        BodyPart bodyPart3 = testUtil.createBodyPart(3);
-        HttpRef customHttpRef2 = testUtil.createCustomHttpRef(3, user);
-        Exercise customExercise2 =
-                testUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart3), List.of(customHttpRef2), user);
-        Workout customWorkout2 = testUtil.createCustomWorkout(3, List.of(customExercise2), user);
-
-        List<Workout> customWorkouts = List.of(customWorkout1, customWorkout2);
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        boolean isDefault = false;
-
-        when(workoutRepository.findAllCustomByUserId(sort, user.getId())).thenReturn(customWorkouts);
-
-        // When
-        List<WorkoutResponseDto> responseWorkouts = workoutService.getWorkouts("id", isDefault, user.getId());
-
-        // Then
-        verify(workoutRepository, times(1)).findAllCustomByUserId(sort, user.getId());
-        assertEquals(2, responseWorkouts.size());
-        assertThat(customWorkouts)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "bodyParts", "user")
-                .isEqualTo(responseWorkouts);
-    }
-
-    @Test
-    void updateCustomWorkoutTest_shouldReturnWorkoutResponseDto_whenValidRequest() {
+    void updateCustomWorkoutTest_shouldReturnWorkoutResponseDto_whenValidRequest()
+            throws NoSuchFieldException, IllegalAccessException {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -438,21 +370,21 @@ class WorkoutServiceTest {
 
         WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDto(1, List.of(customExercise.getId()));
 
-        when(userService.getUserById(user.getId())).thenReturn(user);
         when(workoutRepository.findById(customWorkout.getId())).thenReturn(Optional.of(customWorkout));
         when(workoutRepository.save(any(Workout.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
         when(exerciseRepository.findById(defaultExercise.getId())).thenReturn(Optional.of(defaultExercise));
         when(exerciseRepository.findById(customExercise.getId())).thenReturn(Optional.of(customExercise));
+        when(workoutRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
+                .thenReturn(Collections.emptyList());
 
         // When
         WorkoutResponseDto responseDto =
                 workoutService.updateCustomWorkout(user.getId(), customWorkout.getId(), requestDto);
 
         // Then
-        verify(userService, times(1)).getUserById(1);
         verify(workoutRepository, times(1)).findById(customWorkout.getId());
-        verify(workoutRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
+        verify(workoutRepository, times(1)).findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         verify(workoutRepository, times(1)).save(any(Workout.class));
         verify(exerciseRepository, times(1)).findById(defaultExercise.getId());
         verify(exerciseRepository, times(1)).findById(customExercise.getId());
@@ -489,24 +421,30 @@ class WorkoutServiceTest {
     @Test
     void updateCustomWorkoutTest_shouldThrowErrorWith400_whenEmptyDtoProvided() {
         // Given
-        WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDto(1, Collections.emptyList());
+        User user = testUtil.createUser(1);
+        BodyPart bodyPart = testUtil.createBodyPart(1);
+        Exercise defaultExercise = testUtil.createDefaultExercise(1, false, List.of(bodyPart), Collections.emptyList());
+        Workout customWorkout = testUtil.createCustomWorkout(1, List.of(defaultExercise), user);
+        when(workoutRepository.findById(anyLong())).thenReturn(Optional.ofNullable(customWorkout));
+
+        WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDto(1, List.of(defaultExercise.getId()));
         requestDto.setTitle(null);
         requestDto.setDescription(null);
 
-        ApiException expectedException = new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
+        ApiExceptionCustomMessage expectedException =
+                new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
 
         // When
-        ApiException actualException =
-                assertThrows(ApiException.class, () -> workoutService.updateCustomWorkout(1L, 2L, requestDto));
+        ApiExceptionCustomMessage actualException = assertThrows(
+                ApiExceptionCustomMessage.class, () -> workoutService.updateCustomWorkout(1L, 2L, requestDto));
 
         // Then
         verify(userService, times(0)).getUserById(1);
-        verify(workoutRepository, times(0)).findById(anyLong());
+        verify(workoutRepository, times(1)).findById(anyLong());
         verify(workoutRepository, times(0)).save(any(Workout.class));
         verify(exerciseRepository, times(0)).findById(anyLong());
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
-        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -518,7 +456,6 @@ class WorkoutServiceTest {
         ApiException expectedException =
                 new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, nonExistingWorkoutId, HttpStatus.NOT_FOUND);
 
-        when(userService.getUserById(user.getId())).thenReturn(user);
         when(workoutRepository.findById(nonExistingWorkoutId)).thenReturn(Optional.empty());
 
         // When
@@ -527,7 +464,6 @@ class WorkoutServiceTest {
         });
 
         // Then
-        verify(userService, times(1)).getUserById(user.getId());
         verify(workoutRepository, times(1)).findById(nonExistingWorkoutId);
         verify(workoutRepository, times(0)).save(any(Workout.class));
         verify(exerciseRepository, times(0)).findById(anyLong());
@@ -542,10 +478,9 @@ class WorkoutServiceTest {
         User user = testUtil.createUser(1);
         Workout workout = testUtil.createDefaultWorkout(1, Collections.emptyList());
         WorkoutUpdateRequestDto requestDto = dtoUtil.workoutUpdateRequestDto(1, Collections.emptyList());
-        ApiException expectedException = new ApiException(
-                ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
+        ApiException expectedException =
+                new ApiException(ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
 
-        when(userService.getUserById(user.getId())).thenReturn(user);
         when(workoutRepository.findById(workout.getId())).thenReturn(Optional.of(workout));
 
         // When
@@ -555,7 +490,6 @@ class WorkoutServiceTest {
 
         // Then
         verify(workoutRepository, times(1)).findById(workout.getId());
-        verify(userService, times(1)).getUserById(user.getId());
         verify(workoutRepository, times(0)).save(any(Workout.class));
         verify(exerciseRepository, times(0)).findById(anyLong());
 
@@ -584,7 +518,6 @@ class WorkoutServiceTest {
         ApiException expectedException =
                 new ApiException(ErrorMessage.USER_WORKOUT_MISMATCH, customWorkout.getId(), HttpStatus.BAD_REQUEST);
 
-        when(userService.getUserById(user2.getId())).thenReturn(user2);
         when(workoutRepository.findById(customWorkout.getId())).thenReturn(Optional.of(customWorkout));
 
         // When
@@ -593,7 +526,6 @@ class WorkoutServiceTest {
                 () -> workoutService.updateCustomWorkout(user2.getId(), customWorkout.getId(), requestDto));
 
         // Then
-        verify(userService, times(1)).getUserById(user2.getId());
         verify(workoutRepository, times(1)).findById(customWorkout.getId());
         verify(workoutRepository, times(0)).save(any(Workout.class));
         verify(exerciseRepository, times(0)).findById(anyLong());
@@ -623,9 +555,8 @@ class WorkoutServiceTest {
 
         ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
 
-        when(userService.getUserById(user.getId())).thenReturn(user);
         when(workoutRepository.findById(customWorkoutToUpdate.getId())).thenReturn(Optional.of(customWorkoutToUpdate));
-        when(workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
+        when(workoutRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId()))
                 .thenReturn(List.of(alreadyExistsCustomWorkout));
 
         // When
@@ -634,14 +565,12 @@ class WorkoutServiceTest {
                 () -> workoutService.updateCustomWorkout(user.getId(), customWorkoutToUpdate.getId(), requestDto));
 
         // Then
-        verify(userService, times(1)).getUserById(user.getId());
         verify(workoutRepository, times(1)).findById(customWorkoutToUpdate.getId());
-        verify(workoutRepository, times(1)).findCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
+        verify(workoutRepository, times(1)).findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), user.getId());
         verify(workoutRepository, times(0)).save(any(Workout.class));
         verify(exerciseRepository, times(0)).findById(anyLong());
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
-        assertEquals(expectedException.getHttpStatusValue(), actualException.getHttpStatusValue());
     }
 
     @Test
@@ -665,7 +594,6 @@ class WorkoutServiceTest {
         ApiException expectedException =
                 new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, nonExistingExerciseId, HttpStatus.NOT_FOUND);
 
-        when(userService.getUserById(1)).thenReturn(user);
         when(workoutRepository.findById(customWorkoutToUpdate.getId())).thenReturn(Optional.of(customWorkoutToUpdate));
         when(exerciseRepository.findById(nonExistingExerciseId)).thenReturn(Optional.empty());
 
@@ -675,7 +603,6 @@ class WorkoutServiceTest {
                 () -> workoutService.updateCustomWorkout(user.getId(), customWorkoutToUpdate.getId(), requestDto));
 
         // Then
-        verify(userService, times(1)).getUserById(1);
         verify(workoutRepository, times(1)).findById(customWorkoutToUpdate.getId());
         verify(workoutRepository, times(0)).save(any(Workout.class));
         verify(exerciseRepository, times(1)).findById(nonExistingExerciseId);
@@ -707,7 +634,6 @@ class WorkoutServiceTest {
         ApiException expectedException = new ApiException(
                 ErrorMessage.USER_EXERCISE_MISMATCH, customExerciseOfAnotherUser.getId(), HttpStatus.BAD_REQUEST);
 
-        when(userService.getUserById(1)).thenReturn(user1);
         when(workoutRepository.findById(customWorkoutToUpdate.getId())).thenReturn(Optional.of(customWorkoutToUpdate));
         when(exerciseRepository.findById(customExerciseOfAnotherUser.getId()))
                 .thenReturn(Optional.of(customExerciseOfAnotherUser));
@@ -718,7 +644,6 @@ class WorkoutServiceTest {
                 () -> workoutService.updateCustomWorkout(user1.getId(), customWorkoutToUpdate.getId(), requestDto));
 
         // Then
-        verify(userService, times(1)).getUserById(1);
         verify(workoutRepository, times(1)).findById(customWorkoutToUpdate.getId());
         verify(workoutRepository, times(0)).save(any(Workout.class));
         verify(exerciseRepository, times(1)).findById(customExerciseOfAnotherUser.getId());

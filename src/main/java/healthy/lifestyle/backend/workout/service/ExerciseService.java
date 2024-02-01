@@ -23,11 +23,8 @@ public interface ExerciseService {
             int currentPageNumber,
             int pageSize);
 
-    List<ExerciseResponseDto> getDefaultExercises();
-
-    List<ExerciseResponseDto> getCustomExercises(long userId);
-
-    ExerciseResponseDto updateCustomExercise(long exerciseId, long userId, ExerciseUpdateRequestDto requestDto);
+    ExerciseResponseDto updateCustomExercise(long exerciseId, long userId, ExerciseUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException;
 
     void deleteCustomExercise(long exerciseId, long userId);
 }

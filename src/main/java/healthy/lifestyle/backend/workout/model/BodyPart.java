@@ -8,13 +8,13 @@ import lombok.*;
  * body_parts table preserves default values only.
  * Users cannot change values in this table.
  */
-@Entity
-@Table(name = "body_parts")
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "body_parts")
 public class BodyPart {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,6 +24,6 @@ public class BodyPart {
     private String name;
 
     @ManyToMany(mappedBy = "bodyParts")
-    //    @OrderBy("id")
+    @OrderBy("id")
     private Set<Exercise> exercises;
 }
