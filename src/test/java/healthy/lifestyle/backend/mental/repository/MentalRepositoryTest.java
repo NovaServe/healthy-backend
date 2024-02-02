@@ -1,15 +1,15 @@
-package healthy.lifestyle.backend.mentals.repository;
+package healthy.lifestyle.backend.mental.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.mentals.model.Mental;
-import healthy.lifestyle.backend.mentals.model.MentalType;
-import healthy.lifestyle.backend.users.model.Country;
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.mental.model.Mental;
+import healthy.lifestyle.backend.mental.model.MentalType;
+import healthy.lifestyle.backend.user.model.Country;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.Collections;

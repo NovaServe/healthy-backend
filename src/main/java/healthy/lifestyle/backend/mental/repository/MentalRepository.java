@@ -1,8 +1,7 @@
 package healthy.lifestyle.backend.mental.repository;
 
 import healthy.lifestyle.backend.mental.model.Mental;
-import healthy.lifestyle.backend.mentals.model.Mental;
-import healthy.lifestyle.backend.mentals.model.MentalType;
+import healthy.lifestyle.backend.mental.model.MentalType;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 
 public interface MentalService {
-    MentalResponseDto getMentalById(long mentalId, boolean customRequire);
+    MentalResponseDto getMentalById(long mentalId, boolean requiredDefault, Long userId);
 
     Page<MentalResponseDto> getMentalWithFilter(
             Boolean isCustom,

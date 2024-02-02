@@ -5,6 +5,7 @@ import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.mental.model.Mental;
+import healthy.lifestyle.backend.mental.model.MentalType;
 import healthy.lifestyle.backend.mental.repository.MentalRepository;
 import healthy.lifestyle.backend.mental.repository.MentalTypeRepository;
 import healthy.lifestyle.backend.user.model.User;
@@ -96,23 +97,25 @@ public class MentalServiceImpl implements MentalService {
                 currentPageNumber, pageSize, Sort.by(Sort.Direction.fromString(sortDirection), sortField));
 
         Page<Mental> entitiesPage = null;
-        Optional<MentalType> mentalType =
-                mentalTypeId != null ? mentalTypeRepository.findById(mentalTypeId) : Optional.empty();
+        MentalType mentalType = mentalTypeRepository
+                .findById(mentalTypeId)
+                .orElseThrow(() -> new ApiExceptionCustomMessage(
+                        ErrorMessage.INTERNAL_ERROR.getName(), HttpStatus.INTERNAL_SERVER_ERROR));
 
         // Default and custom
         if (isCustom == null && userId != null) {
-            entitiesPage = mentalRepository.findDefaultAndCustomWithFilter(
-                    userId, title, description, mentalType.orElse(null), pageable);
+            entitiesPage =
+                    mentalRepository.findDefaultAndCustomWithFilter(userId, title, description, mentalType, pageable);
         }
         // Default only
         else if (isCustom != null && !isCustom && userId == null) {
             entitiesPage = mentalRepository.findDefaultOrCustomWithFilter(
-                    false, null, title, description, mentalType.orElse(null), pageable);
+                    false, null, title, description, mentalType, pageable);
         }
         // Custom only
         else if (isCustom != null && isCustom && userId != null) {
             entitiesPage = mentalRepository.findDefaultOrCustomWithFilter(
-                    true, userId, title, description, mentalType.orElse(null), pageable);
+                    true, userId, title, description, mentalType, pageable);
         } else {
             throw new ApiExceptionCustomMessage("Invalid args combination", HttpStatus.BAD_REQUEST);
         }

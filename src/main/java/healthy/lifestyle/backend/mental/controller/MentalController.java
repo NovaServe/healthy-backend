@@ -3,9 +3,6 @@ package healthy.lifestyle.backend.mental.controller;
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.mental.service.MentalService;
 import healthy.lifestyle.backend.user.service.AuthUtil;
-import healthy.lifestyle.backend.mentals.dto.MentalResponseDto;
-import healthy.lifestyle.backend.mentals.service.MentalService;
-import healthy.lifestyle.backend.users.service.AuthService;
 import healthy.lifestyle.backend.validation.DescriptionValidation;
 import healthy.lifestyle.backend.validation.TitleValidation;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -63,7 +60,7 @@ public class MentalController {
             @RequestParam(required = false, defaultValue = "0") int pageNumber) {
         Long userId = null;
         if (isCustom == null || isCustom)
-            userId = authService.getUserIdFromAuthentication(
+            userId = authUtil.getUserIdFromAuthentication(
                     SecurityContextHolder.getContext().getAuthentication());
         Page<MentalResponseDto> dtoPage = mentalService.getMentalWithFilter(
                 isCustom, userId, title, description, mentalTypeId, sortField, sortDirection, pageNumber, pageSize);
@@ -94,7 +91,7 @@ public class MentalController {
             @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
             @RequestParam(required = false, defaultValue = "10") int pageSize,
             @RequestParam(required = false, defaultValue = "0") int pageNumber) {
-        Long userId = authService.getUserIdFromAuthentication(
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         Page<MentalResponseDto> responseDtoPage = mentalService.getMentalWithFilter(
                 true, userId, title, description, mentalTypeId, sortField, sortDirection, pageNumber, pageSize);
