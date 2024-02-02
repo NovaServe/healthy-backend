@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -55,7 +55,7 @@ class ExerciseAdminRepositoryTest {
 
     @ParameterizedTest
     @MethodSource("multipleFilters")
-    void findByFiltersTest_shouldReturnListOfExercises(
+    void findWithFilterTest_shouldReturnListOfExercises(
             String title, String description, Boolean isCustom, Boolean needsEquipment, List<Integer> resultSeeds) {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -80,7 +80,7 @@ class ExerciseAdminRepositoryTest {
 
         // When
         Optional<List<Exercise>> resultOptional =
-                exerciseAdminRepository.findByFilters(title, description, isCustom, needsEquipment);
+                exerciseAdminRepository.findWithFilter(title, description, isCustom, needsEquipment);
 
         // Then
         assertTrue(resultOptional.isPresent());

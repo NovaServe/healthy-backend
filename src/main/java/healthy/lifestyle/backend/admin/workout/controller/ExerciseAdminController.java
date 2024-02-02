@@ -24,12 +24,12 @@ public class ExerciseAdminController {
 
     @GetMapping("/exercises")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<List<ExerciseResponseDto>> getAllExercises(
+    public ResponseEntity<List<ExerciseResponseDto>> getExercisesWithFilter(
             @RequestParam(name = "title", required = false) @TitleValidation String title,
             @RequestParam(name = "description", required = false) @DescriptionValidation String description,
             @RequestParam(name = "isCustom", required = false) Boolean isCustom,
             @RequestParam(name = "needsEquipment", required = false) Boolean needsEquipment) {
         return ResponseEntity.ok(
-                exerciseAdminService.getExercisesByFilters(title, description, isCustom, needsEquipment));
+                exerciseAdminService.getExercisesWithFilter(title, description, isCustom, needsEquipment));
     }
 }

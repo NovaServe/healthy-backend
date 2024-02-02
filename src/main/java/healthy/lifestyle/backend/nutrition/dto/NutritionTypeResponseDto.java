@@ -2,12 +2,13 @@ package healthy.lifestyle.backend.nutrition.dto;
 
 import lombok.*;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class NutritionTypeResponseDto {
     private long id;
+
     private String name;
 }

@@ -5,8 +5,8 @@ import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.nutrition.dto.NutritionResponseDto;
 import healthy.lifestyle.backend.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.nutrition.repository.NutritionRepository;
-import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.service.UserService;
+import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
 import java.util.Comparator;
 import java.util.List;
@@ -16,10 +16,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class NutritionServiceImpl implements NutritionService {
-
     private final NutritionRepository nutritionRepository;
     private final UserService userService;
-
     private final ModelMapper modelMapper;
 
     public NutritionServiceImpl(

@@ -8,14 +8,14 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.*;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ExerciseUpdateRequestDto {
     @TitleValidation
-    @Size(min = 5, max = 255, message = "Size should be from 5 to 255 characters long")
+    @Size(min = 5, max = 255, message = "Available size is 5 to 255 chars")
     private String title;
 
     @DescriptionValidation

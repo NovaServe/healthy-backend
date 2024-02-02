@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.users.model.Country;
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.Country;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -60,27 +60,6 @@ class ExerciseRepositoryTest {
     @BeforeEach
     void beforeEach() {
         dbUtil.deleteAll();
-    }
-
-    static Stream<Arguments> findDefaultOrCustomWithFilter_multipleDefaultFilters() {
-        return Stream.of(
-                // Default, positive
-                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-                Arguments.of(null, null, null, 4, 0, 4, 1, 4, List.of(0L, 1L, 2L, 3L)),
-                Arguments.of("exercise", null, null, 4, 0, 4, 1, 4, List.of(0L, 1L, 2L, 3L)),
-                Arguments.of(null, "desc", null, 4, 0, 4, 1, 4, List.of(0L, 1L, 2L, 3L)),
-                Arguments.of("exercise", "desc", null, 4, 0, 4, 1, 4, List.of(0L, 1L, 2L, 3L)),
-
-                // Default, empty
-                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
-                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
     }
 
     @ParameterizedTest
@@ -153,6 +132,27 @@ class ExerciseRepositoryTest {
                 .isEqualTo(expectedFilteredExercises);
     }
 
+    static Stream<Arguments> findDefaultOrCustomWithFilter_multipleDefaultFilters() {
+        return Stream.of(
+                // Default, positive
+                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of(null, null, null, 4, 0, 4, 1, 4, List.of(0L, 1L, 2L, 3L)),
+                Arguments.of("exercise", null, null, 4, 0, 4, 1, 4, List.of(0L, 1L, 2L, 3L)),
+                Arguments.of(null, "desc", null, 4, 0, 4, 1, 4, List.of(0L, 1L, 2L, 3L)),
+                Arguments.of("exercise", "desc", null, 4, 0, 4, 1, 4, List.of(0L, 1L, 2L, 3L)),
+
+                // Default, empty
+                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
+                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
+    }
+
     @Test
     void findDefaultOrCustomWithFilterTest_shouldReturnDefaultFilteredExercises_whenBodyPartsIdsGiven() {
         // Given
@@ -199,27 +199,6 @@ class ExerciseRepositoryTest {
         assertThat(exercisePage.getContent())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
                 .isEqualTo(List.of(defaultExercise1, defaultExercise2));
-    }
-
-    static Stream<Arguments> findDefaultOrCustomWithFilter_multipleCustomFilters() {
-        return Stream.of(
-                // Custom, positive
-                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-                Arguments.of(null, null, null, 4, 0, 4, 1, 4, List.of(4L, 5L, 6L, 7L)),
-                Arguments.of("exercise", null, null, 4, 0, 4, 1, 4, List.of(4L, 5L, 6L, 7L)),
-                Arguments.of(null, "desc", null, 4, 0, 4, 1, 4, List.of(4L, 5L, 6L, 7L)),
-                Arguments.of("exercise", "desc", null, 4, 0, 4, 1, 4, List.of(4L, 5L, 6L, 7L)),
-
-                // Custom, empty
-                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
-                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
     }
 
     @ParameterizedTest
@@ -309,17 +288,23 @@ class ExerciseRepositoryTest {
                 .isEqualTo(expectedFilteredExercises);
     }
 
-    static Stream<Arguments> findDefaultAndCustomWithFilter_multipleFilters() {
+    static Stream<Arguments> findDefaultOrCustomWithFilter_multipleCustomFilters() {
         return Stream.of(
-                // Positive
-                Arguments.of(null, null, true, 4, 0, 4, 1, 4, List.of(0L, 1L, 4L, 5L)),
-                Arguments.of(null, null, false, 4, 0, 4, 1, 4, List.of(2L, 3L, 6L, 7L)),
-                Arguments.of(null, null, null, 8, 0, 8, 1, 8, List.of(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L)),
-                Arguments.of("exercise", null, true, 4, 0, 4, 1, 4, List.of(0L, 1L, 4L, 5L)),
-                Arguments.of("exercise", null, false, 4, 0, 4, 1, 4, List.of(2L, 3L, 6L, 7L)),
-                Arguments.of("exercise", null, null, 8, 0, 8, 1, 8, List.of(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L)),
+                // Custom, positive
+                Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of(null, null, null, 4, 0, 4, 1, 4, List.of(4L, 5L, 6L, 7L)),
+                Arguments.of("exercise", null, null, 4, 0, 4, 1, 4, List.of(4L, 5L, 6L, 7L)),
+                Arguments.of(null, "desc", null, 4, 0, 4, 1, 4, List.of(4L, 5L, 6L, 7L)),
+                Arguments.of("exercise", "desc", null, 4, 0, 4, 1, 4, List.of(4L, 5L, 6L, 7L)),
 
-                // Empty
+                // Custom, empty
                 Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
                 Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
     }
@@ -411,6 +396,21 @@ class ExerciseRepositoryTest {
                 .isEqualTo(expectedFilteredExercises);
     }
 
+    static Stream<Arguments> findDefaultAndCustomWithFilter_multipleFilters() {
+        return Stream.of(
+                // Positive
+                Arguments.of(null, null, true, 4, 0, 4, 1, 4, List.of(0L, 1L, 4L, 5L)),
+                Arguments.of(null, null, false, 4, 0, 4, 1, 4, List.of(2L, 3L, 6L, 7L)),
+                Arguments.of(null, null, null, 8, 0, 8, 1, 8, List.of(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L)),
+                Arguments.of("exercise", null, true, 4, 0, 4, 1, 4, List.of(0L, 1L, 4L, 5L)),
+                Arguments.of("exercise", null, false, 4, 0, 4, 1, 4, List.of(2L, 3L, 6L, 7L)),
+                Arguments.of("exercise", null, null, 8, 0, 8, 1, 8, List.of(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L)),
+
+                // Empty
+                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
+                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
+    }
+
     @Test
     void findDefaultOrCustomWithFilterTest_shouldReturnCustomFilteredExercises_whenBodyPartIdsGiven() {
         // Given
@@ -470,43 +470,6 @@ class ExerciseRepositoryTest {
         assertThat(exercisePage.getContent())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "bodyParts", "httpRefs")
                 .isEqualTo(List.of(customExercise1User1, customExercise2User1));
-    }
-
-    @Test
-    void findAllDefault_shouldReturnDefaultExerciseList() {
-        // Given
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        boolean needsEquipment = true;
-        Exercise defaultExercise1 =
-                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef1));
-
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
-        Exercise defaultExercise2 =
-                dbUtil.createDefaultExercise(2, needsEquipment, List.of(bodyPart2), List.of(defaultHttpRef2));
-
-        User user = dbUtil.createUser(1);
-        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user);
-        Exercise customExercise1 =
-                dbUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart3), List.of(customHttpRef1), user);
-
-        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
-        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user);
-        Exercise customExercise2 =
-                dbUtil.createCustomExercise(4, needsEquipment, List.of(bodyPart4), List.of(customHttpRef2), user);
-
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-
-        // When
-        List<Exercise> exercisesActual = exerciseRepository.findAllDefault(sort);
-
-        // Then
-        assertEquals(2, exercisesActual.size());
-        assertThat(exercisesActual)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("httpRefs", "bodyParts", "users")
-                .isEqualTo(List.of(defaultExercise1, defaultExercise2));
     }
 
     @Test
@@ -623,47 +586,6 @@ class ExerciseRepositoryTest {
 
         // Then
         assertTrue(actualOpt.isEmpty());
-    }
-
-    @Test
-    void findCustomByUserIdTest_shouldReturnCustomExerciseList_whenUserIdGiven() {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-
-        BodyPart bodyPart1 = dbUtil.createBodyPart(1);
-        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
-        boolean needsEquipment = true;
-        Exercise defaultExercise =
-                dbUtil.createDefaultExercise(1, needsEquipment, List.of(bodyPart1), List.of(defaultHttpRef));
-
-        User user = dbUtil.createUser(1, role, country);
-        BodyPart bodyPart2 = dbUtil.createBodyPart(2);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(2, user);
-        Exercise customExercise1 =
-                dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user);
-
-        BodyPart bodyPart3 = dbUtil.createBodyPart(3);
-        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(3, user);
-        Exercise customExercise2 =
-                dbUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart3), List.of(customHttpRef2), user);
-
-        User user2 = dbUtil.createUser(2, role, country);
-        BodyPart bodyPart4 = dbUtil.createBodyPart(4);
-        HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(3, user);
-        Exercise customExercise3 =
-                dbUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart3), List.of(customHttpRef3), user2);
-
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-
-        // When
-        List<Exercise> exercisesActual = exerciseRepository.findCustomByUserId(user.getId(), sort);
-
-        // Then
-        assertEquals(2, exercisesActual.size());
-        assertThat(exercisesActual)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("httpRefs", "bodyParts", "user")
-                .isEqualTo(List.of(customExercise1, customExercise2));
     }
 
     @Test

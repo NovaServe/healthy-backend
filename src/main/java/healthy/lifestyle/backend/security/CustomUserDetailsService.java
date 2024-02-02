@@ -1,8 +1,8 @@
 package healthy.lifestyle.backend.security;
 
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.service.AuthService;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.service.UserUtil;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,17 +16,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
-    private final AuthService authService;
+    private final UserUtil userUtil;
 
-    public CustomUserDetailsService(AuthService authService) {
-        this.authService = authService;
+    public CustomUserDetailsService(UserUtil userUtil) {
+        this.userUtil = userUtil;
     }
 
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String usernameOrEmail) {
-        User user = authService
-                .findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
+        User user = userUtil.getUserByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
                 .orElseThrow(() -> {
                     String message =
                             String.format("User not found with provided username or email: %s", usernameOrEmail);

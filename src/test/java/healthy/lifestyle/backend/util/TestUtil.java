@@ -2,13 +2,13 @@ package healthy.lifestyle.backend.util;
 
 import static java.util.Objects.isNull;
 
-import healthy.lifestyle.backend.mentals.model.Mental;
-import healthy.lifestyle.backend.mentals.model.MentalType;
+import healthy.lifestyle.backend.mental.model.Mental;
+import healthy.lifestyle.backend.mental.model.MentalType;
 import healthy.lifestyle.backend.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.nutrition.model.NutritionType;
-import healthy.lifestyle.backend.users.model.Country;
-import healthy.lifestyle.backend.users.model.Role;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.Country;
+import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.HttpRef;

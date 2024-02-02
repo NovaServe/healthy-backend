@@ -1,9 +1,11 @@
 package healthy.lifestyle.backend.workout.service;
 
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.service.UserService;
+import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.workout.dto.HttpRefCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefUpdateRequestDto;
@@ -25,29 +27,32 @@ public class HttpRefServiceImpl implements HttpRefService {
     private final HttpRefRepository httpRefRepository;
     private final ModelMapper modelMapper;
     private final UserService userService;
+    private final Util util;
 
-    public HttpRefServiceImpl(HttpRefRepository httpRefRepository, ModelMapper modelMapper, UserService userService) {
+    public HttpRefServiceImpl(
+            HttpRefRepository httpRefRepository, ModelMapper modelMapper, UserService userService, Util util) {
         this.httpRefRepository = httpRefRepository;
         this.modelMapper = modelMapper;
         this.userService = userService;
+        this.util = util;
     }
 
     @Transactional
     @Override
-    public HttpRefResponseDto createCustomHttpRef(long userId, HttpRefCreateRequestDto createHttpRequestDto) {
+    public HttpRefResponseDto createCustomHttpRef(long userId, HttpRefCreateRequestDto requestDto) {
         User user = Optional.ofNullable(userService.getUserById(userId))
                 .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
 
-        httpRefRepository
-                .findCustomByNameAndUserId(createHttpRequestDto.getName(), userId)
-                .ifPresent(alreadyExistentWithSameTitle -> {
-                    throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
-                });
+        List<HttpRef> httpRefsWithSameName =
+                httpRefRepository.findDefaultAndCustomByNameAndUserId(requestDto.getName(), userId);
+        if (!httpRefsWithSameName.isEmpty()) {
+            throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+        }
 
         HttpRef httpRefSaved = httpRefRepository.save(HttpRef.builder()
-                .name(createHttpRequestDto.getName())
-                .description(createHttpRequestDto.getDescription())
-                .ref(createHttpRequestDto.getRef())
+                .name(requestDto.getName())
+                .description(requestDto.getDescription())
+                .ref(requestDto.getRef())
                 .isCustom(true)
                 .user(user)
                 .build());
@@ -74,7 +79,7 @@ public class HttpRefServiceImpl implements HttpRefService {
     }
 
     @Override
-    public Page<HttpRefResponseDto> getHttpRefs(
+    public Page<HttpRefResponseDto> getHttpRefsWithFilter(
             Boolean isCustom,
             Long userId,
             String name,
@@ -98,26 +103,8 @@ public class HttpRefServiceImpl implements HttpRefService {
     }
 
     @Override
-    public List<HttpRefResponseDto> getDefaultHttpRefs(Sort sort) {
-        List<HttpRefResponseDto> responseDtoList = httpRefRepository.findAllDefault(sort).stream()
-                .map(elt -> modelMapper.map(elt, HttpRefResponseDto.class))
-                .toList();
-        return responseDtoList;
-    }
-
-    @Override
-    public List<HttpRefResponseDto> getCustomHttpRefs(long userId, String sortBy) {
-        Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
-        List<HttpRefResponseDto> responseDtoList = httpRefRepository.findCustomByUserId(userId, sort).stream()
-                .map(elt -> modelMapper.map(elt, HttpRefResponseDto.class))
-                .toList();
-        return responseDtoList;
-    }
-
-    @Override
-    public HttpRefResponseDto updateCustomHttpRef(long userId, long httpRefId, HttpRefUpdateRequestDto requestDto) {
-        if (requestDto.getName() == null && requestDto.getDescription() == null && requestDto.getRef() == null)
-            throw new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
+    public HttpRefResponseDto updateCustomHttpRef(long userId, long httpRefId, HttpRefUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException {
 
         HttpRef httpRef = httpRefRepository
                 .findById(httpRefId)
@@ -130,14 +117,35 @@ public class HttpRefServiceImpl implements HttpRefService {
         if (httpRef.getUser().getId() != userId)
             throw new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, httpRefId, HttpStatus.BAD_REQUEST);
 
-        if (requestDto.getName() != null && !requestDto.getName().equals(httpRef.getName()))
+        boolean allFieldsAreNull = util.verifyThatAllFieldsAreNull(requestDto, "name", "description", "ref");
+        if (allFieldsAreNull) {
+            throw new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
+        }
+
+        List<String> fieldsWithSameValues =
+                util.verifyThatFieldsAreDifferent(httpRef, requestDto, "name", "description", "ref");
+        if (!fieldsWithSameValues.isEmpty()) {
+            String errorMessage =
+                    ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + String.join(", ", fieldsWithSameValues);
+            throw new ApiExceptionCustomMessage(errorMessage, HttpStatus.BAD_REQUEST);
+        }
+
+        if (requestDto.getName() != null) {
+            List<HttpRef> httpRefsWithSameName =
+                    httpRefRepository.findDefaultAndCustomByNameAndUserId(requestDto.getName(), userId);
+            if (!httpRefsWithSameName.isEmpty()) {
+                throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+            }
             httpRef.setName(requestDto.getName());
+        }
 
-        if (requestDto.getDescription() != null && !requestDto.getDescription().equals(httpRef.getDescription()))
+        if (requestDto.getDescription() != null) {
             httpRef.setDescription(requestDto.getDescription());
+        }
 
-        if (requestDto.getRef() != null && !requestDto.getRef().equals(httpRef.getRef()))
+        if (requestDto.getRef() != null) {
             httpRef.setRef(requestDto.getRef());
+        }
 
         HttpRefResponseDto responseDto = modelMapper.map(httpRefRepository.save(httpRef), HttpRefResponseDto.class);
         return responseDto;

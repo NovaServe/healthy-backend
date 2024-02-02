@@ -2,11 +2,11 @@ package healthy.lifestyle.backend.workout.dto;
 
 import lombok.*;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class BodyPartResponseDto {
     private long id;
 

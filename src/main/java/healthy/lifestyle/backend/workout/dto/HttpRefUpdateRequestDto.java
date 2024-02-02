@@ -6,14 +6,14 @@ import healthy.lifestyle.backend.validation.TitleValidation;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class HttpRefUpdateRequestDto {
-    @Size(min = 5, max = 255, message = "Size should be from 5 to 255 characters long")
     @TitleValidation
+    @Size(min = 5, max = 255, message = "Size should be from 5 to 255 characters long")
     private String name;
 
     @DescriptionValidation

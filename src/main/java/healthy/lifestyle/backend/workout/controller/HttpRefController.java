@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.workout.controller;
 
-import healthy.lifestyle.backend.users.service.AuthService;
+import healthy.lifestyle.backend.user.service.AuthUtil;
 import healthy.lifestyle.backend.validation.DescriptionValidation;
 import healthy.lifestyle.backend.validation.TitleValidation;
 import healthy.lifestyle.backend.workout.dto.HttpRefCreateRequestDto;
@@ -23,18 +23,18 @@ import org.springframework.web.bind.annotation.*;
 public class HttpRefController {
     private final HttpRefService httpRefService;
 
-    private final AuthService authService;
+    private final AuthUtil authUtil;
 
-    public HttpRefController(HttpRefService httpRefService, AuthService authService) {
+    public HttpRefController(HttpRefService httpRefService, AuthUtil authUtil) {
         this.httpRefService = httpRefService;
-        this.authService = authService;
+        this.authUtil = authUtil;
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<HttpRefResponseDto> createCustomHttpRef(
             @RequestBody @Valid HttpRefCreateRequestDto requestDto) {
-        Long userId = authService.getUserIdFromAuthentication(
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         HttpRefResponseDto responseDto = httpRefService.createCustomHttpRef(userId, requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
@@ -43,7 +43,7 @@ public class HttpRefController {
     @GetMapping("/{httpRefId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<HttpRefResponseDto> getCustomHttpRefById(@PathVariable Long httpRefId) {
-        Long userId = authService.getUserIdFromAuthentication(
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         HttpRefResponseDto responseDto = httpRefService.getCustomHttpRefById(userId, httpRefId);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
@@ -61,9 +61,9 @@ public class HttpRefController {
             @RequestParam(required = false, defaultValue = "0") int pageNumber) {
         Long userId = null;
         if (isCustom == null || isCustom)
-            userId = authService.getUserIdFromAuthentication(
+            userId = authUtil.getUserIdFromAuthentication(
                     SecurityContextHolder.getContext().getAuthentication());
-        Page<HttpRefResponseDto> responseDtoPage = httpRefService.getHttpRefs(
+        Page<HttpRefResponseDto> responseDtoPage = httpRefService.getHttpRefsWithFilter(
                 isCustom, userId, name, description, sortField, sortDirection, pageNumber, pageSize);
         return new ResponseEntity<>(responseDtoPage, HttpStatus.OK);
     }
@@ -78,34 +78,18 @@ public class HttpRefController {
             @RequestParam(required = false, defaultValue = "0") int pageNumber) {
         Boolean isCustom = null;
         Long userId = null;
-        Page<HttpRefResponseDto> responseDtoPage = httpRefService.getHttpRefs(
+        Page<HttpRefResponseDto> responseDtoPage = httpRefService.getHttpRefsWithFilter(
                 isCustom, userId, name, description, sortField, sortDirection, pageNumber, pageSize);
         return new ResponseEntity<>(responseDtoPage, HttpStatus.OK);
     }
 
-    //    @GetMapping("/default")
-    //    public ResponseEntity<List<HttpRefResponseDto>> getDefaultHttpRefs() {
-    //        List<HttpRefResponseDto> responseDtoList = httpRefService.getDefaultHttpRefs(Sort.by(Sort.Direction.ASC,
-    // "id"));
-    //        return new ResponseEntity<>(responseDtoList, HttpStatus.OK);
-    //    }
-
-    //    @GetMapping
-    //    @PreAuthorize("hasRole('ROLE_USER')")
-    //    public ResponseEntity<List<HttpRefResponseDto>> getCustomHttpRefs(
-    //            @RequestParam(name = "sortBy", required = false) String sortBy) {
-    //        if (isNull(sortBy)) sortBy = "id";
-    //        Long userId = authService.getUserIdFromAuthentication(
-    //                SecurityContextHolder.getContext().getAuthentication());
-    //        List<HttpRefResponseDto> responseDtoList = httpRefService.getCustomHttpRefs(userId, "id");
-    //        return new ResponseEntity<>(responseDtoList, HttpStatus.OK);
-    //    }
-
     @PatchMapping("/{httpRefId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<HttpRefResponseDto> updateCustomHttpRef(
-            @PathVariable Long httpRefId, @RequestBody @Valid HttpRefUpdateRequestDto requestDto) {
-        Long userId = authService.getUserIdFromAuthentication(
+            @PathVariable Long httpRefId, @RequestBody @Valid HttpRefUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException {
+
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         HttpRefResponseDto responseDto = httpRefService.updateCustomHttpRef(userId, httpRefId, requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
@@ -114,7 +98,7 @@ public class HttpRefController {
     @DeleteMapping("/{httpRefId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> deleteCustomHttpRef(@PathVariable Long httpRefId) {
-        Long authUserId = authService.getUserIdFromAuthentication(
+        Long authUserId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         httpRefService.deleteCustomHttpRef(authUserId, httpRefId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

@@ -3,7 +3,7 @@ package healthy.lifestyle.backend.admin.workout.service;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.admin.workout.repository.ExerciseAdminRepository;
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -43,7 +43,7 @@ public class ExerciseAdminServiceTest {
 
     @ParameterizedTest
     @MethodSource("multipleFilters")
-    void getExercisesByFiltersTest_shouldReturnEntityResponseDtoList_whenParamsAreValid(
+    void getExercisesWithFilterTest_shouldReturnEntityResponseDtoList_whenParamsAreValid(
             String title, String description, Boolean isCustom, Boolean needsEquipment, List<Integer> resultSeeds) {
         // Given
         User user1 = testUtil.createUser(1);
@@ -79,12 +79,12 @@ public class ExerciseAdminServiceTest {
                         Integer.parseInt(exercise.getTitle().split(" ")[1])))
                 .collect(Collectors.toList());
 
-        when(exerciseAdminRepository.findByFilters(eq(title), eq(description), eq(isCustom), eq(needsEquipment)))
+        when(exerciseAdminRepository.findWithFilter(eq(title), eq(description), eq(isCustom), eq(needsEquipment)))
                 .thenReturn(Optional.of(expectedExercises));
 
         // When
         List<ExerciseResponseDto> result =
-                exerciseAdminService.getExercisesByFilters(title, description, isCustom, needsEquipment);
+                exerciseAdminService.getExercisesWithFilter(title, description, isCustom, needsEquipment);
 
         // Then
         for (int i = 0; i < resultSeeds.size(); i++) {
@@ -98,7 +98,7 @@ public class ExerciseAdminServiceTest {
         }
 
         verify(exerciseAdminRepository, times(1))
-                .findByFilters(eq(title), eq(description), eq(isCustom), eq(needsEquipment));
+                .findWithFilter(eq(title), eq(description), eq(isCustom), eq(needsEquipment));
     }
 
     static Stream<Arguments> multipleFilters() {

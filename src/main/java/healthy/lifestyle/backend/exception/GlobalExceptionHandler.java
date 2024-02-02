@@ -29,12 +29,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 "{}, {}, {}", webRequest.getDescription(false), exception.getHttpStatus(), exception.getStackTrace());
 
         String message;
-        if (exception.getResourceId() != null) message = exception.getMessageWithResourceId();
-        else message = exception.getMessage();
-
-        ExceptionDto exceptionDto =
-                new ExceptionDto(message, exception.getHttpStatus().value());
-        return new ResponseEntity<ExceptionDto>(exceptionDto, exception.getHttpStatus());
+        if (exception.getResourceId() != null) {
+            message = exception.getMessageWithResourceId();
+        } else {
+            message = exception.getMessage();
+        }
+        ExceptionDto exceptionDto = new ExceptionDto(message);
+        return new ResponseEntity<>(exceptionDto, exception.getHttpStatus());
     }
 
     @ExceptionHandler(ApiExceptionCustomMessage.class)
@@ -43,9 +44,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         logger.error(
                 "{}, {}, {}", webRequest.getDescription(false), exception.getHttpStatus(), exception.getStackTrace());
 
-        ExceptionDto exceptionDto = new ExceptionDto(
-                exception.getMessage(), exception.getHttpStatus().value());
-        return new ResponseEntity<ExceptionDto>(exceptionDto, exception.getHttpStatus());
+        ExceptionDto exceptionDto = new ExceptionDto(exception.getMessage());
+        return new ResponseEntity<>(exceptionDto, exception.getHttpStatus());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -58,8 +58,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             substrings[i] = substring;
         }
         String resultMessage = String.join(", ", substrings);
-        ExceptionDto exceptionDto = new ExceptionDto(resultMessage, HttpStatus.BAD_REQUEST.value());
-        logger.error("{} - {}", exceptionDto.getMessage(), exceptionDto.getCode());
+        ExceptionDto exceptionDto = new ExceptionDto(resultMessage);
+        logger.error("{}", exceptionDto.getMessage());
         return new ResponseEntity<>(exceptionDto, HttpStatus.BAD_REQUEST);
     }
 

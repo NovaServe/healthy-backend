@@ -17,14 +17,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set versions
+      - name: Set version
         id: set
         run: |          
-          echo "current=$(grep '^current=' versions | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
-          echo "target=$(grep '^target=' versions | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
-          echo "test=$(grep '^test=' versions | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
+          echo "current=$(grep '^current=' version | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
+          echo "target=$(grep '^target=' version | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
+          echo "test=$(grep '^test=' version | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
 
-      - name: Display versions
+      - name: Display version
         run: |
           echo ">> >> >> CURRENT VERSION: ${{ steps.set.outputs.current }}"
           echo ">> >> >> TARGET VERSION: ${{ steps.set.outputs.target }}"
@@ -36,7 +36,7 @@ jobs:
     if: ${{ needs.checkversions.outputs.current == needs.checkversions.outputs.target }}
 
     steps:
-      - name: Display versions
+      - name: Display version
         run: |
           echo ">> >> >> CURRENT VERSION: ${{ steps.set.outputs.current }}"
           echo ">> >> >> TARGET VERSION: ${{ steps.set.outputs.target }}"

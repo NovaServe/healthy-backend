@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.workout.controller;
 
-import healthy.lifestyle.backend.users.service.AuthService;
+import healthy.lifestyle.backend.user.service.AuthUtil;
 import healthy.lifestyle.backend.validation.DescriptionValidation;
 import healthy.lifestyle.backend.validation.TitleValidation;
 import healthy.lifestyle.backend.workout.dto.WorkoutCreateRequestDto;
@@ -22,18 +22,19 @@ import org.springframework.web.bind.annotation.*;
 public class WorkoutController {
     private final WorkoutService workoutService;
 
-    private final AuthService authService;
+    private final AuthUtil authUtil;
 
-    public WorkoutController(WorkoutService workoutService, AuthService authService) {
+    public WorkoutController(WorkoutService workoutService, AuthUtil authUtil) {
         this.workoutService = workoutService;
-        this.authService = authService;
+        this.authUtil = authUtil;
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<WorkoutResponseDto> createCustomWorkout(
             @Valid @RequestBody WorkoutCreateRequestDto requestDto) {
-        Long userId = authService.getUserIdFromAuthentication(
+
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         WorkoutResponseDto responseDto = workoutService.createCustomWorkout(userId, requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
@@ -90,7 +91,7 @@ public class WorkoutController {
             @RequestParam(required = false, defaultValue = "0") int pageNumber) {
         Long userId = null;
         if (isCustom == null || isCustom)
-            userId = authService.getUserIdFromAuthentication(
+            userId = authUtil.getUserIdFromAuthentication(
                     SecurityContextHolder.getContext().getAuthentication());
         Page<WorkoutResponseDto> dtoPage = workoutService.getWorkoutsWithFilter(
                 isCustom,
@@ -109,8 +110,10 @@ public class WorkoutController {
     @PatchMapping("/{workoutId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<WorkoutResponseDto> updateCustomWorkout(
-            @PathVariable long workoutId, @Valid @RequestBody WorkoutUpdateRequestDto requestDto) {
-        Long userId = authService.getUserIdFromAuthentication(
+            @PathVariable long workoutId, @Valid @RequestBody WorkoutUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException {
+
+        Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         WorkoutResponseDto responseDto = workoutService.updateCustomWorkout(userId, workoutId, requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
@@ -119,7 +122,7 @@ public class WorkoutController {
     @DeleteMapping("/{workoutId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> deleteCustomWorkout(@PathVariable("workoutId") Long workoutId) {
-        Long authenticatedUserId = authService.getUserIdFromAuthentication(
+        Long authenticatedUserId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         workoutService.deleteCustomWorkout(authenticatedUserId, workoutId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

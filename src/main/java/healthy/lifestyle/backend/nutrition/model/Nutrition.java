@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.nutrition.model;
 
-import healthy.lifestyle.backend.users.model.User;
+import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import jakarta.persistence.*;
 import java.util.Comparator;
@@ -12,13 +12,13 @@ import lombok.*;
  * nutritions table preserves both default and custom nutritions.
  * If nutrition is default then is_custom is false, otherwise is true.
  */
-@Entity
-@Table(name = "nutritions")
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "nutritions")
 public class Nutrition {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

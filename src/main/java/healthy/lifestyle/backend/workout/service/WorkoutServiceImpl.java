@@ -3,8 +3,9 @@ package healthy.lifestyle.backend.workout.service;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.users.model.User;
-import healthy.lifestyle.backend.users.service.UserService;
+import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.model.Exercise;
@@ -25,33 +26,36 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class WorkoutServiceImpl implements WorkoutService {
     private final WorkoutRepository workoutRepository;
-
     private final ExerciseRepository exerciseRepository;
-
     private final BodyPartRepository bodyPartRepository;
-
     private final UserService userService;
-
     private final ModelMapper modelMapper;
+    private final Util util;
 
     public WorkoutServiceImpl(
             WorkoutRepository workoutRepository,
             ExerciseRepository exerciseRepository,
             BodyPartRepository bodyPartRepository,
             UserService userService,
-            ModelMapper modelMapper) {
+            ModelMapper modelMapper,
+            Util util) {
         this.workoutRepository = workoutRepository;
         this.exerciseRepository = exerciseRepository;
         this.bodyPartRepository = bodyPartRepository;
         this.userService = userService;
         this.modelMapper = modelMapper;
+        this.util = util;
     }
 
     @Override
     @Transactional
     public WorkoutResponseDto createCustomWorkout(long userId, WorkoutCreateRequestDto requestDto) {
-        List<Workout> workouts = workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), userId);
-        if (workouts.size() > 0) throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+        List<Workout> workoutsWithSameTitle =
+                workoutRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), userId);
+
+        if (!workoutsWithSameTitle.isEmpty()) {
+            throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+        }
 
         User user = userService.getUserById(userId);
         Set<Exercise> exerciseSet = new HashSet<>();
@@ -80,7 +84,7 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .exercises(exerciseSet)
                 .build();
         Workout savedWorkout = workoutRepository.save(workout);
-        userService.addWorkout(user, savedWorkout);
+        userService.addWorkoutToUser(user, savedWorkout);
 
         WorkoutResponseDto workoutResponseDto = modelMapper.map(savedWorkout, WorkoutResponseDto.class);
 
@@ -210,132 +214,128 @@ public class WorkoutServiceImpl implements WorkoutService {
             throw new ApiExceptionCustomMessage("Invalid args combination", HttpStatus.BAD_REQUEST);
         }
 
-        Page<WorkoutResponseDto> dtoPage =
-                entitiesPage.map(entity -> modelMapper.map(entity, WorkoutResponseDto.class));
+        Page<WorkoutResponseDto> dtoPage = entitiesPage.map(entity -> {
+            WorkoutResponseDto workoutResponseDto = modelMapper.map(entity, WorkoutResponseDto.class);
+            boolean workoutNeedsEquipment = false;
+            for (Exercise exercise : entity.getExercises()) {
+                if (exercise.isNeedsEquipment()) {
+                    workoutNeedsEquipment = true;
+                    break;
+                }
+            }
+            workoutResponseDto.setNeedsEquipment(workoutNeedsEquipment);
+            return workoutResponseDto;
+        });
         return dtoPage;
     }
 
     @Override
     @Transactional
-    public List<WorkoutResponseDto> getWorkouts(String sortBy, boolean isDefault, Long userId) {
-        Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
-        List<Workout> workouts;
-        if (isDefault) workouts = workoutRepository.findAllDefault(sort);
-        else workouts = workoutRepository.findAllCustomByUserId(sort, userId);
+    public WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, WorkoutUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException {
 
-        List<WorkoutResponseDto> responseDtoList = workouts.stream()
-                .map(workout -> modelMapper.map(workout, WorkoutResponseDto.class))
-                .peek(elt -> {
-                    List<ExerciseResponseDto> exercisesSorted = elt.getExercises().stream()
-                            .sorted(Comparator.comparingLong(ExerciseResponseDto::getId))
-                            .toList();
-
-                    elt.setExercises(exercisesSorted);
-
-                    Set<BodyPartResponseDto> bodyParts = new HashSet<>();
-                    boolean needsEquipment = false;
-
-                    for (ExerciseResponseDto exercise : exercisesSorted) {
-                        for (BodyPartResponseDto bodyPart : exercise.getBodyParts()) {
-                            bodyParts.add(bodyPart);
-                            if (exercise.isNeedsEquipment()) needsEquipment = true;
-                        }
-                    }
-
-                    elt.setBodyParts(bodyParts.stream()
-                            .sorted(Comparator.comparingLong(BodyPartResponseDto::getId))
-                            .toList());
-
-                    elt.setNeedsEquipment(needsEquipment);
-                })
-                .toList();
-        return responseDtoList;
-    }
-
-    @Override
-    @Transactional
-    public WorkoutResponseDto updateCustomWorkout(long userId, long workoutId, WorkoutUpdateRequestDto requestDto) {
-        if (requestDto.getTitle() == null
-                && requestDto.getDescription() == null
-                && requestDto.getExerciseIds().size() == 0)
-            throw new ApiException(ErrorMessage.EMPTY_REQUEST, null, HttpStatus.BAD_REQUEST);
-
-        User user = userService.getUserById(userId);
         Workout workout = workoutRepository
                 .findById(workoutId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, workoutId, HttpStatus.NOT_FOUND));
 
-        if (!workout.isCustom())
+        if (!workout.isCustom()) {
             throw new ApiException(
-                    ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
-        if (user.getWorkouts() == null || !user.getWorkouts().contains(workout))
-            throw new ApiException(ErrorMessage.USER_WORKOUT_MISMATCH, workoutId, HttpStatus.BAD_REQUEST);
+                    ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
+        }
 
-        if (requestDto.getTitle() != null && !requestDto.getTitle().equals(workout.getTitle())) {
-            List<Workout> workouts = workoutRepository.findCustomByTitleAndUserId(requestDto.getTitle(), userId);
-            if (workouts.size() > 0) throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+        if (userId != workout.getUser().getId()) {
+            throw new ApiException(ErrorMessage.USER_WORKOUT_MISMATCH, workoutId, HttpStatus.BAD_REQUEST);
+        }
+
+        boolean allFieldsAreNull = util.verifyThatAllFieldsAreNull(requestDto, "title", "description");
+        boolean exercisesAreDifferent =
+                util.verifyThatNestedEntitiesAreDifferent(workout.getSortedExercisesIds(), requestDto.getExerciseIds());
+        if (allFieldsAreNull && !exercisesAreDifferent) {
+            throw new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
+        }
+
+        List<String> fieldsWithSameValues =
+                util.verifyThatFieldsAreDifferent(workout, requestDto, "title", "description");
+        if (!fieldsWithSameValues.isEmpty()) {
+            String errorMessage =
+                    ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + String.join(", ", fieldsWithSameValues);
+            throw new ApiExceptionCustomMessage(errorMessage, HttpStatus.BAD_REQUEST);
+        }
+
+        if (requestDto.getTitle() != null) {
+            List<Workout> workoutsWithSameTitle =
+                    workoutRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), userId);
+            if (!workoutsWithSameTitle.isEmpty()) {
+                throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+            }
             workout.setTitle(requestDto.getTitle());
         }
 
-        if (requestDto.getDescription() != null && !requestDto.getDescription().equals(workout.getDescription()))
+        if (requestDto.getDescription() != null) {
             workout.setDescription(requestDto.getDescription());
+        }
 
-        boolean workoutNeedsEquipment = false;
-        Set<BodyPart> workoutBodyParts = new HashSet<>();
-
-        if (requestDto.getExerciseIds().size() > 0) {
-            Set<Long> idsToAdd = new HashSet<>(requestDto.getExerciseIds());
-            Set<Long> idsToRemove = new HashSet<>();
-
-            for (Exercise exercise : workout.getExercises()) {
-                idsToAdd.remove(exercise.getId());
-
-                if (!requestDto.getExerciseIds().contains(exercise.getId())) {
-                    idsToRemove.add(exercise.getId());
-                }
-
-                if (exercise.isNeedsEquipment()) workoutNeedsEquipment = true;
-                workoutBodyParts.addAll(exercise.getBodyParts());
-            }
-
-            for (long id : idsToAdd) {
-                Optional<Exercise> exerciseOptional = exerciseRepository.findById(id);
-                if (exerciseOptional.isEmpty())
-                    throw new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, id, HttpStatus.NOT_FOUND);
-
-                Exercise exercise = exerciseOptional.get();
-                if (exercise.isCustom()) {
-                    boolean userHasCustomExercise =
-                            user.getExercises() != null && user.getExercises().contains(exercise);
-                    if (!userHasCustomExercise)
-                        throw new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, id, HttpStatus.BAD_REQUEST);
-                }
-
-                workout.getExercises().add(exercise);
-                if (exercise.isNeedsEquipment()) workoutNeedsEquipment = true;
-                workoutBodyParts.addAll(exercise.getBodyParts());
-            }
-
-            for (long id : idsToRemove) {
-                Exercise exercise = exerciseRepository
-                        .findById(id)
-                        .orElseThrow(() -> new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, id, HttpStatus.NOT_FOUND));
-                workout.getExercises().remove(exercise);
-                workoutBodyParts.removeAll(exercise.getBodyParts());
-            }
+        if (exercisesAreDifferent) {
+            updateExercises(workout, requestDto.getExerciseIds());
         }
 
         Workout savedWorkout = workoutRepository.save(workout);
-        WorkoutResponseDto workoutResponseDto = modelMapper.map(savedWorkout, WorkoutResponseDto.class);
+        WorkoutResponseDto workoutResponseDto = mapWorkoutToWorkoutResponseDto(savedWorkout);
+        return workoutResponseDto;
+    }
 
-        List<BodyPartResponseDto> workoutBodyPartResponseDtoList = workoutBodyParts.stream()
-                .sorted(Comparator.comparingLong(BodyPart::getId))
+    private void updateExercises(Workout workout, List<Long> exercisesIds) {
+        if (exercisesIds == null || exercisesIds.isEmpty()) {
+            throw new ApiExceptionCustomMessage(
+                    ErrorMessage.WORKOUT_SHOULD_HAVE_EXERCISES.getName(), HttpStatus.BAD_REQUEST);
+        }
+
+        Set<Long> idsToAdd = new HashSet<>(exercisesIds);
+        Set<Long> idsToRemove = new HashSet<>();
+        for (Exercise exercise : workout.getExercises()) {
+            idsToAdd.remove(exercise.getId());
+            if (!exercisesIds.contains(exercise.getId())) {
+                idsToRemove.add(exercise.getId());
+            }
+        }
+
+        for (long id : idsToAdd) {
+            Exercise exercise = exerciseRepository
+                    .findById(id)
+                    .orElseThrow(() -> new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, id, HttpStatus.NOT_FOUND));
+
+            if (exercise.isCustom() && !workout.getUser().equals(exercise.getUser())) {
+                throw new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, id, HttpStatus.BAD_REQUEST);
+            }
+            workout.getExercises().add(exercise);
+        }
+
+        for (long id : idsToRemove) {
+            Exercise exercise = exerciseRepository
+                    .findById(id)
+                    .orElseThrow(() -> new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, id, HttpStatus.NOT_FOUND));
+            workout.getExercises().remove(exercise);
+        }
+    }
+
+    private WorkoutResponseDto mapWorkoutToWorkoutResponseDto(Workout workout) {
+        boolean workoutNeedsEquipment = false;
+        for (Exercise exercise : workout.getExercises()) {
+            if (exercise.isNeedsEquipment()) {
+                workoutNeedsEquipment = true;
+                break;
+            }
+        }
+
+        WorkoutResponseDto workoutResponseDto = modelMapper.map(workout, WorkoutResponseDto.class);
+
+        List<BodyPartResponseDto> workoutBodyPartResponseDtoList = workout.getDistinctBodyPartsSortedById().stream()
                 .map(bodyPart -> modelMapper.map(bodyPart, BodyPartResponseDto.class))
                 .toList();
         workoutResponseDto.setBodyParts(workoutBodyPartResponseDtoList);
         workoutResponseDto.setNeedsEquipment(workoutNeedsEquipment);
 
-        List<ExerciseResponseDto> exerciseResponseDtoList = savedWorkout.getExercisesSortedById().stream()
+        List<ExerciseResponseDto> exerciseResponseDtoList = workout.getExercisesSortedById().stream()
                 .map(exercise -> modelMapper.map(exercise, ExerciseResponseDto.class))
                 .peek(elt -> {
                     List<BodyPartResponseDto> bodyPartsSorted = elt.getBodyParts().stream()
@@ -367,7 +367,7 @@ public class WorkoutServiceImpl implements WorkoutService {
         if (userId != workout.getUser().getId())
             throw new ApiException(ErrorMessage.USER_WORKOUT_MISMATCH, workoutId, HttpStatus.BAD_REQUEST);
         User user = userService.getUserById(userId);
-        userService.removeWorkout(user, workout);
+        userService.deleteWorkoutFromUser(user, workout);
         workoutRepository.delete(workout);
     }
 }
