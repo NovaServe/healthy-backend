@@ -40,4 +40,10 @@ public interface MentalRepository extends JpaRepository<Mental, Long> {
 
     @Query("SELECT m FROM Mental m WHERE m.user.id = :userId AND m.isCustom = true")
     List<Mental> findCustomMentalByUserId(long userId, Sort sort);
+
+    @Query("SELECT m FROM Mental m WHERE m.user.id = :userId AND m.title = :title AND m.isCustom = true")
+    List<Mental> findCustomMentalByTitleAndUserId(String title, Long userId);
+
+    @Query("SELECT m FROM Mental m WHERE m.user.id = :userId AND m.id = :mentalId AND m.isCustom = true")
+    List<Mental> findCustomByMentalIdAndUserId(long mentalId, long userId);
 }

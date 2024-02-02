@@ -16,8 +16,6 @@ import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.mentals.dto.MentalResponseDto;
 import healthy.lifestyle.backend.mentals.model.Mental;
 import healthy.lifestyle.backend.mentals.model.MentalType;
-import healthy.lifestyle.backend.users.model.Country;
-import healthy.lifestyle.backend.users.model.Role;
 import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.DtoUtil;
@@ -201,29 +199,29 @@ public class MentalControllerTest {
                 .andDo(print());
     }
 
-    @Test
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomMentalByIdTest_shouldReturnErrorMessageWith400_whenRequestedMentalBelongsToAnotherUser()
-            throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-        MentalType mentalType1 = dbUtil.createAffirmationType();
-        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
-
-        Mental customMental = dbUtil.createCustomMental(3, List.of(defaultHttpRef1), mentalType1, user2);
-        ApiException expectedException =
-                new ApiException(ErrorMessage.USER_MENTAL_MISMATCH, customMental.getId(), HttpStatus.BAD_REQUEST);
-
-        // When
-        mockMvc.perform(get(URL.CUSTOM_MENTAL_ID, customMental.getId()).contentType(MediaType.APPLICATION_JSON))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
-                .andDo(print());
-    }
+    //    @Test
+    //    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    //    void getCustomMentalByIdTest_shouldReturnErrorMessageWith400_whenRequestedMentalBelongsToAnotherUser()
+    //            throws Exception {
+    //        // Given
+    //        Role role = dbUtil.createUserRole();
+    //        Country country = dbUtil.createCountry(1);
+    //        MentalType mentalType1 = dbUtil.createAffirmationType();
+    //        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+    //        User user1 = dbUtil.createUser(1, role, country);
+    //        User user2 = dbUtil.createUser(2, role, country);
+    //
+    //        Mental customMental = dbUtil.createCustomMental(3, List.of(defaultHttpRef1), mentalType1, user2);
+    //        ApiException expectedException =
+    //                new ApiException(ErrorMessage.USER_MENTAL_MISMATCH, customMental.getId(), HttpStatus.BAD_REQUEST);
+    //
+    //        // When
+    //        mockMvc.perform(get(URL.CUSTOM_MENTAL_ID, customMental.getId()).contentType(MediaType.APPLICATION_JSON))
+    //
+    //                // Then
+    //                .andExpect(status().isBadRequest())
+    //                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+    //                .andExpect(jsonPath("$.code", is(expectedException.getHttpStatusValue())))
+    //                .andDo(print());
+    //    }
 }

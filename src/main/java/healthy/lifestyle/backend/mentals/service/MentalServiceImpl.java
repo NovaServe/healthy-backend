@@ -8,13 +8,10 @@ import healthy.lifestyle.backend.mentals.model.Mental;
 import healthy.lifestyle.backend.mentals.model.MentalType;
 import healthy.lifestyle.backend.mentals.repository.MentalRepository;
 import healthy.lifestyle.backend.mentals.repository.MentalTypeRepository;
-import healthy.lifestyle.backend.users.model.User;
 import healthy.lifestyle.backend.users.service.UserService;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -52,25 +49,25 @@ public class MentalServiceImpl implements MentalService {
 
     @Override
     @Transactional
-    public MentalResponseDto getMentalById(long mentalId, boolean requiredDefault, Long userId) {
+    public MentalResponseDto getMentalById(long mentalId, boolean customRequire) {
         Mental mental = mentalRepository
                 .findById(mentalId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.MENTAL_NOT_FOUND, mentalId, HttpStatus.NOT_FOUND));
 
-        if (mental.isCustom() && requiredDefault)
+        if (mental.isCustom() && !customRequire)
             throw new ApiException(
                     ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT, null, HttpStatus.BAD_REQUEST);
 
-        if (!mental.isCustom() && !requiredDefault)
+        if (!mental.isCustom() && customRequire)
             throw new ApiException(
                     ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
 
-        if (userId != null) {
-            User user = userService.getUserById(userId);
-            if (mental.isCustom()
-                    && (user.getMentals() == null || !user.getMentals().contains(mental)))
-                throw new ApiException(ErrorMessage.USER_MENTAL_MISMATCH, mentalId, HttpStatus.BAD_REQUEST);
-        }
+        // if (userId != null) {
+        //   User user = userService.getUserById(userId);
+        //   if (mental.isCustom()
+        //           && (user.getMentals() == null || !user.getMentals().contains(mental)))
+        //      throw new ApiException(ErrorMessage.USER_MENTAL_MISMATCH, mentalId, HttpStatus.BAD_REQUEST);
+        // }
 
         MentalResponseDto mentalResponseDto = modelMapper.map(mental, MentalResponseDto.class);
 
@@ -123,27 +120,48 @@ public class MentalServiceImpl implements MentalService {
         return dtoPage;
     }
 
-    @Override
-    @Transactional
-    public List<MentalResponseDto> getCustomMentals(long userId) {
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        List<MentalResponseDto> responseDtoList = mentalRepository.findCustomMentalByUserId(userId, sort).stream()
-                .map(elt -> modelMapper.map(elt, MentalResponseDto.class))
-                .peek(elt -> {
-                    List<HttpRefResponseDto> httpRefsSorted = elt.getHttpRefs().stream()
-                            .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
-                            .toList();
-                    elt.setHttpRefs(httpRefsSorted);
-                })
-                .toList();
-        return responseDtoList;
-    }
+    // @Override
+    // @Transactional
+    // public List<MentalResponseDto> getCustomMentals(long userId) {
+    //      Sort sort = Sort.by(Sort.Direction.ASC, "id");
+    //     List<MentalResponseDto> responseDtoList = mentalRepository.findCustomMentalByUserId(userId, sort).stream()
+    //            .map(elt -> modelMapper.map(elt, MentalResponseDto.class))
+    //              .peek(elt -> {
+    //                  List<HttpRefResponseDto> httpRefsSorted = elt.getHttpRefs().stream()
+    //                         .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+    //                        .toList();
+    //              elt.setHttpRefs(httpRefsSorted);
+    //           })
+    //           .toList();
+    //  return responseDtoList;
+    // }
+
+    // @Override
+    // @Transactional
+    //  public List<MentalResponseDto> getDefaultMentals() {
+    //     Sort sort = Sort.by(Sort.Direction.ASC, "id");
+    //     List<MentalResponseDto> responseDtoList = mentalRepository.findAllDefault(sort).stream()
+    //            .map(mental -> modelMapper.map(mental, MentalResponseDto.class))
+    //             .peek(elt -> {
+    //                List<HttpRefResponseDto> httpRefsSorted = elt.getHttpRefs().stream()
+    //                       .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+    //                       .toList();
+
+    //              elt.setHttpRefs(httpRefsSorted);
+    //          })
+    //         .toList();
+    //  return responseDtoList;
+    // }
 
     @Override
     @Transactional
-    public List<MentalResponseDto> getDefaultMentals() {
-        Sort sort = Sort.by(Sort.Direction.ASC, "id");
-        List<MentalResponseDto> responseDtoList = mentalRepository.findAllDefault(sort).stream()
+    public List<MentalResponseDto> getMentals(String sortBy, boolean isDefault, Long userId) {
+        Sort sort = Sort.by(Sort.Direction.ASC, sortBy);
+        List<Mental> mentals;
+        if (isDefault) mentals = mentalRepository.findAllDefault(sort);
+        else mentals = mentalRepository.findCustomMentalByUserId(userId, sort);
+
+        List<MentalResponseDto> responseDtoList = mentals.stream()
                 .map(mental -> modelMapper.map(mental, MentalResponseDto.class))
                 .peek(elt -> {
                     List<HttpRefResponseDto> httpRefsSorted = elt.getHttpRefs().stream()

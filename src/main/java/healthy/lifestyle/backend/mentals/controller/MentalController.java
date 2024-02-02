@@ -33,7 +33,7 @@ public class MentalController {
     @GetMapping("/default/{mental_id}")
     public ResponseEntity<MentalResponseDto> getDefaultMentalById(
             @PathVariable("mental_id") @PositiveOrZero long mental_id) {
-        MentalResponseDto responseDto = mentalService.getMentalById(mental_id, true, null);
+        MentalResponseDto responseDto = mentalService.getMentalById(mental_id, false);
         return ResponseEntity.ok(responseDto);
     }
 
@@ -42,7 +42,7 @@ public class MentalController {
     public ResponseEntity<MentalResponseDto> getCustomMentalById(@PathVariable("mental_id") long mental_id) {
         Long userId = authService.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        MentalResponseDto responseDto = mentalService.getMentalById(mental_id, false, userId);
+        MentalResponseDto responseDto = mentalService.getMentalById(mental_id, true);
         return ResponseEntity.ok(responseDto);
     }
 
