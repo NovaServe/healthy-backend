@@ -80,21 +80,4 @@ public class MentalController {
                 false, null, title, description, mentalTypeId, sortField, sortDirection, pageNumber, pageSize);
         return ResponseEntity.ok(dtoPage);
     }
-
-    @GetMapping("/custom")
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<Page<MentalResponseDto>> getCustomMentals(
-            @RequestParam(required = false) @TitleValidation String title,
-            @RequestParam(required = false) @DescriptionValidation String description,
-            @RequestParam(required = false) Long mentalTypeId,
-            @RequestParam(required = false, defaultValue = "title") String sortField,
-            @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
-            @RequestParam(required = false, defaultValue = "10") int pageSize,
-            @RequestParam(required = false, defaultValue = "0") int pageNumber) {
-        Long userId = authUtil.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        Page<MentalResponseDto> responseDtoPage = mentalService.getMentalWithFilter(
-                true, userId, title, description, mentalTypeId, sortField, sortDirection, pageNumber, pageSize);
-        return ResponseEntity.ok(responseDtoPage);
-    }
 }

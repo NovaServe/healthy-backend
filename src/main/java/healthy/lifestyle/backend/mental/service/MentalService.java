@@ -1,7 +1,6 @@
 package healthy.lifestyle.backend.mental.service;
 
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
-import java.util.List;
 import org.springframework.data.domain.Page;
 
 public interface MentalService {
@@ -17,10 +16,4 @@ public interface MentalService {
             String sortDirection,
             int currentPageNumber,
             int pageSize);
-
-    // List<MentalResponseDto> getDefaultMentals();
-
-    // List<MentalResponseDto> getCustomMentals(long userId);
-
-    List<MentalResponseDto> getMentals(String sortBy, boolean isDefault, Long userId);
 }

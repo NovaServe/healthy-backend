@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.mental.repository;
 import healthy.lifestyle.backend.mental.model.Mental;
 import healthy.lifestyle.backend.mental.model.MentalType;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -35,9 +36,6 @@ public interface MentalRepository extends JpaRepository<Mental, Long> {
             @Param("type") MentalType type,
             Pageable pageable);
 
-    @Query("SELECT m FROM Mental m WHERE m.isCustom = false")
-    List<Mental> findAllDefault(Sort sort);
-
     @Query("SELECT m FROM Mental m WHERE m.user.id = :userId AND m.isCustom = true")
     List<Mental> findCustomMentalByUserId(long userId, Sort sort);
 
@@ -45,5 +43,9 @@ public interface MentalRepository extends JpaRepository<Mental, Long> {
     List<Mental> findCustomMentalByTitleAndUserId(String title, Long userId);
 
     @Query("SELECT m FROM Mental m WHERE m.user.id = :userId AND m.id = :mentalId AND m.isCustom = true")
-    List<Mental> findCustomByMentalIdAndUserId(long mentalId, long userId);
+    Optional<Mental> findCustomByMentalIdAndUserId(long mentalId, long userId);
+
+    @Query("SELECT m FROM Mental m WHERE (m.title = :title AND m.isCustom = true AND m.user.id = :userId) "
+            + "OR (m.title = :title AND m.isCustom = false)")
+    List<Mental> findDefaultAndCustomByTitleAndUserId(String title, Long userId);
 }
