@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.mental.model.Mental;
@@ -22,14 +23,19 @@ import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
@@ -190,5 +196,114 @@ class MentalServiceTest {
         assertThat(httpRefs_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
                 .isEqualTo(mentalDtoActual.getHttpRefs());
+    }
+
+    static Stream<Arguments> getMentalsWithFilter_multipleInputs() {
+        return Stream.of(Arguments.of(null, 1L), Arguments.of(true, 1L), Arguments.of(false, null));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getMentalsWithFilter_multipleInputs")
+    void getExercisesWithFilter_shouldReturnPageObject(Boolean isCustom, Long userId) {
+        // Given
+        int currentPageNumber = 0;
+        int itemsPerPage = 2;
+        String sortDirection = "ASC";
+        String sortField = "id";
+
+        if (isCustom == null) {
+            when(mentalRepository.findDefaultAndCustomWithFilter(
+                            nullable(Long.class),
+                            nullable(String.class),
+                            nullable(String.class),
+                            nullable(MentalType.class),
+                            any()))
+                    .thenReturn(Page.empty());
+        } else {
+            when(mentalRepository.findDefaultOrCustomWithFilter(
+                            nullable(Boolean.class),
+                            nullable(Long.class),
+                            nullable(String.class),
+                            nullable(String.class),
+                            nullable(MentalType.class),
+                            any()))
+                    .thenReturn(Page.empty());
+        }
+
+        // When
+        Page<MentalResponseDto> dtoPage = mentalService.getMentalWithFilter(
+                isCustom, userId, "title", "desc", 1L, sortField, sortDirection, currentPageNumber, itemsPerPage);
+
+        // Then
+
+        if (isCustom == null) {
+            verify(mentalRepository, times(1))
+                    .findDefaultAndCustomWithFilter(
+                            nullable(Long.class),
+                            nullable(String.class),
+                            nullable(String.class),
+                            nullable(MentalType.class),
+                            any());
+        } else {
+            verify(mentalRepository, times(1))
+                    .findDefaultOrCustomWithFilter(
+                            nullable(Boolean.class),
+                            nullable(Long.class),
+                            nullable(String.class),
+                            nullable(String.class),
+                            nullable(MentalType.class),
+                            any());
+        }
+    }
+
+    static Stream<Arguments> getMentalsWithFilter_invalidArgs() {
+        return Stream.of(Arguments.of(null, null), Arguments.of(false, 1L), Arguments.of(true, null));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getMentalsWithFilter_invalidArgs")
+    void getMentalWithFilter_shouldThrowErrorWith400_whenInvalidArgs(Boolean isCustom, Long userId) {
+        // Given
+        int currentPageNumber = 0;
+        int itemsPerPage = 2;
+        String sortDirection = "ASC";
+        String sortField = "id";
+        ApiExceptionCustomMessage expectedException =
+                new ApiExceptionCustomMessage("Invalid args combination", HttpStatus.BAD_REQUEST);
+
+        // When
+        ApiExceptionCustomMessage actualException = assertThrows(
+                ApiExceptionCustomMessage.class,
+                () -> mentalService.getMentalWithFilter(
+                        isCustom,
+                        userId,
+                        "title",
+                        "desc",
+                        1L,
+                        sortField,
+                        sortDirection,
+                        currentPageNumber,
+                        itemsPerPage));
+
+        // Then
+        assertEquals(expectedException.getMessage(), actualException.getMessage());
+        assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
+
+        verify(mentalTypeRepository, times(0)).findAll();
+        verify(mentalRepository, times(0))
+                .findDefaultAndCustomWithFilter(
+                        nullable(Long.class),
+                        nullable(String.class),
+                        nullable(String.class),
+                        nullable(MentalType.class),
+                        any());
+        verify(mentalRepository, times(0))
+                .findDefaultOrCustomWithFilter(
+                        nullable(Boolean.class),
+                        nullable(Long.class),
+                        nullable(String.class),
+                        nullable(String.class),
+                        nullable(MentalType.class),
+                        any());
     }
 }
