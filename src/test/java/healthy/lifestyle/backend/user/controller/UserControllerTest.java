@@ -13,9 +13,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.exception.ExceptionDto;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.dto.CountryResponseDto;
 import healthy.lifestyle.backend.user.dto.SignupRequestDto;
 import healthy.lifestyle.backend.user.dto.UserResponseDto;
@@ -23,6 +22,7 @@ import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.validation.UserValidationMessage;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.URL;
@@ -91,13 +91,15 @@ public class UserControllerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("signupAgeIsOptional")
-    void signupTest_shouldReturnVoidWith201_whenValidRequest(Integer ageIsOptional) throws Exception {
+    @MethodSource("signupAgeValues")
+    void signup_shouldReturnVoidWith201_whenValidFields(Integer age) throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
         SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
-        requestDto.setAge(ageIsOptional);
+        if (age != null) {
+            requestDto.setAge(age);
+        }
 
         // When
         mockMvc.perform(post(URL.USERS)
@@ -110,12 +112,133 @@ public class UserControllerTest {
                 .andDo(print());
     }
 
-    static Stream<Arguments> signupAgeIsOptional() {
+    static Stream<Arguments> signupAgeValues() {
         return Stream.of(Arguments.of(20), Arguments.of((Object) null));
     }
 
     @Test
-    void signupTest_shouldReturnErrorMessageWith400_whenUserAlreadyExists() throws Exception {
+    void signup_shouldReturnValidationMessageWith400_whenInvalidFields() throws Exception {
+        // Given
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDtoEmpty();
+        requestDto.setUsername("username!");
+        requestDto.setEmail("email@@email.com");
+        requestDto.setFullName("Name 1");
+        requestDto.setCountryId(-1L);
+        requestDto.setAge(15);
+        requestDto.setPassword("password space");
+        requestDto.setConfirmPassword("password space");
+
+        String usernameMessage = "Username can include lower and upper-case letters, digits, and symbols: . - _";
+        String emailMessage = "Email can contain lower and upper-case letters, digits, and symbols: . - _";
+        String fullNameMessage = "Full name can include lower and upper-case letters, and spaces";
+        String idMessage = "Id must be equal or greater than 0";
+        String ageMessage = "Age must be between 16 and 120";
+        String passwordMessage =
+                "Password can include lower and upper-case letters, digits, and symbols: . , - _ < > : ; ! ? # $ % ^ & * ( ) + =";
+
+        // When
+        mockMvc.perform(post(URL.USERS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.username", is(usernameMessage)))
+                .andExpect(jsonPath("$.email", is(emailMessage)))
+                .andExpect(jsonPath("$.fullName", is(fullNameMessage)))
+                .andExpect(jsonPath("$.countryId", is(idMessage)))
+                .andExpect(jsonPath("$.age", is(ageMessage)))
+                .andExpect(jsonPath("$.password", is(passwordMessage)))
+                .andExpect(jsonPath("$.confirmPassword", is(passwordMessage)))
+                .andDo(print());
+    }
+
+    @ParameterizedTest
+    @MethodSource("signupNullOrBlankOrInvalidLengthFields")
+    void signup_shouldReturnValidationMessageWith400_whenNullOrBlankOrInvalidLengthFields(
+            String username,
+            String email,
+            String fullName,
+            Long countryId,
+            Integer age,
+            String password,
+            String confirmPassword)
+            throws Exception {
+        // Given
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDtoEmpty();
+        if (username != null) requestDto.setUsername(username);
+        if (email != null) requestDto.setEmail(email);
+        if (fullName != null) requestDto.setFullName(fullName);
+        if (countryId != null) requestDto.setCountryId(countryId);
+        if (age != null) requestDto.setAge(age);
+        if (password != null) requestDto.setPassword(password);
+        if (confirmPassword != null) requestDto.setConfirmPassword(confirmPassword);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(post(URL.USERS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.username", is(UserValidationMessage.USERNAME_LENGTH_RANGE.getName())))
+                .andExpect(jsonPath("$.email", is(UserValidationMessage.EMAIL_LENGTH_RANGE.getName())))
+                .andExpect(jsonPath("$.fullName", is(UserValidationMessage.FULL_NAME_LENGTH_RANGE.getName())))
+                .andExpect(jsonPath("$.countryId", is("Id must be equal or greater than 0")))
+                .andExpect(jsonPath("$.password", is(UserValidationMessage.PASSWORD_LENGTH_RANGE.getName())))
+                .andExpect(jsonPath("$.confirmPassword", is(UserValidationMessage.PASSWORD_LENGTH_RANGE.getName())))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("age");
+        if (age == null) {
+            assertTrue(contentNode.asText().isEmpty());
+        } else {
+            assertEquals("Age must be between 16 and 120", contentNode.asText());
+        }
+    }
+
+    static Stream<Arguments> signupNullOrBlankOrInvalidLengthFields() {
+        return Stream.of(
+                // null
+                Arguments.of(null, null, null, null, null, null, null),
+                // blank
+                Arguments.of("", "", "", null, null, "", ""),
+                Arguments.of(" ", " ", " ", null, null, " ", " "),
+                // invalid length
+                Arguments.of("user", "email", "f", -1L, null, "pass", "pass"),
+                Arguments.of("user", "email", "f", -1L, 15, "pass", "pass"),
+                Arguments.of("user", "email", "f", -1L, 121, "pass", "pass"));
+    }
+
+    @Test
+    void signup_shouldReturnValidationMessageWith400_whenPasswordsMismatch() throws Exception {
+        // Given
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDtoEmpty();
+        requestDto.setPassword("password-1");
+        requestDto.setConfirmPassword("password-2");
+
+        // When
+        mockMvc.perform(post(URL.USERS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.password,confirmPassword", is("Passwords mismatch")))
+                .andDo(print());
+    }
+
+    @Test
+    void signup_shouldReturnErrorMessageWith400_whenUserAlreadyExists() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -129,245 +252,13 @@ public class UserControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Already exists")))
+                .andExpect(jsonPath("$.message", is(ErrorMessage.ALREADY_EXISTS.getName())))
                 .andDo(print());
-    }
-
-    @ParameterizedTest
-    @MethodSource("signupOneInputFieldIsInvalid")
-    void signupTest_shouldReturnValidationMessageWith400_whenOneInputFieldIsInvalid(
-            String username,
-            String email,
-            String fullName,
-            Long countryId,
-            Integer age,
-            String password,
-            String confirmPassword,
-            String errorFieldName,
-            String errorMessage)
-            throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-
-        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
-        if (email != null) requestDto.setEmail(email);
-        if (username != null) requestDto.setUsername(username);
-        if (fullName != null) requestDto.setFullName(fullName);
-        if (password != null) requestDto.setPassword(password);
-        if (confirmPassword != null) requestDto.setConfirmPassword(confirmPassword);
-        if (countryId != null) requestDto.setCountryId(countryId);
-        if (age != null) requestDto.setAge(age);
-
-        // When
-        mockMvc.perform(post(URL.USERS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(errorFieldName, is(errorMessage)))
-                .andDo(print());
-    }
-
-    static Stream<Arguments> signupOneInputFieldIsInvalid() {
-        return Stream.of(
-                Arguments.of("Username%^&", null, null, null, null, null, null, "$.username", "Not allowed symbols"),
-                Arguments.of(
-                        null,
-                        "email()@email.com",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "$.email",
-                        "must be a well-formed email address"),
-                Arguments.of(null, null, "Full name !@#", null, null, null, null, "$.fullName", "Not allowed symbols"),
-                Arguments.of(
-                        null, null, null, -1L, null, null, null, "$.countryId", "must be greater than or equal to 0"),
-                Arguments.of(null, null, null, null, 15, null, null, "$.age", "Age should be in range from 16 to 120"),
-                Arguments.of(null, null, null, null, 121, null, null, "$.age", "Age should be in range from 16 to 120"),
-                Arguments.of(
-                        null, null, null, null, null, "Password 1", "Password 1", "$.password", "Not allowed symbols"),
-                Arguments.of(
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "Password_1",
-                        "Password_2",
-                        "password,confirmPassword",
-                        "Passwords don't match"));
-    }
-
-    @ParameterizedTest
-    @MethodSource("signupOneInputFieldIsNull")
-    void signupTest_shouldReturnValidationMessageWith400_whenOneInputFieldIsNull(
-            String username,
-            String email,
-            String fullName,
-            Long countryId,
-            String password,
-            String confirmPassword,
-            String errorFieldName,
-            String errorMessage)
-            throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-
-        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
-        if (email == null) requestDto.setEmail(email);
-        if (username == null) requestDto.setUsername(username);
-        if (fullName == null) requestDto.setFullName(fullName);
-        if (password == null) requestDto.setPassword(password);
-        if (confirmPassword == null) requestDto.setConfirmPassword(confirmPassword);
-        if (countryId == null) requestDto.setCountryId(countryId);
-
-        // When
-        mockMvc.perform(post(URL.USERS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(errorFieldName, is(errorMessage)))
-                .andDo(print());
-    }
-
-    static Stream<Arguments> signupOneInputFieldIsNull() {
-        return Stream.of(
-                Arguments.of(
-                        null, "Not null", "Not null", 1L, "Not null", "Not null", "$.username", "must not be blank"),
-                Arguments.of("Not null", null, "Not null", 1L, "Not null", "Not null", "$.email", "must not be blank"),
-                Arguments.of(
-                        "Not null", "Not null", null, 1L, "Not null", "Not null", "$.fullName", "must not be blank"),
-                Arguments.of(
-                        "Not null",
-                        "Not null",
-                        "Not null",
-                        null,
-                        "Not null",
-                        "Not null",
-                        "$.countryId",
-                        "must not be null"),
-                Arguments.of(
-                        "Not null", "Not null", "Not null", 1L, null, "Not null", "$.password", "must not be blank"),
-                Arguments.of(
-                        "Not null",
-                        "Not null",
-                        "Not null",
-                        1L,
-                        "Not null",
-                        null,
-                        "$.confirmPassword",
-                        "must not be blank"));
-    }
-
-    @ParameterizedTest
-    @MethodSource("signupAllInputsAreInvalid")
-    void signupTest_shouldReturnValidationMessageWith400_whenAllInputsAreInvalid(
-            String username,
-            String email,
-            String fullName,
-            Long countryId,
-            Integer age,
-            String password,
-            String confirmPassword)
-            throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-        SignupRequestDto requestDto = dtoUtil.signupRequestDtoEmpty();
-        requestDto.setEmail(email);
-        requestDto.setUsername(username);
-        requestDto.setFullName(fullName);
-        requestDto.setPassword(password);
-        requestDto.setConfirmPassword(confirmPassword);
-        requestDto.setCountryId(countryId);
-        requestDto.setAge(age);
-
-        // When
-        MvcResult mvcResult = mvcResult = mockMvc.perform(post(URL.USERS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andDo(print())
-                .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        JsonNode responseJson = objectMapper.readTree(responseContent);
-
-        assertEquals("Not allowed symbols", responseJson.get("username").asText());
-        assertEquals(
-                "must be a well-formed email address", responseJson.get("email").asText());
-        assertEquals("Not allowed symbols", responseJson.get("fullName").asText());
-        assertEquals(
-                "must be greater than or equal to 0",
-                responseJson.get("countryId").asText());
-        assertEquals(
-                "Age should be in range from 16 to 120", responseJson.get("age").asText());
-        assertEquals("Not allowed symbols", responseJson.get("password").asText());
-        assertEquals("Not allowed symbols", responseJson.get("confirmPassword").asText());
-    }
-
-    static Stream<Arguments> signupAllInputsAreInvalid() {
-        return Stream.of(
-                Arguments.of("Username%^&", "email()@email.com", "Full name !@#", -1L, 1, "Password 1", "Password 1"));
-    }
-
-    @ParameterizedTest
-    @MethodSource("signupAllInputsAreNull")
-    void signupTest_shouldReturnValidationMessageWith400_whenAllInputsAreNull(
-            String username,
-            String email,
-            String fullName,
-            Long countryId,
-            Integer age,
-            String password,
-            String confirmPassword)
-            throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-        SignupRequestDto requestDto = dtoUtil.signupRequestDtoEmpty();
-        requestDto.setEmail(email);
-        requestDto.setUsername(username);
-        requestDto.setFullName(fullName);
-        requestDto.setPassword(password);
-        requestDto.setConfirmPassword(confirmPassword);
-        requestDto.setCountryId(countryId);
-        requestDto.setAge(age);
-
-        // When
-        mockMvc.perform(post(URL.USERS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.username", is("must not be blank")))
-                .andExpect(jsonPath("$.email", is("must not be blank")))
-                .andExpect(jsonPath("$.fullName", is("must not be blank")))
-                .andExpect(jsonPath("$.countryId", is("must not be null")))
-                .andExpect(jsonPath("$.age").doesNotExist())
-                .andExpect(jsonPath("$.password", is("must not be blank")))
-                .andExpect(jsonPath("$.confirmPassword", is("must not be blank")))
-                .andExpect(jsonPath("$.password,confirmPassword", is("Passwords don't match")))
-                .andDo(print());
-    }
-
-    static Stream<Arguments> signupAllInputsAreNull() {
-        return Stream.of(Arguments.of(null, null, null, null, null, null, null));
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getUserDetailsTest_shouldReturnUserDtoWith200_whenValidRequest() throws Exception {
+    void getUserDetails_shouldReturnDtoWith200_whenValidRequest() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
 
@@ -381,7 +272,6 @@ public class UserControllerTest {
 
         String responseContent = mvcResult.getResponse().getContentAsString();
         UserResponseDto responseDto = objectMapper.readValue(responseContent, new TypeReference<UserResponseDto>() {});
-
         assertThat(responseDto)
                 .usingRecursiveComparison()
                 .ignoringFields("countryId")
@@ -390,9 +280,9 @@ public class UserControllerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("updateUserMultipleValidInputs")
+    @MethodSource("updateUserValidFields")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateUserTest_shouldReturnUpdatedUserDtoWith200_whenValidRequest(
+    void updateUser_shouldReturnUpdatedDtoWith200_whenValidFields(
             String username,
             String email,
             String fullName,
@@ -403,22 +293,23 @@ public class UserControllerTest {
             throws Exception {
         // Given
         User user = dbUtil.createUser(1);
-        Country newCountry = dbUtil.createCountry(2);
         String initialUsername = user.getUsername();
         String initialEmail = user.getEmail();
         String initialFullName = user.getFullName();
         int initialAge = user.getAge();
         String initialPassword = "Password-1";
+        Country newCountry = dbUtil.createCountry(2);
 
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
-        if (!"Country 2".equals(countryName)) requestDto.setCountryId(newCountry.getId());
+        if (countryName != null) requestDto.setCountryId(newCountry.getId());
         else requestDto.setCountryId(user.getCountry().getId());
-        requestDto.setUsername(username);
-        requestDto.setEmail(email);
-        requestDto.setFullName(fullName);
-        requestDto.setAge(age);
-        requestDto.setPassword(password);
-        requestDto.setConfirmPassword(confirmPassword);
+
+        if (username != null) requestDto.setUsername(username);
+        if (email != null) requestDto.setEmail(email);
+        if (fullName != null) requestDto.setFullName(fullName);
+        if (age != null) requestDto.setAge(age);
+        if (password != null) requestDto.setPassword(password);
+        if (confirmPassword != null) requestDto.setConfirmPassword(confirmPassword);
 
         // When
         MvcResult mvcResult = mockMvc.perform(patch(URL.USER_ID, user.getId())
@@ -453,37 +344,64 @@ public class UserControllerTest {
         } else assertTrue(passwordEncoder.matches(initialPassword, user.getPassword()));
     }
 
-    static Stream<Arguments> updateUserMultipleValidInputs() {
+    static Stream<Arguments> updateUserValidFields() {
         return Stream.of(
                 Arguments.of("new-username", null, null, null, null, null, null),
                 Arguments.of(null, "new-email@email.com", null, null, null, null, null),
                 Arguments.of(null, null, "New full name", null, null, null, null),
-                Arguments.of(null, null, null, "Country 2", null, null, null),
-                Arguments.of(null, null, null, null, 100, null, null),
+                Arguments.of(null, null, null, "New Country", null, null, null),
+                Arguments.of(null, null, null, null, 30, null, null),
                 Arguments.of(null, null, null, null, null, "new-password", "new-password"));
     }
 
-    @ParameterizedTest
-    @MethodSource("updateUserMultipleValidInputsButNotDifferent")
+    @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateUserTest_shouldReturnErrorMessageWith400_whenValidButNotDifferentInput(
-            String username, String email, String fullName, Integer age, String password, String confirmPassword)
-            throws Exception {
+    void updateUser_shouldReturnErrorMessageWith400_whenNotDifferentFields() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1, 20);
+        UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
+        requestDto.setUsername(user.getUsername());
+        requestDto.setEmail(user.getEmail());
+        requestDto.setFullName(user.getFullName());
+        requestDto.setAge(user.getAge());
+        requestDto.setCountryId(user.getCountry().getId());
+        requestDto.setPassword("Password-1");
+        requestDto.setConfirmPassword("Password-1");
+        String errorMessage =
+                ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + "username, email, fullName, age, password";
+
+        // When
+        mockMvc.perform(patch(URL.USER_ID, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(errorMessage)))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateUser_shouldReturnErrorMessageWith400_whenInvalidFields() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDtoEmpty();
+        requestDto.setUsername("username!");
+        requestDto.setEmail("email@@email.com");
+        requestDto.setFullName("Name 1");
+        requestDto.setCountryId(-1L);
+        requestDto.setAge(15);
+        requestDto.setPassword("password space");
+        requestDto.setConfirmPassword("password space");
 
-        UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
-        if (age != null) {
-            user.setAge(age);
-            dbUtil.saveUserChanges(user);
-            requestDto.setAge(age);
-        }
-        requestDto.setUsername(username);
-        requestDto.setEmail(email);
-        requestDto.setFullName(fullName);
-        requestDto.setCountryId(user.getCountry().getId());
-        requestDto.setPassword(password);
-        requestDto.setConfirmPassword(confirmPassword);
+        String usernameMessage = "Username can include lower and upper-case letters, digits, and symbols: . - _";
+        String emailMessage = "Email can contain lower and upper-case letters, digits, and symbols: . - _";
+        String fullNameMessage = "Full name can include lower and upper-case letters, and spaces";
+        String idMessage = "Id must be equal or greater than 0";
+        String ageMessage = "Age must be between 16 and 120";
+        String passwordMessage =
+                "Password can include lower and upper-case letters, digits, and symbols: . , - _ < > : ; ! ? # $ % ^ & * ( ) + =";
 
         // When
         MvcResult mvcResult = mockMvc.perform(patch(URL.USER_ID, user.getId())
@@ -492,56 +410,21 @@ public class UserControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.username", is(usernameMessage)))
+                .andExpect(jsonPath("$.email", is(emailMessage)))
+                .andExpect(jsonPath("$.fullName", is(fullNameMessage)))
+                .andExpect(jsonPath("$.countryId", is(idMessage)))
+                .andExpect(jsonPath("$.age", is(ageMessage)))
+                .andExpect(jsonPath("$.password", is(passwordMessage)))
+                .andExpect(jsonPath("$.confirmPassword", is(passwordMessage)))
                 .andDo(print())
                 .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        ExceptionDto exceptionDto = objectMapper.readValue(responseContent, ExceptionDto.class);
-
-        boolean allFieldsAreNotDifferent = username != null
-                && email != null
-                && fullName != null
-                && age != null
-                && password != null
-                && confirmPassword != null;
-        if (allFieldsAreNotDifferent) {
-            StringBuilder errorMessage = new StringBuilder();
-            errorMessage.append(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName());
-            errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName());
-            errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName());
-            errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName());
-            errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName());
-            assertEquals(errorMessage.toString(), exceptionDto.getMessage());
-        } else {
-            if (username != null)
-                assertEquals(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
-            if (email != null) assertEquals(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
-            if (fullName != null)
-                assertEquals(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
-            if (age != null) assertEquals(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
-            if (password != null && confirmPassword != null)
-                assertEquals(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName(), exceptionDto.getMessage());
-        }
-    }
-
-    static Stream<Arguments> updateUserMultipleValidInputsButNotDifferent() {
-        return Stream.of(
-                Arguments.of("Username-1", null, null, null, null, null),
-                Arguments.of(null, "email-1@email.com", null, null, null, null),
-                Arguments.of(null, null, "Full Name One", null, null, null),
-                Arguments.of(null, null, null, 20, null, null),
-                Arguments.of(null, null, null, null, "Password-1", "Password-1"),
-                Arguments.of("Username-1", "email-1@email.com", "Full Name One", 20, "Password-1", "Password-1"));
     }
 
     @ParameterizedTest
-    @MethodSource("updateUserMultipleInvalidInputs")
+    @MethodSource("updateUserBlankOrInvalidLengthFields")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateUserTest_shouldReturnErrorMessageWith400_whenInvalidRequest(
+    void updateUser_shouldReturnErrorMessageWith400_whenBlankOrInvalidLengthFields(
             String username,
             String email,
             String fullName,
@@ -552,16 +435,14 @@ public class UserControllerTest {
             throws Exception {
         // Given
         User user = dbUtil.createUser(1);
-
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
+        if (username != null) requestDto.setUsername(username);
+        if (email != null) requestDto.setEmail(email);
+        if (fullName != null) requestDto.setFullName(fullName);
         if (countryId != null) requestDto.setCountryId(countryId);
-        else requestDto.setCountryId(user.getCountry().getId());
         if (age != null) requestDto.setAge(age);
-        requestDto.setUsername(username);
-        requestDto.setEmail(email);
-        requestDto.setFullName(fullName);
-        requestDto.setPassword(password);
-        requestDto.setConfirmPassword(confirmPassword);
+        if (password != null) requestDto.setPassword(password);
+        if (confirmPassword != null) requestDto.setConfirmPassword(confirmPassword);
 
         // When
         MvcResult mvcResult = mockMvc.perform(patch(URL.USER_ID, user.getId())
@@ -570,176 +451,58 @@ public class UserControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.username", is(UserValidationMessage.USERNAME_LENGTH_RANGE.getName())))
+                .andExpect(jsonPath("$.email", is(UserValidationMessage.EMAIL_LENGTH_RANGE.getName())))
+                .andExpect(jsonPath("$.fullName", is(UserValidationMessage.FULL_NAME_LENGTH_RANGE.getName())))
+                .andExpect(jsonPath("$.countryId", is("Id must be equal or greater than 0")))
+                .andExpect(jsonPath("$.password", is(UserValidationMessage.PASSWORD_LENGTH_RANGE.getName())))
+                .andExpect(jsonPath("$.confirmPassword", is(UserValidationMessage.PASSWORD_LENGTH_RANGE.getName())))
                 .andDo(print())
                 .andReturn();
 
         String responseContent = mvcResult.getResponse().getContentAsString();
-        JsonNode responseJson = objectMapper.readTree(responseContent);
-
-        boolean allFieldsAreInvalid = username != null
-                && email != null
-                && fullName != null
-                && countryId != null
-                && age != null
-                && password != null
-                && confirmPassword != null;
-        if (allFieldsAreInvalid) {
-            assertEquals("Not allowed symbols", responseJson.get("username").asText());
-            assertEquals(
-                    "must be a well-formed email address",
-                    responseJson.get("email").asText());
-            assertEquals("Not allowed symbols", responseJson.get("fullName").asText());
-            assertEquals(
-                    "must be greater than or equal to 0",
-                    responseJson.get("countryId").asText());
-            assertEquals(
-                    "Age should be in range from 16 to 120",
-                    responseJson.get("age").asText());
-            assertEquals("Not allowed symbols", responseJson.get("password").asText());
-            assertEquals(
-                    "Not allowed symbols", responseJson.get("confirmPassword").asText());
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("age");
+        if (age == null) {
+            assertTrue(contentNode.asText().isEmpty());
         } else {
-            if (username != null)
-                assertEquals("Not allowed symbols", responseJson.get("username").asText());
-            if (email != null)
-                assertEquals(
-                        "must be a well-formed email address",
-                        responseJson.get("email").asText());
-            if (fullName != null)
-                assertEquals("Not allowed symbols", responseJson.get("fullName").asText());
-            if (countryId != null)
-                assertEquals(
-                        "must be greater than or equal to 0",
-                        responseJson.get("countryId").asText());
-            if (age != null)
-                assertEquals(
-                        "Age should be in range from 16 to 120",
-                        responseJson.get("age").asText());
-            if (password != null && password.equals(confirmPassword)) {
-                assertEquals("Not allowed symbols", responseJson.get("password").asText());
-                assertEquals(
-                        "Not allowed symbols",
-                        responseJson.get("confirmPassword").asText());
-            }
-            if (password != null && confirmPassword != null && !password.equals(confirmPassword))
-                assertEquals(
-                        "Passwords don't match",
-                        responseJson.get("confirmPassword,password").asText());
+            assertEquals("Age must be between 16 and 120", contentNode.asText());
         }
     }
 
-    static Stream<Arguments> updateUserMultipleInvalidInputs() {
+    static Stream<Arguments> updateUserBlankOrInvalidLengthFields() {
         return Stream.of(
-                Arguments.of("Username%^&", null, null, null, null, null, null),
-                Arguments.of(null, "email()@email.com", null, null, null, null, null),
-                Arguments.of(null, null, "Full name !@#", null, null, null, null),
-                Arguments.of(null, null, null, -1L, null, null, null),
-                Arguments.of(null, null, null, null, 15, null, null),
-                Arguments.of(null, null, null, null, 121, null, null),
-                Arguments.of(null, null, null, null, null, "Password 1", "Password 1"),
-                Arguments.of(null, null, null, null, null, "Password_1", "Password_2"),
-                Arguments.of("Username%^&", "email()@email.com", "Full name !@#", -1L, 1, "Password 1", "Password 1"));
-    }
-
-    @ParameterizedTest
-    @MethodSource("updateUserMultipleInvalidInputSize")
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateUserTest_shouldReturnErrorMessageWith400_whenInvalidInputSize(
-            String username, String email, String fullName, String password, String confirmPassword) throws Exception {
-        // Given
-        User user = dbUtil.createUser(1);
-
-        UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
-        requestDto.setCountryId(user.getCountry().getId());
-        requestDto.setUsername(username);
-        requestDto.setEmail(email);
-        requestDto.setFullName(fullName);
-        requestDto.setPassword(password);
-        requestDto.setConfirmPassword(confirmPassword);
-
-        // When
-        MvcResult mvcResult = mockMvc.perform(patch(URL.USER_ID, user.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andDo(print())
-                .andReturn();
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        JsonNode responseJson = objectMapper.readTree(responseContent);
-
-        boolean allFieldsAreInvalid =
-                username != null && email != null && fullName != null && password != null && confirmPassword != null;
-        if (allFieldsAreInvalid) {
-            assertEquals(
-                    "size must be between 6 and 20",
-                    responseJson.get("username").asText());
-            assertEquals(
-                    "size must be between 6 and 64", responseJson.get("email").asText());
-            assertEquals(
-                    "size must be between 4 and 64",
-                    responseJson.get("fullName").asText());
-            assertEquals(
-                    "size must be between 10 and 64",
-                    responseJson.get("password").asText());
-            assertEquals(
-                    "size must be between 10 and 64",
-                    responseJson.get("confirmPassword").asText());
-        } else {
-            if (username != null)
-                assertEquals(
-                        "size must be between 6 and 20",
-                        responseJson.get("username").asText());
-            if (email != null)
-                assertEquals(
-                        "size must be between 6 and 64",
-                        responseJson.get("email").asText());
-            if (fullName != null)
-                assertEquals(
-                        "size must be between 4 and 64",
-                        responseJson.get("fullName").asText());
-            if (password != null && confirmPassword != null) {
-                assertEquals(
-                        "size must be between 10 and 64",
-                        responseJson.get("password").asText());
-                assertEquals(
-                        "size must be between 10 and 64",
-                        responseJson.get("confirmPassword").asText());
-            }
-        }
-    }
-
-    static Stream<Arguments> updateUserMultipleInvalidInputSize() {
-        return Stream.of(
-                Arguments.of("Usern", null, null, null, null),
-                Arguments.of("UsernameUsernameUsername", null, null, null, null),
-                Arguments.of(
-                        null,
-                        "longemail_longemail_longemail_longemail_longemail_longemail@email.com",
-                        null,
-                        null,
-                        null),
-                Arguments.of(null, null, "Nam", null, null),
-                Arguments.of(
-                        null,
-                        null,
-                        "Long Full Name Long Full Name Long Full Name Long Full Name Long Full Name",
-                        null,
-                        null),
-                Arguments.of(null, null, null, "Short", "Short"),
-                Arguments.of(
-                        null,
-                        null,
-                        null,
-                        "Long_Password_Long_Password_Long_Password_Long_Password_Long_Password",
-                        "Long_Password_Long_Password_Long_Password_Long_Password_Long_Password"));
+                // blank
+                Arguments.of("", "", "", null, null, "", ""),
+                Arguments.of(" ", " ", " ", null, null, " ", " "),
+                // invalid length
+                Arguments.of("user", "email", "f", -1L, null, "pass", "pass"),
+                Arguments.of("user", "email", "f", -1L, 15, "pass", "pass"),
+                Arguments.of("user", "email", "f", -1L, 121, "pass", "pass"));
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateUserTest_shouldReturnErrorMessageWith400_whenUserRequestedAnotherUserProfile() throws Exception {
+    void updateUser_shouldReturnErrorMessageWith400_whenNoUpdatesRequest() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
+        requestDto.setCountryId(user.getCountry().getId());
+
+        // When
+        mockMvc.perform(patch(URL.USER_ID, user.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NO_UPDATES_REQUEST.getName())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateUser_shouldReturnErrorMessageWith400_whenUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -765,11 +528,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(
-            username = "Username-1",
-            password = "Password-1",
-            authorities = {"ROLE_USER"})
-    void updateUserTest_shouldReturnErrorMessageWith404_whenCountryNotFound() throws Exception {
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateUser_shouldReturnErrorMessageWith404_whenCountryNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
 
@@ -793,7 +553,7 @@ public class UserControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteUserTest_shouldReturnVoid204_whenValidRequest() throws Exception {
+    void deleteUser_shouldReturnVoid204_whenValidRequest() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -843,7 +603,7 @@ public class UserControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteUserTest_shouldReturnErrorMessageWith400_whenUserResourceMismatch() throws Exception {
+    void deleteUser_shouldReturnErrorMessageWith400_whenUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -863,7 +623,7 @@ public class UserControllerTest {
     }
 
     @Test
-    void getCountriesTest_shouldReturnCountriesWith200_whenValidRequest() throws Exception {
+    void getCountries_shouldReturnDtoListWith200_whenValidRequest() throws Exception {
         // Given
         Country country1 = dbUtil.createCountry(1);
         Country country2 = dbUtil.createCountry(2);
@@ -888,7 +648,7 @@ public class UserControllerTest {
     }
 
     @Test
-    void getCountriesTest_shouldReturnErrorMessageWith500_whenNoCountries() throws Exception {
+    void getCountries_shouldReturnErrorMessageWith404_whenCountriesNotFound() throws Exception {
         // Given
         ApiException expectedException = new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
 

@@ -31,7 +31,7 @@ public class CountryServiceTest {
     TestUtil testUtil = new TestUtil();
 
     @Test
-    public void getCountriesTest_shouldReturnAllCountries() {
+    public void getCountries_shouldReturnDtoList_whenValidRequest() {
         // Given
         Country country1 = testUtil.createCountry(1);
         Country country2 = testUtil.createCountry(2);

@@ -9,5 +9,6 @@ import lombok.*;
 @AllArgsConstructor
 public class CountryResponseDto {
     private Long id;
+
     private String name;
 }

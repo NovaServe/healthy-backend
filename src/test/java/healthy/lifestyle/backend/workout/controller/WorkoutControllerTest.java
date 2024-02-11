@@ -16,14 +16,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.DtoUtil;
-import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.util.URL;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -64,9 +63,6 @@ class WorkoutControllerTest {
     DbUtil dbUtil;
 
     @Autowired
-    TestUtil testUtil;
-
-    @Autowired
     DtoUtil dtoUtil;
 
     @Container
@@ -87,7 +83,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomWorkoutTest_shouldReturnWorkoutResponseDtoWith201_whenValidRequest() throws Exception {
+    void createCustomWorkout_shouldReturnCreatedDtoWith201_whenValidFields() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -131,8 +127,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomWorkoutTest_shouldReturnErrorMessageWith400_whenWorkoutAlreadyExistsWithSameTitle()
-            throws Exception {
+    void createCustomWorkout_shouldReturnErrorMessageWith400_whenAlreadyExistsWithSameTitle() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -166,7 +161,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomWorkoutTest_shouldReturnErrorMessageWith404_whenExerciseNotFound() throws Exception {
+    void createCustomWorkout_shouldReturnErrorMessageWith404_whenExerciseNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         long nonExistentExerciseId = 1000L;
@@ -188,7 +183,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomWorkoutTest_shouldReturnErrorMessageWith400_whenExerciseDoesntBelongToUser() throws Exception {
+    void createCustomWorkout_shouldReturnErrorMessageWith400_whenExerciseUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -224,7 +219,7 @@ class WorkoutControllerTest {
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnDefaultWorkoutDtoWith200_whenIdIsValid() throws Exception {
+    void getDefaultWorkoutById_shouldReturnDtoWith200_whenValidId() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -254,7 +249,7 @@ class WorkoutControllerTest {
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnErrorMessageWith404_whenWorkoutNotFound() throws Exception {
+    void getDefaultWorkoutById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         long nonExistentDefaultWorkoutId = 1000L;
         ApiException expectedException =
@@ -272,8 +267,7 @@ class WorkoutControllerTest {
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnErrorMessageWith400_whenCustomWorkoutRequestedInsteadOfDefault()
-            throws Exception {
+    void getDefaultWorkoutById_shouldReturnErrorMessageWith400_whenCustomWorkoutRequested() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -302,7 +296,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomWorkoutByIdTest_shouldReturnCustomWorkoutDtoWith200_whenIdIsValid() throws Exception {
+    void getCustomWorkoutById_shouldReturnDtoWith200_whenValidId() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -334,8 +328,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomWorkoutByIdTest_shouldReturnErrorMessageWith400_whenDefaultWorkoutRequestedInsteadOfCustom()
-            throws Exception {
+    void getCustomWorkoutById_shouldReturnErrorMessageWith400_whenDefaultWorkoutRequested() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -363,7 +356,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnWorkoutResponseDtoWith200_whenValidRequest() throws Exception {
+    void updateCustomWorkout_shouldReturnDtoWith200_whenValidFields() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -418,7 +411,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnErrorMessageWith400_whenRequestWithoutUpdates() throws Exception {
+    void updateCustomWorkout_shouldReturnErrorMessageWith400_whenRequestWithoutUpdates() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -450,7 +443,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnErrorMessageWith404_whenWorkoutNotFound() throws Exception {
+    void updateCustomWorkout_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
@@ -477,7 +470,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnErrorMessageWith400_whenWorkoutDoesntBelongToUser() throws Exception {
+    void updateCustomWorkout_shouldReturnErrorMessageWith400_whenWorkoutUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -512,7 +505,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnErrorMessageWith400_whenWorkoutTitleDuplicated() throws Exception {
+    void updateCustomWorkout_shouldReturnErrorMessageWith400_whenWorkoutTitleDuplicated() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -546,7 +539,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnErrorMessageWith404_whenExerciseNotFound() throws Exception {
+    void updateCustomWorkout_shouldReturnErrorMessageWith404_whenExerciseNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -579,7 +572,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomWorkoutTest_shouldReturnErrorMessageWith400_whenExerciseDoesntBelongToUser() throws Exception {
+    void updateCustomWorkoutTest_shouldReturnErrorMessageWith400_whenExerciseUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -619,7 +612,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomWorkoutTest_shouldReturnVoidWith204_whenValidRequest() throws Exception {
+    void deleteCustomWorkout_shouldReturnVoidWith204_whenValidRequest() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -660,8 +653,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomWorkoutTest_shouldReturnErrorMessageWith400_whenDefaultWorkoutRequestedInsteadOfCustom()
-            throws Exception {
+    void deleteCustomWorkoutTest_shouldReturnErrorMessageWith400_whenDefaultWorkoutRequested() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -698,7 +690,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomWorkoutTest_shouldReturnErrorMessageWith404_whenWorkoutNotFound() throws Exception {
+    void deleteCustomWorkout_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         long nonExistentWorkoutId = 1000L;
@@ -716,7 +708,7 @@ class WorkoutControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomWorkoutTest_shouldReturnErrorMessageWith400_whenWorkoutDoesntBelongToUser() throws Exception {
+    void deleteCustomWorkout_shouldReturnErrorMessageWith400_whenWorkoutUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);

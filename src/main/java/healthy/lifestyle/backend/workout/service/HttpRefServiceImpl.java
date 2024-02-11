@@ -1,9 +1,9 @@
 package healthy.lifestyle.backend.workout.service;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
-import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.util.VerificationUtil;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.workout.dto.HttpRefCreateRequestDto;
@@ -14,6 +14,7 @@ import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.List;
 import java.util.Optional;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,21 +25,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class HttpRefServiceImpl implements HttpRefService {
-    private final HttpRefRepository httpRefRepository;
-    private final ModelMapper modelMapper;
-    private final UserService userService;
-    private final Util util;
+    @Autowired
+    HttpRefRepository httpRefRepository;
 
-    public HttpRefServiceImpl(
-            HttpRefRepository httpRefRepository, ModelMapper modelMapper, UserService userService, Util util) {
-        this.httpRefRepository = httpRefRepository;
-        this.modelMapper = modelMapper;
-        this.userService = userService;
-        this.util = util;
-    }
+    @Autowired
+    ModelMapper modelMapper;
 
-    @Transactional
+    @Autowired
+    UserService userService;
+
+    @Autowired
+    VerificationUtil verificationUtil;
+
     @Override
+    @Transactional
     public HttpRefResponseDto createCustomHttpRef(long userId, HttpRefCreateRequestDto requestDto) {
         User user = Optional.ofNullable(userService.getUserById(userId))
                 .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
@@ -117,13 +117,13 @@ public class HttpRefServiceImpl implements HttpRefService {
         if (httpRef.getUser().getId() != userId)
             throw new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, httpRefId, HttpStatus.BAD_REQUEST);
 
-        boolean allFieldsAreNull = util.verifyThatAllFieldsAreNull(requestDto, "name", "description", "ref");
-        if (allFieldsAreNull) {
+        boolean fieldsAreNull = verificationUtil.areFieldsNull(requestDto, "name", "description", "ref");
+        if (fieldsAreNull) {
             throw new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
         }
 
         List<String> fieldsWithSameValues =
-                util.verifyThatFieldsAreDifferent(httpRef, requestDto, "name", "description", "ref");
+                verificationUtil.getFieldsWithSameValues(httpRef, requestDto, "name", "description", "ref");
         if (!fieldsWithSameValues.isEmpty()) {
             String errorMessage =
                     ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + String.join(", ", fieldsWithSameValues);

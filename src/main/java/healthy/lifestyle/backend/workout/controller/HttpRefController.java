@@ -1,13 +1,15 @@
 package healthy.lifestyle.backend.workout.controller;
 
+import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
+import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
+import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
 import healthy.lifestyle.backend.user.service.AuthUtil;
-import healthy.lifestyle.backend.validation.DescriptionValidation;
-import healthy.lifestyle.backend.validation.TitleValidation;
 import healthy.lifestyle.backend.workout.dto.HttpRefCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.workout.service.HttpRefService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +23,11 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequestMapping("${api.basePath}/${api.version}/workouts/httpRefs")
 public class HttpRefController {
-    private final HttpRefService httpRefService;
+    @Autowired
+    HttpRefService httpRefService;
 
-    private final AuthUtil authUtil;
-
-    public HttpRefController(HttpRefService httpRefService, AuthUtil authUtil) {
-        this.httpRefService = httpRefService;
-        this.authUtil = authUtil;
-    }
+    @Autowired
+    AuthUtil authUtil;
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -42,7 +41,7 @@ public class HttpRefController {
 
     @GetMapping("/{httpRefId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<HttpRefResponseDto> getCustomHttpRefById(@PathVariable Long httpRefId) {
+    public ResponseEntity<HttpRefResponseDto> getCustomHttpRefById(@PathVariable @IdValidation long httpRefId) {
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         HttpRefResponseDto responseDto = httpRefService.getCustomHttpRefById(userId, httpRefId);
@@ -53,8 +52,8 @@ public class HttpRefController {
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Page<HttpRefResponseDto>> getHttpRefsWithFilter(
             @RequestParam(required = false) Boolean isCustom,
-            @RequestParam(required = false) @TitleValidation String name,
-            @RequestParam(required = false) @DescriptionValidation String description,
+            @RequestParam(required = false) @TitleOptionalValidation(min = 2) String name,
+            @RequestParam(required = false) @DescriptionOptionalValidation(min = 2) String description,
             @RequestParam(required = false, defaultValue = "id") String sortField,
             @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
             @RequestParam(required = false, defaultValue = "10") int pageSize,
@@ -70,8 +69,8 @@ public class HttpRefController {
 
     @GetMapping("/default")
     public ResponseEntity<Page<HttpRefResponseDto>> getDefaultHttpRefsWithFilter(
-            @RequestParam(required = false) @TitleValidation String name,
-            @RequestParam(required = false) @DescriptionValidation String description,
+            @RequestParam(required = false) @TitleOptionalValidation(min = 2) String name,
+            @RequestParam(required = false) @DescriptionOptionalValidation(min = 2) String description,
             @RequestParam(required = false, defaultValue = "id") String sortField,
             @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
             @RequestParam(required = false, defaultValue = "10") int pageSize,
@@ -88,7 +87,6 @@ public class HttpRefController {
     public ResponseEntity<HttpRefResponseDto> updateCustomHttpRef(
             @PathVariable Long httpRefId, @RequestBody @Valid HttpRefUpdateRequestDto requestDto)
             throws NoSuchFieldException, IllegalAccessException {
-
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         HttpRefResponseDto responseDto = httpRefService.updateCustomHttpRef(userId, httpRefId, requestDto);
@@ -97,7 +95,7 @@ public class HttpRefController {
 
     @DeleteMapping("/{httpRefId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<?> deleteCustomHttpRef(@PathVariable Long httpRefId) {
+    public ResponseEntity<?> deleteCustomHttpRef(@PathVariable @IdValidation long httpRefId) {
         Long authUserId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         httpRefService.deleteCustomHttpRef(authUserId, httpRefId);

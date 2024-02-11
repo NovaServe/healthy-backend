@@ -1,12 +1,11 @@
 package healthy.lifestyle.backend.workout.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -36,7 +35,7 @@ class BodyPartServiceTest {
     TestUtil dataUtil = new TestUtil();
 
     @Test
-    void getBodyPartsTest_shouldReturnBodyPartResponseDtoList() {
+    void getBodyParts_shouldReturnDtoList() {
         // Given
         BodyPart bodyPart1 = dataUtil.createBodyPart(1);
         BodyPart bodyPart2 = dataUtil.createBodyPart(2);
@@ -55,7 +54,7 @@ class BodyPartServiceTest {
     }
 
     @Test
-    void getBodyPartsTest_shouldThrowExceptionWith404_whenBodyPartsNotFound() {
+    void getBodyParts_shouldThrowExceptionWith404_whenNotFound() {
         // Given
         ApiException expectedException = new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
         when(bodyPartRepository.findAll()).thenReturn(new ArrayList<>());

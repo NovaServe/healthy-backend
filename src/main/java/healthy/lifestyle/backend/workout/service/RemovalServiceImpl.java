@@ -4,23 +4,20 @@ import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class RemovalServiceImpl implements RemovalService {
-    private final WorkoutRepository workoutRepository;
-    private final ExerciseRepository exerciseRepository;
-    private final HttpRefRepository httpRefRepository;
+    @Autowired
+    WorkoutRepository workoutRepository;
 
-    public RemovalServiceImpl(
-            WorkoutRepository workoutRepository,
-            ExerciseRepository exerciseRepository,
-            HttpRefRepository httpRefRepository) {
-        this.workoutRepository = workoutRepository;
-        this.exerciseRepository = exerciseRepository;
-        this.httpRefRepository = httpRefRepository;
-    }
+    @Autowired
+    ExerciseRepository exerciseRepository;
+
+    @Autowired
+    HttpRefRepository httpRefRepository;
 
     @Override
     @Transactional

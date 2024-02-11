@@ -1,7 +1,6 @@
 package healthy.lifestyle.backend.workout.dto;
 
-import healthy.lifestyle.backend.validation.IdValidation;
-import jakarta.validation.constraints.NotNull;
+import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import lombok.*;
 
 @Getter
@@ -10,6 +9,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BodyPartRequestDto {
-    @NotNull @IdValidation
+    @IdValidation
     private long id;
 }

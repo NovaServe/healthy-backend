@@ -1,31 +1,30 @@
 package healthy.lifestyle.backend.nutrition.service;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.nutrition.dto.NutritionResponseDto;
 import healthy.lifestyle.backend.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.nutrition.repository.NutritionRepository;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
 import java.util.Comparator;
 import java.util.List;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
 public class NutritionServiceImpl implements NutritionService {
-    private final NutritionRepository nutritionRepository;
-    private final UserService userService;
-    private final ModelMapper modelMapper;
+    @Autowired
+    NutritionRepository nutritionRepository;
 
-    public NutritionServiceImpl(
-            NutritionRepository nutritionRepository, UserService userService, ModelMapper modelMapper) {
-        this.nutritionRepository = nutritionRepository;
-        this.userService = userService;
-        this.modelMapper = modelMapper;
-    }
+    @Autowired
+    UserService userService;
+
+    @Autowired
+    ModelMapper modelMapper;
 
     @Override
     public NutritionResponseDto getNutritionById(long nutritionId, boolean requiredDefault, Long userId) {
@@ -50,13 +49,11 @@ public class NutritionServiceImpl implements NutritionService {
         }
 
         NutritionResponseDto nutritionResponseDto = modelMapper.map(nutrition, NutritionResponseDto.class);
-
         List<HttpRefResponseDto> httpRefsSorted = nutritionResponseDto.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
                 .toList();
 
         nutritionResponseDto.setHttpRefs(httpRefsSorted);
-
         return nutritionResponseDto;
     }
 }

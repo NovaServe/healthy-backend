@@ -77,11 +77,13 @@ public class DbUtil implements Util {
         exerciseRepository.deleteAll();
         bodyPartRepository.deleteAll();
         mentalRepository.deleteAll();
+        mentalTypeRepository.deleteAll();
+        nutritionRepository.deleteAll();
+        nutritionTypeRepository.deleteAll();
         httpRefRepository.deleteAll();
         userRepository.deleteAll();
         countryRepository.deleteAll();
         roleRepository.deleteAll();
-        mentalTypeRepository.deleteAll();
     }
 
     @Override
@@ -105,9 +107,9 @@ public class DbUtil implements Util {
 
     private HttpRef createHttpRefBase(int seed, boolean isCustom, User user) {
         return httpRefRepository.save(HttpRef.builder()
-                .name("Name " + seed)
-                .ref("Ref " + seed)
-                .description("Desc " + seed)
+                .name("Media Name " + seed)
+                .ref("https://ref " + seed + ".com")
+                .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)
                 .build());
@@ -138,7 +140,7 @@ public class DbUtil implements Util {
             User user) {
         Exercise exercise = Exercise.builder()
                 .title("Exercise " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .isCustom(isCustom)
                 .needsEquipment(needsEquipment)
                 .user(user)
@@ -165,7 +167,7 @@ public class DbUtil implements Util {
     private Workout createWorkoutBase(int seed, boolean isCustom, List<Exercise> exercises, User user) {
         Workout workout = Workout.builder()
                 .title("Workout " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)
                 .exercises(new HashSet<>(exercises))
@@ -179,6 +181,14 @@ public class DbUtil implements Util {
         Country country =
                 countryRepository.save(Country.builder().name("Country-" + seed).build());
         return this.createUserBase(seed, role, country, null, null, null, null);
+    }
+
+    @Override
+    public User createUser(int seed, int age) {
+        Role role = roleRepository.save(Role.builder().name("ROLE_USER").build());
+        Country country =
+                countryRepository.save(Country.builder().name("Country-" + seed).build());
+        return this.createUserBase(seed, role, country, age, null, null, null);
     }
 
     @Override
@@ -342,7 +352,7 @@ public class DbUtil implements Util {
 
         Nutrition nutrition = Nutrition.builder()
                 .title("Nutrition " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)
                 .httpRefs(new HashSet<>(httpRefs))
