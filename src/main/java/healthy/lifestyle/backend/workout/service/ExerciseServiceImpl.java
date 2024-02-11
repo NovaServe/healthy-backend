@@ -1,9 +1,9 @@
 package healthy.lifestyle.backend.workout.service;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
-import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.util.VerificationUtil;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.workout.dto.*;
@@ -15,6 +15,7 @@ import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
 import java.util.*;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,30 +26,26 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ExerciseServiceImpl implements ExerciseService {
-    private final ExerciseRepository exerciseRepository;
-    private final BodyPartRepository bodyPartRepository;
-    private final HttpRefRepository httpRefRepository;
-    private final UserService userService;
-    private final ModelMapper modelMapper;
-    private final Util util;
+    @Autowired
+    ExerciseRepository exerciseRepository;
 
-    public ExerciseServiceImpl(
-            ExerciseRepository exerciseRepository,
-            BodyPartRepository bodyPartRepository,
-            HttpRefRepository httpRefRepository,
-            UserService userService,
-            ModelMapper modelMapper,
-            Util util) {
-        this.exerciseRepository = exerciseRepository;
-        this.bodyPartRepository = bodyPartRepository;
-        this.httpRefRepository = httpRefRepository;
-        this.userService = userService;
-        this.modelMapper = modelMapper;
-        this.util = util;
-    }
+    @Autowired
+    BodyPartRepository bodyPartRepository;
 
-    @Transactional
+    @Autowired
+    HttpRefRepository httpRefRepository;
+
+    @Autowired
+    UserService userService;
+
+    @Autowired
+    ModelMapper modelMapper;
+
+    @Autowired
+    VerificationUtil verificationUtil;
+
     @Override
+    @Transactional
     public ExerciseResponseDto createCustomExercise(ExerciseCreateRequestDto requestDto, long userId) {
         List<Exercise> exercisesWithSameTitle =
                 exerciseRepository.findDefaultAndCustomByTitleAndUserId(requestDto.getTitle(), userId);
@@ -198,25 +195,26 @@ public class ExerciseServiceImpl implements ExerciseService {
                 .findById(exerciseId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.EXERCISE_NOT_FOUND, exerciseId, HttpStatus.NOT_FOUND));
 
-        if (!exercise.isCustom())
+        if (!exercise.isCustom()) {
             throw new ApiException(
                     ErrorMessage.DEFAULT_RESOURCE_IS_NOT_ALLOWED_TO_MODIFY, null, HttpStatus.BAD_REQUEST);
+        }
 
-        if (userId != exercise.getUser().getId())
+        if (userId != exercise.getUser().getId()) {
             throw new ApiException(ErrorMessage.USER_EXERCISE_MISMATCH, exerciseId, HttpStatus.BAD_REQUEST);
+        }
 
-        boolean allFieldsAreNull =
-                util.verifyThatAllFieldsAreNull(requestDto, "title", "description", "needsEquipment");
-        boolean bodyPartsAreDifferent = util.verifyThatNestedEntitiesAreDifferent(
+        boolean fieldsAreNull = verificationUtil.areFieldsNull(requestDto, "title", "description", "needsEquipment");
+        boolean bodyPartsAreDifferent = verificationUtil.areNestedEntitiesDifferent(
                 exercise.getBodyPartsIdsSorted(), requestDto.getBodyPartIds());
-        boolean httpRefsAreDifferent =
-                util.verifyThatNestedEntitiesAreDifferent(exercise.getHttpRefsIdsSorted(), requestDto.getHttpRefIds());
-        if (allFieldsAreNull && !bodyPartsAreDifferent && !httpRefsAreDifferent) {
+        boolean httpRefsAreDifferent = verificationUtil.areNestedEntitiesDifferent(
+                exercise.getHttpRefsIdsSorted(), requestDto.getHttpRefIds());
+        if (fieldsAreNull && !bodyPartsAreDifferent && !httpRefsAreDifferent) {
             throw new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
         }
 
-        List<String> fieldsWithSameValues =
-                util.verifyThatFieldsAreDifferent(exercise, requestDto, "title", "description", "needsEquipment");
+        List<String> fieldsWithSameValues = verificationUtil.getFieldsWithSameValues(
+                exercise, requestDto, "title", "description", "needsEquipment");
         if (!fieldsWithSameValues.isEmpty()) {
             String errorMessage =
                     ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + String.join(", ", fieldsWithSameValues);

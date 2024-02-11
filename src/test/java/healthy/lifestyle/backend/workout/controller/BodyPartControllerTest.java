@@ -11,8 +11,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.URL;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
@@ -66,7 +66,7 @@ class BodyPartControllerTest {
     }
 
     @Test
-    void getBodyPartsTest_shouldReturnBodyPartDtoListWith200_whenValidRequest() throws Exception {
+    void getBodyParts_shouldReturnDtoListWith200_whenValidRequest() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -91,11 +91,13 @@ class BodyPartControllerTest {
     }
 
     @Test
-    void getBodyPartsTest_shouldReturnErrorMessageWith404_whenBodyPartsNotFound() throws Exception {
+    void getBodyParts_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
+        // Given
         ApiException expectedException = new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
 
         // When
         mockMvc.perform(get(URL.BODY_PARTS).contentType(MediaType.APPLICATION_JSON))
+
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))

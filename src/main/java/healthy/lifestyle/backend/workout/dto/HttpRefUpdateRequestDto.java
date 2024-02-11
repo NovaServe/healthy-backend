@@ -1,9 +1,8 @@
 package healthy.lifestyle.backend.workout.dto;
 
-import healthy.lifestyle.backend.validation.DescriptionValidation;
-import healthy.lifestyle.backend.validation.HttpValidation;
-import healthy.lifestyle.backend.validation.TitleValidation;
-import jakarta.validation.constraints.Size;
+import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
+import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
+import healthy.lifestyle.backend.shared.validation.annotation.WebLinkOptionalValidation;
 import lombok.*;
 
 @Getter
@@ -12,13 +11,12 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class HttpRefUpdateRequestDto {
-    @TitleValidation
-    @Size(min = 5, max = 255, message = "Size should be from 5 to 255 characters long")
+    @TitleOptionalValidation
     private String name;
 
-    @DescriptionValidation
+    @DescriptionOptionalValidation
     private String description;
 
-    @HttpValidation
+    @WebLinkOptionalValidation
     private String ref;
 }

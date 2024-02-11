@@ -69,9 +69,9 @@ class ExerciseAdminControllerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("multipleFilters")
+    @MethodSource("getExercisesValidFilters")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "ADMIN")
-    void getExercisesWithFilterTest_shouldReturnFilteredExercisesDtoListWith200_whenValidRequest(
+    void getExercisesWithFilter_shouldReturnFilteredPageOfDtoWith200_whenValidFilters(
             String title, String description, Boolean isCustom, Boolean needsEquipment, List<Integer> resultSeeds)
             throws Exception {
         // Given
@@ -123,13 +123,13 @@ class ExerciseAdminControllerTest {
         }
     }
 
-    static Stream<Arguments> multipleFilters() {
+    static Stream<Arguments> getExercisesValidFilters() {
         return Stream.of(
                 // Positive cases for default exercises
                 Arguments.of(null, null, false, null, List.of(1, 2)),
                 Arguments.of("Exercise 1", null, false, null, List.of(1)),
-                Arguments.of(null, "Desc 1", false, true, List.of(1)),
-                Arguments.of("Exercise 2", "Desc 2", false, false, List.of(2)),
+                Arguments.of(null, "Description 1", false, true, List.of(1)),
+                Arguments.of("Exercise 2", "Description 2", false, false, List.of(2)),
                 Arguments.of("Exercise 2", null, false, null, List.of(2)),
 
                 // Negative cases for default exercises
@@ -140,8 +140,8 @@ class ExerciseAdminControllerTest {
                 // Positive cases for custom exercises
                 Arguments.of(null, null, true, null, List.of(3, 4)),
                 Arguments.of("Exercise 3", null, true, null, List.of(3)),
-                Arguments.of(null, "Desc 3", true, true, List.of(3)),
-                Arguments.of("Exercise 4", "Desc 4", true, false, List.of(4)),
+                Arguments.of(null, "Description 3", true, true, List.of(3)),
+                Arguments.of("Exercise 4", "Description 4", true, false, List.of(4)),
                 Arguments.of("Exercise 4", null, true, null, List.of(4)),
 
                 // Negative cases for custom exercises

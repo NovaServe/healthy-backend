@@ -4,10 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
-import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.util.VerificationUtil;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.util.DtoUtil;
@@ -51,14 +51,14 @@ class HttpRefServiceTest {
     ModelMapper modelMapper;
 
     @Spy
-    Util util;
+    VerificationUtil verificationUtil;
 
     TestUtil testUtil = new TestUtil();
 
     DtoUtil dtoUtil = new DtoUtil();
 
     @Test
-    void createCustomHttpRefTest_shouldReturnHttpRefResponseDto() {
+    void createCustomHttpRef_shouldReturnCreatedDto() {
         // Given
         User user = testUtil.createUser(1);
         HttpRefCreateRequestDto requestDto = dtoUtil.httpRefCreateRequestDto(1);
@@ -91,7 +91,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void createCustomHttpRefTest_shouldThrowErrorWith404_whenInvalidUserIdProvided() {
+    void createCustomHttpRef_shouldThrowErrorWith404_whenInvalidUserId() {
         // Given
         HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
         long nonExistentUserId = 1000L;
@@ -114,7 +114,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void createCustomHttpRefTest_shouldThrowErrorWith400_whenAlreadyExists() {
+    void createCustomHttpRef_shouldThrowErrorWith400_whenAlreadyExists() {
         // Given
         HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
         User user = testUtil.createUser(1);
@@ -139,7 +139,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void getCustomHttpRefByIdTest_shouldReturnHttpRefResponseDto() {
+    void getCustomHttpRefById_shouldReturnDto_whenValidId() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
@@ -158,7 +158,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void getCustomHttpRefByIdTest_shouldThrowErrorWith404_whenHttpRefNotFound() {
+    void getCustomHttpRefById_shouldThrowErrorWith404_whenNotFound() {
         // Given
         long randomUserId = 1000L;
         long nonExistentHttpRefId = 1000L;
@@ -178,7 +178,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void getCustomHttpRefByIdTest_shouldThrowErrorAnd400_whenDefaultHttpRefRequestedInsteadOfCustom() {
+    void getCustomHttpRefById_shouldThrowErrorAnd400_whenDefaultHttpRefRequested() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createDefaultHttpRef(1);
@@ -198,7 +198,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void getCustomHttpRefByIdTest_shouldThrowErrorWith400_whenHttpRefDoesntBelongToUser() {
+    void getCustomHttpRefById_shouldThrowErrorWith400_whenHttpRefUserMismatch() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
@@ -219,8 +219,8 @@ class HttpRefServiceTest {
     }
 
     @ParameterizedTest
-    @MethodSource("multipleValidFilters")
-    void getHttpRefsTest_shouldReturnHttpRefs(
+    @MethodSource("getHttpRefsValidFilters")
+    void getHttpRefsWithFilter_shouldReturnDtoList_whenValidFilters(
             Boolean isCustom,
             Long userId,
             String name,
@@ -271,7 +271,7 @@ class HttpRefServiceTest {
         assertEquals(currentPageNumber, httpRefPage.getNumber());
     }
 
-    static Stream<Arguments> multipleValidFilters() {
+    static Stream<Arguments> getHttpRefsValidFilters() {
         return Stream.of(
                 Arguments.of(false, null, "Name", "Desc", 1, 1, 1, List.of(1L)),
                 Arguments.of(true, 0L, "Name", "Desc", 1, 1, 1, List.of(2L)),
@@ -279,7 +279,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldReturnUpdatedHttpRefResponseDto()
+    void updateCustomHttpRef_shouldReturnUpdatedDto_whenValidFields()
             throws NoSuchFieldException, IllegalAccessException {
         // Given
         User user = testUtil.createUser(1);
@@ -303,7 +303,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldThrowErrorWith404_whenHttpRefNotFound() {
+    void updateCustomHttpRef_shouldThrowErrorWith404_whenNotFound() {
         // Given
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(1);
         long randomUserId = 1000L;
@@ -326,7 +326,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldReturnErrorMessageAnd400_whenDefaultHttpRefRequestedInsteadOfCustom() {
+    void updateCustomHttpRef_shouldReturnErrorMessageAnd400_whenDefaultHttpRefRequested() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createDefaultHttpRef(1);
@@ -350,7 +350,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldThrowErrorWith400_whenHttpRefDoesntBelongToUser() {
+    void updateCustomHttpRef_shouldThrowErrorWith400_whenHttpRefUserMismatch() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
@@ -375,7 +375,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void updateCustomHttpRefTest_shouldThrowErrorWith400_whenEmptyRequest() {
+    void updateCustomHttpRef_shouldThrowErrorWith400_whenEmptyRequest() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef customHttpRef = testUtil.createCustomHttpRef(1, user);
@@ -398,7 +398,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void deleteCustomHttpRefTest_shouldReturnDeletedHttpRefId() {
+    void deleteCustomHttpRef_shouldReturnVoid_whenValidId() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createCustomHttpRef(1, user);
@@ -412,7 +412,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void deleteCustomHttpRefTest_shouldThrowErrorWith404_whenHttpRefNotFound() {
+    void deleteCustomHttpRef_shouldThrowErrorWith404_whenNotFound() {
         // Given
         long randomUserId = 1000L;
         long nonExistentHttpRefId = 1000L;
@@ -432,7 +432,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void deleteCustomHttpRefTest_shouldThrowErrorWith400_whenDefaultHttpRefIsRequestedToDelete() {
+    void deleteCustomHttpRef_shouldThrowErrorWith400_whenDefaultHttpRefRequested() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef httpRef = testUtil.createDefaultHttpRef(1);
@@ -452,7 +452,7 @@ class HttpRefServiceTest {
     }
 
     @Test
-    void deleteCustomHttpRefTest_shouldThrowErrorWith400_whenHttpRefBelongsToAnotherUser() {
+    void deleteCustomHttpRef_shouldThrowErrorWith400_whenHttpRefUserMismatch() {
         // Given
         User user1 = testUtil.createUser(1);
         User user2 = testUtil.createUser(2);

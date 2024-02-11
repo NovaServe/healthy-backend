@@ -46,7 +46,7 @@ public class TestUtil implements Util {
                 .id((long) seed)
                 .name("Name " + seed)
                 .ref("Ref " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)
                 .build();
@@ -77,7 +77,7 @@ public class TestUtil implements Util {
         return Exercise.builder()
                 .id((long) seed)
                 .title("Exercise " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .isCustom(isCustom)
                 .needsEquipment(needsEquipment)
                 .user(user)
@@ -103,7 +103,7 @@ public class TestUtil implements Util {
         return Workout.builder()
                 .id((long) seed)
                 .title("Workout " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)
                 .exercises(new HashSet<>(exercises))
@@ -116,6 +116,14 @@ public class TestUtil implements Util {
         Country country =
                 Country.builder().id((long) seed).name("Country-" + seed).build();
         return this.createUserBase(seed, role, country, null, null, null, null);
+    }
+
+    @Override
+    public User createUser(int seed, int age) {
+        Role role = Role.builder().id((long) seed).name("ROLE_USER").build();
+        Country country =
+                Country.builder().id((long) seed).name("Country-" + seed).build();
+        return this.createUserBase(seed, role, country, age, null, null, null);
     }
 
     @Override
@@ -204,7 +212,7 @@ public class TestUtil implements Util {
         return Mental.builder()
                 .id((long) seed)
                 .title("Mental " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)
                 .httpRefs(new HashSet<>(httpRefs))
@@ -253,7 +261,7 @@ public class TestUtil implements Util {
         return Nutrition.builder()
                 .id((long) seed)
                 .title("Nutrition " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)
                 .httpRefs(new HashSet<>(httpRefs))

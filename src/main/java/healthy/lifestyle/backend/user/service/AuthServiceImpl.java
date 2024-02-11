@@ -1,11 +1,11 @@
 package healthy.lifestyle.backend.user.service;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.security.JwtTokenProvider;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.security.JwtTokenProvider;
 import healthy.lifestyle.backend.user.dto.LoginRequestDto;
 import healthy.lifestyle.backend.user.dto.LoginResponseDto;
-import healthy.lifestyle.backend.user.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,16 +15,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthServiceImpl implements AuthService {
-    private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    AuthenticationManager authenticationManager;
 
-    public AuthServiceImpl(
-            UserRepository userRepository,
-            AuthenticationManager authenticationManager,
-            JwtTokenProvider jwtTokenProvider) {
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
 
     @Override
     public LoginResponseDto login(LoginRequestDto requestDto) {

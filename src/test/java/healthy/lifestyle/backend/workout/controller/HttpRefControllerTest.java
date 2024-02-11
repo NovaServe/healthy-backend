@@ -17,8 +17,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.validation.ValidationMessage;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
@@ -87,7 +88,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomHttpRefTest_shouldReturnHttpRefDtoWith201_whenValidRequest() throws Exception {
+    void createCustomHttpRef_shouldReturnCreatedDtoWith201_whenValidFields() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
 
@@ -108,9 +109,55 @@ class HttpRefControllerTest {
                 .andDo(print());
     }
 
+    @ParameterizedTest
+    @MethodSource("createCustomHttpRefInvalidFields")
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void createCustomHttpRef_shouldReturnValidationMessageWith400_whenInvalidFields(
+            String name, String description, String ref, String fieldName, String validationMessage) throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        HttpRefCreateRequestDto requestDto = dtoUtil.httpRefCreateRequestDtoEmpty();
+        if (name != null) requestDto.setName(name);
+        if (description != null) requestDto.setDescription(description);
+        if (ref != null) requestDto.setRef(ref);
+
+        // When
+        mockMvc.perform(post(URL.CUSTOM_HTTP_REFS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$." + fieldName, is(validationMessage)))
+                .andDo(print());
+    }
+
+    static Stream<Arguments> createCustomHttpRefInvalidFields() {
+        String lengthMessage = String.format(ValidationMessage.LENGTH_RANGE.getName(), 5, 255);
+        String descriptionMessage =
+                "Description can include lower and upper-case letters, digits, spaces, and symbols: . , - : ; ! ? ' \" # % ( ) + =";
+        String refMessage = "Web link should start with http:// or https://";
+
+        return Stream.of(
+                // name
+                Arguments.of(null, null, "https://test-ref.com", "name", lengthMessage),
+                Arguments.of("", null, "https://test-ref.com", "name", lengthMessage),
+                Arguments.of(" ", null, "https://test-ref.com", "name", lengthMessage),
+                Arguments.of("name", null, "https://test-ref.com", "name", lengthMessage),
+                // description
+                Arguments.of("test name", "", "https://test-ref.com", "description", lengthMessage),
+                Arguments.of("test name", " ", "https://test-ref.com", "description", lengthMessage),
+                Arguments.of("test name", "description^", "https://test-ref.com", "description", descriptionMessage),
+                // ref
+                Arguments.of("test name", "description", "test-ref.com", "ref", refMessage),
+                Arguments.of("test name", "description", null, "ref", ValidationMessage.NOT_NULL_OR_BLANK.getName()),
+                Arguments.of("test name", "description", "", "ref", ValidationMessage.NOT_NULL_OR_BLANK.getName()),
+                Arguments.of("test name", "description", " ", "ref", ValidationMessage.NOT_NULL_OR_BLANK.getName()));
+    }
+
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomHttpRefTest_shouldReturnErrorMessageWith400_whenAlreadyExistsWithSameName() throws Exception {
+    void createCustomHttpRef_shouldReturnErrorMessageWith400_whenAlreadyExistsWithSameName() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef alreadyExistentHttpRef = dbUtil.createCustomHttpRef(1, user);
@@ -133,91 +180,88 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomHttpRefTest_shouldReturnValidationMessageWith400_whenTooShortNameGiven() throws Exception {
+    void getCustomHttpRefById_shouldReturnDtoWith200_whenValidRequest() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
-
-        HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
-        String invalidValue = "abc";
-        createHttpRequestDto.setName(invalidValue);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user);
+        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(3);
 
         // When
-        mockMvc.perform(post(URL.CUSTOM_HTTP_REFS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createHttpRequestDto)))
+        mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, customHttpRef1.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.name", is("Size should be from 5 to 255 characters long")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(customHttpRef1.getId().intValue())))
+                .andExpect(jsonPath("$.name", is(customHttpRef1.getName())))
+                .andExpect(jsonPath("$.description", is(customHttpRef1.getDescription())))
+                .andExpect(jsonPath("$.ref", is(customHttpRef1.getRef())))
+                .andExpect(jsonPath("$.isCustom", is(true)))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomHttpRefTest_shouldReturnValidationMessageWith400_whenInvalidNameGiven() throws Exception {
+    void getCustomHttpRefById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
-
-        HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
-        String invalidValue = "abc@def#";
-        createHttpRequestDto.setName(invalidValue);
+        long nonExistentHttpRefId = 1000L;
+        ApiException expectedException =
+                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
 
         // When
-        mockMvc.perform(post(URL.CUSTOM_HTTP_REFS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createHttpRequestDto)))
+        mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, nonExistentHttpRefId).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.name", is("Not allowed symbols")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomHttpRefTest_shouldReturnValidationMessageWith400_whenInvalidDescriptionGiven() throws Exception {
+    void getCustomHttpRefById_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequested() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
-
-        HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
-        String invalidValue = "abc@def#";
-        createHttpRequestDto.setDescription(invalidValue);
+        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
+        ApiException expectedException = new ApiException(
+                ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
 
         // When
-        mockMvc.perform(post(URL.CUSTOM_HTTP_REFS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createHttpRequestDto)))
+        mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, defaultHttpRef.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.description", is("Not allowed symbols")))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomHttpRefTest_shouldReturnValidationMessageWith400_whenInvalidRefGiven() throws Exception {
+    void getCustomHttpRefById_shouldReturnErrorMessageWith400_whenHttpRefUserMismatch() throws Exception {
         // Given
-        User user = dbUtil.createUser(1);
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
 
-        HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
-        String invalidValue = "abc@def#";
-        createHttpRequestDto.setRef(invalidValue);
+        User user1 = dbUtil.createUser(1, role, country);
+        User user2 = dbUtil.createUser(2, role, country);
+        HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user2);
+
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, customHttpRef.getId(), HttpStatus.BAD_REQUEST);
 
         // When
-        mockMvc.perform(post(URL.CUSTOM_HTTP_REFS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createHttpRequestDto)))
+        mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, customHttpRef.getId()).contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.ref", is("Invalid format, should start with http")))
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
                 .andDo(print());
     }
 
     @ParameterizedTest
-    @MethodSource("multipleValidFiltersDefaultHttpRefs")
-    void getDefaultHttpRefsWithFilterTest_shouldReturnDefaultHttpRefsWith200_whenValidRequest(
+    @MethodSource("getDefaultHttpRefsValidFilters")
+    void getDefaultHttpRefsWithFilter_shouldReturnPageWith200_whenValidFilters(
             String name, String description, int totalElements, int totalPages, int numberOfElements) throws Exception {
         // Given
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -261,22 +305,22 @@ class HttpRefControllerTest {
         assertEquals(numberOfElements, httpRefResponseDtoList.size());
     }
 
-    static Stream<Arguments> multipleValidFiltersDefaultHttpRefs() {
+    static Stream<Arguments> getDefaultHttpRefsValidFilters() {
         return Stream.of(
                 // Default
-                Arguments.of("1", null, 1, 1, 1),
-                Arguments.of(null, "1", 1, 1, 1),
-                Arguments.of("1", "1", 1, 1, 1),
-                Arguments.of("1", "2", 0, 0, 0),
-                Arguments.of("Name", null, 3, 2, 2),
-                Arguments.of(null, "Desc", 3, 2, 2),
+                Arguments.of("Media Name 1", null, 1, 1, 1),
+                Arguments.of(null, "Description 1", 1, 1, 1),
+                Arguments.of("Name 1", "Description 1", 1, 1, 1),
+                Arguments.of("Name 1", "Description 2", 0, 0, 0),
+                Arguments.of("Media Name", null, 3, 2, 2),
+                Arguments.of(null, "Description", 3, 2, 2),
                 Arguments.of(null, null, 3, 2, 2));
     }
 
     @ParameterizedTest
-    @MethodSource("multipleFiltersDefaultSortAndOrder")
+    @MethodSource("getDefaultHttpRefsSortedByFieldAndDirection")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getDefaultHttpRefsWithFilterTest_shouldReturnDefaultHttpRefsWith200_whenSortAndOrder(
+    void getDefaultHttpRefsWithFilter_shouldReturnPageWith200_whenSortedByFieldAndDirection(
             String sortField, String sortDirection, Boolean isCustom) throws Exception {
         // Given
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -354,7 +398,7 @@ class HttpRefControllerTest {
         }
     }
 
-    static Stream<Arguments> multipleFiltersDefaultSortAndOrder() {
+    static Stream<Arguments> getDefaultHttpRefsSortedByFieldAndDirection() {
         return Stream.of(
                 // Default
                 Arguments.of("id", "ASC", false),
@@ -366,9 +410,9 @@ class HttpRefControllerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("multipleInvalidFiltersDefaultHttpRefs")
-    void getDefaultHttpRefsWithFilterTest_shouldReturnValidationErrorMessageWith400_whenInvalidRequest(
-            String name, String description, String validationErrorMessage) throws Exception {
+    @MethodSource("getDefaultHttpRefsInvalidFilters")
+    void getDefaultHttpRefsWithFilterTest_shouldReturnValidationErrorMessageWith400_whenInvalidFilters(
+            String name, String description, String paramName, String validationErrorMessage) throws Exception {
         // When
         mockMvc.perform(get(URL.DEFAULT_HTTP_REFS)
                         .param("name", name)
@@ -377,103 +421,25 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(validationErrorMessage)))
+                .andExpect(jsonPath("$." + paramName, is(validationErrorMessage)))
                 .andDo(print());
     }
 
-    static Stream<Arguments> multipleInvalidFiltersDefaultHttpRefs() {
+    static Stream<Arguments> getDefaultHttpRefsInvalidFilters() {
+        String nameMessage = "Title can include lower and upper-case letters, digits, spaces, and symbols . , - ( ) /";
+        String descriptionMessage =
+                "Description can include lower and upper-case letters, digits, spaces, and symbols: . , - : ; ! ? ' \" # % ( ) + =";
+
         return Stream.of(
                 // Default
-                Arguments.of("!invalid-name", null, "name: Not allowed symbols"),
-                Arguments.of(null, "!invalid-description", "description: Not allowed symbols"));
-    }
-
-    @Test
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomHttpRefByIdTest_shouldReturnHttpRefDtoWith200_whenValidRequest() throws Exception {
-        // Given
-        User user = dbUtil.createUser(1);
-        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
-        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user);
-        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(3);
-
-        // When
-        mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, customHttpRef1.getId()).contentType(MediaType.APPLICATION_JSON))
-
-                // Then
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(customHttpRef1.getId().intValue())))
-                .andExpect(jsonPath("$.name", is(customHttpRef1.getName())))
-                .andExpect(jsonPath("$.description", is(customHttpRef1.getDescription())))
-                .andExpect(jsonPath("$.ref", is(customHttpRef1.getRef())))
-                .andExpect(jsonPath("$.isCustom", is(true)))
-                .andDo(print());
-    }
-
-    @Test
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageWith404_whenHttpRefNotFound() throws Exception {
-        // Given
-        User user = dbUtil.createUser(1);
-        long nonExistentHttpRefId = 1000L;
-        ApiException expectedException =
-                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
-
-        // When
-        mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, nonExistentHttpRefId).contentType(MediaType.APPLICATION_JSON))
-
-                // Then
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andDo(print());
-    }
-
-    @Test
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequestedInsteadOfCustom()
-            throws Exception {
-        // Given
-        User user = dbUtil.createUser(1);
-        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
-        ApiException expectedException = new ApiException(
-                ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
-
-        // When
-        mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, defaultHttpRef.getId()).contentType(MediaType.APPLICATION_JSON))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-                .andDo(print());
-    }
-
-    @Test
-    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomHttpRefByIdTest_shouldReturnErrorMessageWith400_whenHttpRefDoesntBelongToUser() throws Exception {
-        // Given
-        Role role = dbUtil.createUserRole();
-        Country country = dbUtil.createCountry(1);
-
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
-        HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user2);
-
-        ApiException expectedException =
-                new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, customHttpRef.getId(), HttpStatus.BAD_REQUEST);
-
-        // When
-        mockMvc.perform(get(URL.CUSTOM_HTTP_REF_ID, customHttpRef.getId()).contentType(MediaType.APPLICATION_JSON))
-
-                // Then
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
-                .andDo(print());
+                Arguments.of("invalid-name!", null, "name", nameMessage),
+                Arguments.of(null, "invalid-description^", "description", descriptionMessage));
     }
 
     @ParameterizedTest
-    @MethodSource("multipleValidFiltersDefaultOrCustom")
+    @MethodSource("getHttpRefsValidFiltersDefaultOrCustom")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getHttpRefsWithFilterTest_shouldReturnDefaultOrCustomHttpRefs(
+    void getHttpRefsWithFilter_shouldReturnPageOfDefaultOrCustom_whenValidFilters(
             Boolean isCustom, String name, String description, int totalElements, int totalPages, int numberOfElements)
             throws Exception {
         // Given
@@ -521,31 +487,31 @@ class HttpRefControllerTest {
         assertEquals(numberOfElements, httpRefResponseDtoList.size());
     }
 
-    static Stream<Arguments> multipleValidFiltersDefaultOrCustom() {
+    static Stream<Arguments> getHttpRefsValidFiltersDefaultOrCustom() {
         return Stream.of(
                 // Default
-                Arguments.of(false, "1", null, 1, 1, 1),
-                Arguments.of(false, null, "1", 1, 1, 1),
-                Arguments.of(false, "1", "1", 1, 1, 1),
-                Arguments.of(false, "1", "2", 0, 0, 0),
-                Arguments.of(false, "Name", null, 3, 2, 2),
-                Arguments.of(false, null, "Desc", 3, 2, 2),
+                Arguments.of(false, "Name 1", null, 1, 1, 1),
+                Arguments.of(false, null, "Description 1", 1, 1, 1),
+                Arguments.of(false, "Name 1", "Description 1", 1, 1, 1),
+                Arguments.of(false, "Name 1", "Description 2", 0, 0, 0),
+                Arguments.of(false, "Media Name", null, 3, 2, 2),
+                Arguments.of(false, null, "Description", 3, 2, 2),
                 Arguments.of(false, null, null, 3, 2, 2),
 
                 // Custom
-                Arguments.of(true, "4", null, 1, 1, 1),
-                Arguments.of(true, null, "4", 1, 1, 1),
-                Arguments.of(true, "4", "4", 1, 1, 1),
-                Arguments.of(true, "1", "2", 0, 0, 0),
-                Arguments.of(true, "Name", null, 2, 1, 2),
-                Arguments.of(true, null, "Desc", 2, 1, 2),
+                Arguments.of(true, "Name 4", null, 1, 1, 1),
+                Arguments.of(true, null, "Description 4", 1, 1, 1),
+                Arguments.of(true, "Name 4", "Description 4", 1, 1, 1),
+                Arguments.of(true, "Name 1", "Description 2", 0, 0, 0),
+                Arguments.of(true, "Media Name", null, 2, 1, 2),
+                Arguments.of(true, null, "Description", 2, 1, 2),
                 Arguments.of(true, null, null, 2, 1, 2));
     }
 
     @ParameterizedTest
-    @MethodSource("multipleFiltersDefaultOrCustomSortAndOrder")
+    @MethodSource("getHttpRefsWithFilterDefaultOrCustomSortedByFieldAndDirection")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getHttpRefsWithFilterTest_shouldReturnDefaultOrCustomHttpRefs_whenSortAndOrder(
+    void getHttpRefsWithFilterTest_shouldReturnPageOfDefaultOrCustom_whenSortedByFieldsAndDirection(
             String sortField, String sortDirection, Boolean isCustom) throws Exception {
         // Given
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -660,7 +626,7 @@ class HttpRefControllerTest {
         }
     }
 
-    static Stream<Arguments> multipleFiltersDefaultOrCustomSortAndOrder() {
+    static Stream<Arguments> getHttpRefsWithFilterDefaultOrCustomSortedByFieldAndDirection() {
         return Stream.of(
                 // Default
                 Arguments.of("id", "ASC", false),
@@ -680,10 +646,10 @@ class HttpRefControllerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("multipleInvalidFiltersDefaultOrCustomHttpRefs")
+    @MethodSource("getHttpRefsWithFilterDefaultOrCustomInvalidFilters")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getHttpRefsWithFilterTest_shouldReturnValidationErrorMessageWith400_whenInvalidRequest(
-            String name, String description, String validationErrorMessage) throws Exception {
+    void getHttpRefsWithFilterTest_shouldReturnValidationErrorMessageWith400_whenInvalidFilters(
+            String name, String description, String paramName, String validationErrorMessage) throws Exception {
         // Given
         User user = dbUtil.createUser(1);
 
@@ -696,20 +662,25 @@ class HttpRefControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is(validationErrorMessage)))
+                .andExpect(jsonPath("$." + paramName, is(validationErrorMessage)))
                 .andDo(print());
     }
 
-    static Stream<Arguments> multipleInvalidFiltersDefaultOrCustomHttpRefs() {
+    static Stream<Arguments> getHttpRefsWithFilterDefaultOrCustomInvalidFilters() {
+        String nameMessage = "Title can include lower and upper-case letters, digits, spaces, and symbols . , - ( ) /";
+        String descriptionMessage =
+                "Description can include lower and upper-case letters, digits, spaces, and symbols: . , - : ; ! ? ' \" # % ( ) + =";
+
         return Stream.of(
-                Arguments.of("!invalid-name", null, "name: Not allowed symbols"),
-                Arguments.of(null, "!invalid-description", "description: Not allowed symbols"));
+                // Default
+                Arguments.of("invalid-name!", null, "name", nameMessage),
+                Arguments.of(null, "invalid-description^", "description", descriptionMessage));
     }
 
     @ParameterizedTest
-    @MethodSource("multipleValidFiltersDefaultAndCustom")
+    @MethodSource("getHttpRefsWithFilterDefaultAndCustomValidFilters")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getHttpRefsWithFilterTest_shouldReturnDefaultAndCustomHttpRefs(
+    void getHttpRefsWithFilter_shouldReturnPageOfDefaultAndCustom_whenValidFilters(
             String name, String description, int totalElements, int totalPages, int numberOfElements) throws Exception {
         // Given
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -755,18 +726,18 @@ class HttpRefControllerTest {
         assertEquals(numberOfElements, httpRefResponseDtoList.size());
     }
 
-    static Stream<Arguments> multipleValidFiltersDefaultAndCustom() {
+    static Stream<Arguments> getHttpRefsWithFilterDefaultAndCustomValidFilters() {
         return Stream.of(
-                Arguments.of("1", "2", 0, 0, 0),
-                Arguments.of("Name", null, 5, 3, 2),
-                Arguments.of(null, "Desc", 5, 3, 2),
+                Arguments.of("Name 1", "Description 2", 0, 0, 0),
+                Arguments.of("Media Name", null, 5, 3, 2),
+                Arguments.of(null, "Description", 5, 3, 2),
                 Arguments.of(null, null, 5, 3, 2));
     }
 
     @ParameterizedTest
-    @MethodSource("multipleFiltersDefaultAndCustomSortAndOrder")
+    @MethodSource("getHttpRefsWithFilterDefaultAndCustomSortedByFieldAndDirection")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getHttpRefsWithFilterTest_shouldReturnDefaultAndCustomHttpRefs_whenSortAndOrder(
+    void getHttpRefsWithFilterTest_shouldReturnPageOfDefaultAndCustom_whenSortedByFieldAndDirection(
             String sortField, String sortDirection) throws Exception {
         // Given
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -858,7 +829,7 @@ class HttpRefControllerTest {
         }
     }
 
-    static Stream<Arguments> multipleFiltersDefaultAndCustomSortAndOrder() {
+    static Stream<Arguments> getHttpRefsWithFilterDefaultAndCustomSortedByFieldAndDirection() {
         return Stream.of(
                 Arguments.of("id", "ASC"),
                 Arguments.of("name", "ASC"),
@@ -870,7 +841,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomHttpRefTest_shouldReturnHttpRefDtoWith200_whenValidRequest() throws Exception {
+    void updateCustomHttpRef_shouldReturnDtoWith200_whenValidFilters() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user);
@@ -894,7 +865,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomHttpRefTest_shouldReturnErrorMessageWith404_whenHttpRefNotFound() throws Exception {
+    void updateCustomHttpRef_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         long nonExistentHttpRefId = 1000L;
@@ -915,8 +886,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequestedInsteadOfCustom()
-            throws Exception {
+    void updateCustomHttpRef_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequested() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
@@ -937,7 +907,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenHttpRefDoesntBelongToUser() throws Exception {
+    void updateCustomHttpRef_shouldReturnErrorMessageWith400_whenHttpRefUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -965,7 +935,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomHttpRefTest_shouldReturnErrorMessageWith400_whenRequestWithNoUpdates() throws Exception {
+    void updateCustomHttpRef_shouldReturnErrorMessageWith400_whenRequestWithNoUpdates() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user);
@@ -987,7 +957,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomHttpRefTest_shouldReturnVoidWith204_whenValidRequest() throws Exception {
+    void deleteCustomHttpRef_shouldReturnVoidWith204_whenValidRequest() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user);
@@ -1005,7 +975,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomHttpRefTest_shouldReturnErrorMessageWith404_whenHttpRefNotFound() throws Exception {
+    void deleteCustomHttpRef_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         long nonExistentHttpRefId = 1000L;
@@ -1023,8 +993,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomHttpRefTest_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequestedInsteadOfCustom()
-            throws Exception {
+    void deleteCustomHttpRef_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequested() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
@@ -1042,7 +1011,7 @@ class HttpRefControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomHttpRefTest_shouldReturnErrorMessageWith400_whenHttpRefDoesntBelongToUser() throws Exception {
+    void deleteCustomHttpRef_shouldReturnErrorMessageWith400_whenHttpRefUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);

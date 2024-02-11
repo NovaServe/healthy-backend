@@ -11,16 +11,20 @@ public class DtoUtil {
     public HttpRefCreateRequestDto httpRefCreateRequestDto(int seed) {
         return HttpRefCreateRequestDto.builder()
                 .name("HttpRef " + seed)
-                .description("Desc " + seed)
-                .ref("http://ref-" + seed)
+                .description("Description " + seed)
+                .ref("https://ref-" + seed + ".com")
                 .build();
+    }
+
+    public HttpRefCreateRequestDto httpRefCreateRequestDtoEmpty() {
+        return HttpRefCreateRequestDto.builder().build();
     }
 
     public HttpRefUpdateRequestDto httpRefUpdateRequestDto(int seed) {
         return HttpRefUpdateRequestDto.builder()
                 .name("Update Name " + seed)
-                .ref("https://update-ref-" + seed)
-                .description("Update Desc " + seed)
+                .ref("https://update-ref-" + seed + ".com")
+                .description("Update Description " + seed)
                 .build();
     }
 
@@ -33,7 +37,7 @@ public class DtoUtil {
 
         return ExerciseCreateRequestDto.builder()
                 .title("Title " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .needsEquipment(needsEquipment)
                 .bodyParts(bodyPartIds)
                 .httpRefs(httpRefIds)
@@ -58,7 +62,7 @@ public class DtoUtil {
     public WorkoutCreateRequestDto workoutCreateRequestDto(int seed, List<Long> exerciseIds) {
         return WorkoutCreateRequestDto.builder()
                 .title("Workout " + seed)
-                .description("Desc " + seed)
+                .description("Description " + seed)
                 .exerciseIds(exerciseIds)
                 .build();
     }
@@ -66,7 +70,7 @@ public class DtoUtil {
     public WorkoutUpdateRequestDto workoutUpdateRequestDto(int seed, List<Long> exerciseIds) {
         return WorkoutUpdateRequestDto.builder()
                 .title("Update Workout " + seed)
-                .description("Update Desc " + seed)
+                .description("Update Description " + seed)
                 .exerciseIds(exerciseIds)
                 .build();
     }

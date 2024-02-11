@@ -1,9 +1,9 @@
 package healthy.lifestyle.backend.workout.service;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
-import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.util.VerificationUtil;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.workout.dto.*;
@@ -15,6 +15,7 @@ import healthy.lifestyle.backend.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.workout.repository.WorkoutRepository;
 import java.util.*;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,27 +26,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class WorkoutServiceImpl implements WorkoutService {
-    private final WorkoutRepository workoutRepository;
-    private final ExerciseRepository exerciseRepository;
-    private final BodyPartRepository bodyPartRepository;
-    private final UserService userService;
-    private final ModelMapper modelMapper;
-    private final Util util;
+    @Autowired
+    WorkoutRepository workoutRepository;
 
-    public WorkoutServiceImpl(
-            WorkoutRepository workoutRepository,
-            ExerciseRepository exerciseRepository,
-            BodyPartRepository bodyPartRepository,
-            UserService userService,
-            ModelMapper modelMapper,
-            Util util) {
-        this.workoutRepository = workoutRepository;
-        this.exerciseRepository = exerciseRepository;
-        this.bodyPartRepository = bodyPartRepository;
-        this.userService = userService;
-        this.modelMapper = modelMapper;
-        this.util = util;
-    }
+    @Autowired
+    ExerciseRepository exerciseRepository;
+
+    @Autowired
+    BodyPartRepository bodyPartRepository;
+
+    @Autowired
+    UserService userService;
+
+    @Autowired
+    ModelMapper modelMapper;
+
+    @Autowired
+    VerificationUtil verificationUtil;
 
     @Override
     @Transactional
@@ -247,15 +244,15 @@ public class WorkoutServiceImpl implements WorkoutService {
             throw new ApiException(ErrorMessage.USER_WORKOUT_MISMATCH, workoutId, HttpStatus.BAD_REQUEST);
         }
 
-        boolean allFieldsAreNull = util.verifyThatAllFieldsAreNull(requestDto, "title", "description");
-        boolean exercisesAreDifferent =
-                util.verifyThatNestedEntitiesAreDifferent(workout.getSortedExercisesIds(), requestDto.getExerciseIds());
-        if (allFieldsAreNull && !exercisesAreDifferent) {
+        boolean fieldsAreNull = verificationUtil.areFieldsNull(requestDto, "title", "description");
+        boolean exercisesAreDifferent = verificationUtil.areNestedEntitiesDifferent(
+                workout.getSortedExercisesIds(), requestDto.getExerciseIds());
+        if (fieldsAreNull && !exercisesAreDifferent) {
             throw new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
         }
 
         List<String> fieldsWithSameValues =
-                util.verifyThatFieldsAreDifferent(workout, requestDto, "title", "description");
+                verificationUtil.getFieldsWithSameValues(workout, requestDto, "title", "description");
         if (!fieldsWithSameValues.isEmpty()) {
             String errorMessage =
                     ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + String.join(", ", fieldsWithSameValues);

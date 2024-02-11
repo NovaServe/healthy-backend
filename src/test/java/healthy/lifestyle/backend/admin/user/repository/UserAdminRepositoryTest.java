@@ -31,7 +31,6 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 @Import(BeanConfig.class)
 public class UserAdminRepositoryTest {
-
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
             new PostgreSQLContainer<>(DockerImageName.parse(ContainerConfig.POSTGRES));
@@ -55,8 +54,8 @@ public class UserAdminRepositoryTest {
     }
 
     @ParameterizedTest
-    @MethodSource("multipleFilters")
-    void findWithFilterTest_shouldReturnListOfUsers(
+    @MethodSource("findWithFilterValidFilters")
+    void findWithFilter_shouldReturnListOfUsers_whenValidFilters(
             String roleName,
             String username,
             String email,
@@ -102,7 +101,7 @@ public class UserAdminRepositoryTest {
         }
     }
 
-    static Stream<Arguments> multipleFilters() {
+    static Stream<Arguments> findWithFilterValidFilters() {
         return Stream.of(
                 // Positive cases for ROLE_USER
                 Arguments.of("ROLE_USER", null, null, null, null, null, List.of(1, 2)),

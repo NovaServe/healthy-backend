@@ -8,10 +8,10 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
-import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.util.VerificationUtil;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
@@ -43,6 +43,9 @@ import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 class ExerciseServiceTest {
+    @InjectMocks
+    ExerciseServiceImpl exerciseService;
+
     @Mock
     private ExerciseRepository exerciseRepository;
 
@@ -59,17 +62,14 @@ class ExerciseServiceTest {
     ModelMapper modelMapper;
 
     @Spy
-    Util util;
-
-    @InjectMocks
-    ExerciseServiceImpl exerciseService;
+    VerificationUtil verificationUtil;
 
     TestUtil testUtil = new TestUtil();
 
     DtoUtil dtoUtil = new DtoUtil();
 
     @Test
-    void createExerciseTest_shouldReturnExerciseDto() {
+    void createExercise_shouldReturnCreatedDto() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -120,13 +120,9 @@ class ExerciseServiceTest {
                 .isEqualTo(exerciseActual.getHttpRefs());
     }
 
-    static Stream<Arguments> getExercisesWithFilter_multipleInputs() {
-        return Stream.of(Arguments.of(null, 1L), Arguments.of(true, 1L), Arguments.of(false, null));
-    }
-
     @ParameterizedTest
-    @MethodSource("getExercisesWithFilter_multipleInputs")
-    void getExercisesWithFilter_shouldReturnPageObject(Boolean isCustom, Long userId) {
+    @MethodSource("getExercisesWithFilterValidFilters")
+    void getExercisesWithFilter_shouldReturnPage_whenValidFilters(Boolean isCustom, Long userId) {
         // Given
         int currentPageNumber = 0;
         int itemsPerPage = 2;
@@ -191,13 +187,13 @@ class ExerciseServiceTest {
         }
     }
 
-    static Stream<Arguments> getExercisesWithFilter_invalidArgs() {
-        return Stream.of(Arguments.of(null, null), Arguments.of(false, 1L), Arguments.of(true, null));
+    static Stream<Arguments> getExercisesWithFilterValidFilters() {
+        return Stream.of(Arguments.of(null, 1L), Arguments.of(true, 1L), Arguments.of(false, null));
     }
 
     @ParameterizedTest
-    @MethodSource("getExercisesWithFilter_invalidArgs")
-    void getExercisesWithFilter_shouldThrowErrorWith400_whenInvalidArgs(Boolean isCustom, Long userId) {
+    @MethodSource("getExercisesWithFilterInvalidFilters")
+    void getExercisesWithFilter_shouldThrowErrorWith400_whenInvalidFilters(Boolean isCustom, Long userId) {
         // Given
         int currentPageNumber = 0;
         int itemsPerPage = 2;
@@ -245,8 +241,12 @@ class ExerciseServiceTest {
                         any());
     }
 
+    static Stream<Arguments> getExercisesWithFilterInvalidFilters() {
+        return Stream.of(Arguments.of(null, null), Arguments.of(false, 1L), Arguments.of(true, null));
+    }
+
     @Test
-    void getExerciseByIdTest_shouldReturnDefaultExerciseDto() {
+    void getExerciseById_shouldReturnDefaultExerciseDto() {
         // Given
         BodyPart bodyPart = testUtil.createBodyPart(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
@@ -284,7 +284,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void getExerciseByIdTest_shouldReturnCustomExerciseDto() {
+    void getExerciseById_shouldReturnCustomExerciseDto() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -326,7 +326,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void getExerciseByIdTest_shouldThrowErrorWith404_whenExerciseNotFound() {
+    void getExerciseById_shouldThrowErrorWith404_whenExerciseNotFound() {
         // Given
         long nonExistingExerciseId = 1000L;
         ApiException expectedException =
@@ -346,7 +346,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void getExerciseByIdTest_shouldThrowErrorWith400_whenDefaultExerciseRequestedInsteadOfCustom() {
+    void getExerciseById_shouldThrowErrorWith400_whenDefaultExerciseRequestedInsteadOfCustom() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -373,7 +373,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void getExerciseByIdTest_shouldThrowErrorWith400_whenRequestedExerciseDoesntBelongToUser() {
+    void getExerciseById_shouldThrowErrorWith400_whenExerciseUserMismatch() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -405,8 +405,8 @@ class ExerciseServiceTest {
     }
 
     @ParameterizedTest
-    @MethodSource("updateCustomExerciseMultipleValidInputs")
-    void updateCustomExerciseTest_shouldReturnUpdatedExerciseDto_whenValidRequest(
+    @MethodSource("updateCustomExerciseValidFields")
+    void updateCustomExercise_shouldReturnUpdatedDto_whenValidFields(
             String updateTitle, String updateDescription, Boolean updateNeedsEquipment)
             throws NoSuchFieldException, IllegalAccessException {
         // Given
@@ -500,7 +500,7 @@ class ExerciseServiceTest {
         assertThat(responseDto.getHttpRefs()).usingRecursiveComparison().isEqualTo(expectedHttpRefs);
     }
 
-    static Stream<Arguments> updateCustomExerciseMultipleValidInputs() {
+    static Stream<Arguments> updateCustomExerciseValidFields() {
         return Stream.of(
                 Arguments.of("Update title", "Update description", false),
                 Arguments.of("Update title", "Update description", null),
@@ -511,7 +511,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldReturnUpdatedExerciseDto_whenEmptyHttpRefsIdsListGiven()
+    void updateCustomExercise_shouldReturnUpdatedDto_whenHttpRefsIdsNotGiven()
             throws NoSuchFieldException, IllegalAccessException {
         // Given
         User user = testUtil.createUser(1);
@@ -561,7 +561,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowErrorWith400_whenNoUpdatesRequest() {
+    void updateCustomExercise_shouldThrowErrorWith400_whenNoUpdatesRequest() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -597,7 +597,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowErrorWith404_whenExerciseNotFound() {
+    void updateCustomExercise_shouldThrowErrorWith404_whenExerciseNotFound() {
         // Given
         ExerciseUpdateRequestDto requestDto = dtoUtil.exerciseUpdateRequestDtoEmpty();
         requestDto.setBodyPartIds(List.of(1L));
@@ -627,7 +627,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowErrorWith400_whenExerciseDoesntBelongToUser() {
+    void updateCustomExercise_shouldThrowErrorWith400_whenExerciseUserMismatch() {
         // Given
         Role role = testUtil.createUserRole();
         Country country = testUtil.createCountry(1);
@@ -669,7 +669,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowErrorWith400_whenExerciseWithNewTitleAlreadyExists() {
+    void updateCustomExercise_shouldThrowErrorWith400_whenExerciseWithNewTitleAlreadyExists() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -708,7 +708,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowErrorWith404_whenBodyPartNotFound() {
+    void updateCustomExercise_shouldThrowErrorWith404_whenBodyPartNotFound() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -744,7 +744,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void updateCustomExerciseTest_shouldThrowErrorWith400_whenNewHttpRefDoesntBelongToUser() {
+    void updateCustomExercise_shouldThrowErrorWith400_whenHttpRefUserMismatch() {
         // Given
         Role role = testUtil.createUserRole();
         Country country = testUtil.createCountry(1);
@@ -787,8 +787,8 @@ class ExerciseServiceTest {
     }
 
     @ParameterizedTest
-    @MethodSource("updateCustomExerciseMultipleValidButNotDifferentInputs")
-    void updateCustomExerciseTest_shouldThrowErrorWith400_whenNewFieldValueIsNotDifferent(
+    @MethodSource("updateCustomExerciseFieldsAreNotDifferent")
+    void updateCustomExercise_shouldThrowErrorWith400_whenFieldsAreNotDifferent(
             String updateTitle, String updateDescription, Boolean updateNeedsEquipment) {
         // Given
         User user = testUtil.createUser(1);
@@ -831,15 +831,15 @@ class ExerciseServiceTest {
                     ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + "needsEquipment", exception.getMessage());
     }
 
-    static Stream<Arguments> updateCustomExerciseMultipleValidButNotDifferentInputs() {
+    static Stream<Arguments> updateCustomExerciseFieldsAreNotDifferent() {
         return Stream.of(
                 Arguments.of("Exercise 1", null, null),
-                Arguments.of(null, "Desc 1", null),
+                Arguments.of(null, "Description 1", null),
                 Arguments.of(null, null, true));
     }
 
     @Test
-    void deleteCustomExerciseTest_shouldReturnVoid_whenValidRequest() {
+    void deleteCustomExercise_shouldReturnVoid_whenValidRequest() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -865,7 +865,7 @@ class ExerciseServiceTest {
     }
 
     @Test
-    void deleteCustomExerciseTest_shouldThrowErrorWith404_whenExerciseNotFound() {
+    void deleteCustomExercise_shouldThrowErrorWith404_whenExerciseNotFound() {
         // Given
         long randomUserId = 1000L;
         long nonExistentExerciseId = 1000L;

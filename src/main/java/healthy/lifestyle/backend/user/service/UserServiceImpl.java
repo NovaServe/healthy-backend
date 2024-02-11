@@ -1,8 +1,9 @@
 package healthy.lifestyle.backend.user.service;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
-import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.util.VerificationUtil;
 import healthy.lifestyle.backend.user.dto.*;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
@@ -14,7 +15,10 @@ import healthy.lifestyle.backend.workout.model.Exercise;
 import healthy.lifestyle.backend.workout.model.Workout;
 import healthy.lifestyle.backend.workout.service.RemovalService;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,27 +27,26 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserServiceImpl implements UserService {
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final CountryRepository countryRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final ModelMapper modelMapper;
-    private final RemovalService removalService;
+    @Autowired
+    UserRepository userRepository;
 
-    public UserServiceImpl(
-            UserRepository userRepository,
-            RoleRepository roleRepository,
-            CountryRepository countryRepository,
-            PasswordEncoder passwordEncoder,
-            ModelMapper modelMapper,
-            RemovalService removalService) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.countryRepository = countryRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.modelMapper = modelMapper;
-        this.removalService = removalService;
-    }
+    @Autowired
+    RoleRepository roleRepository;
+
+    @Autowired
+    CountryRepository countryRepository;
+
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+    @Autowired
+    ModelMapper modelMapper;
+
+    @Autowired
+    RemovalService removalService;
+
+    @Autowired
+    VerificationUtil verificationUtil;
 
     @Override
     public void createUser(SignupRequestDto requestDto) {
@@ -93,18 +96,55 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto) {
+    public UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException {
+
         User user = userRepository
                 .findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
 
-        checkIfFieldsAreDifferent(requestDto, user);
+        boolean fieldsAreNull =
+                verificationUtil.areFieldsNull(requestDto, "username", "email", "fullName", "age", "password");
+        if (fieldsAreNull && user.getCountry().getId().equals(requestDto.getCountryId())) {
+            throw new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
+        }
 
-        if (requestDto.getUsername() != null) user.setUsername(requestDto.getUsername());
-        if (requestDto.getEmail() != null) user.setEmail(requestDto.getEmail());
-        if (requestDto.getPassword() != null) user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
-        if (requestDto.getFullName() != null) user.setFullName(requestDto.getFullName());
-        if (requestDto.getAge() != null) user.setAge(requestDto.getAge());
+        List<String> fieldsWithSameValues =
+                verificationUtil.getFieldsWithSameValues(user, requestDto, "username", "email", "fullName", "age");
+        if (requestDto.getPassword() != null && passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
+            fieldsWithSameValues.add("password");
+        }
+        if (!fieldsWithSameValues.isEmpty()) {
+            String errorMessage =
+                    ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + String.join(", ", fieldsWithSameValues);
+            throw new ApiExceptionCustomMessage(errorMessage, HttpStatus.BAD_REQUEST);
+        }
+
+        if (requestDto.getUsername() != null) {
+            Optional<User> userWithSameUsernameOpt = userRepository.findByUsername(requestDto.getUsername());
+            if (userWithSameUsernameOpt.isPresent()) {
+                throw new ApiException(ErrorMessage.USERNAME_ALREADY_EXISTS, null, HttpStatus.BAD_REQUEST);
+            }
+            user.setUsername(requestDto.getUsername());
+        }
+
+        if (requestDto.getEmail() != null) {
+            Optional<User> userWithSameEmailOpt = userRepository.findByEmail(requestDto.getEmail());
+            if (userWithSameEmailOpt.isPresent()) {
+                throw new ApiException(ErrorMessage.EMAIL_ALREADY_EXISTS, null, HttpStatus.BAD_REQUEST);
+            }
+            user.setEmail(requestDto.getEmail());
+        }
+
+        if (requestDto.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
+        }
+        if (requestDto.getFullName() != null) {
+            user.setFullName(requestDto.getFullName());
+        }
+        if (requestDto.getAge() != null) {
+            user.setAge(requestDto.getAge());
+        }
         if (requestDto.getCountryId() != null
                 && !requestDto.getCountryId().equals(user.getCountry().getId())) {
             Country country = countryRepository
@@ -117,36 +157,6 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepository.save(user);
         UserResponseDto responseDto = modelMapper.map(savedUser, UserResponseDto.class);
         return responseDto;
-    }
-
-    private void checkIfFieldsAreDifferent(UserUpdateRequestDto requestDto, User user) {
-        StringBuilder errorMessage = new StringBuilder();
-
-        if (requestDto.getUsername() != null && user.getUsername().equals(requestDto.getUsername()))
-            errorMessage.append(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName());
-
-        if (requestDto.getEmail() != null && user.getEmail().equals(requestDto.getEmail())) {
-            if (!errorMessage.isEmpty()) errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName());
-        }
-
-        if (requestDto.getFullName() != null && user.getFullName().equals(requestDto.getFullName())) {
-            if (!errorMessage.isEmpty()) errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName());
-        }
-
-        if (requestDto.getAge() != null && user.getAge() == requestDto.getAge()) {
-            if (!errorMessage.isEmpty()) errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName());
-        }
-
-        if (requestDto.getPassword() != null && passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
-            if (!errorMessage.isEmpty()) errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName());
-        }
-
-        if (!errorMessage.isEmpty())
-            throw new ApiExceptionCustomMessage(errorMessage.toString(), HttpStatus.BAD_REQUEST);
     }
 
     @Override

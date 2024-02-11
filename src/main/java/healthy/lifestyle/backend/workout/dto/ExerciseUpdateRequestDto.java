@@ -1,10 +1,8 @@
 package healthy.lifestyle.backend.workout.dto;
 
-import healthy.lifestyle.backend.validation.DescriptionValidation;
-import healthy.lifestyle.backend.validation.NotEmptyList;
-import healthy.lifestyle.backend.validation.TitleValidation;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
+import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import lombok.*;
 
@@ -14,17 +12,16 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExerciseUpdateRequestDto {
-    @TitleValidation
-    @Size(min = 5, max = 255, message = "Available size is 5 to 255 chars")
+    @TitleOptionalValidation
     private String title;
 
-    @DescriptionValidation
+    @DescriptionOptionalValidation
     private String description;
 
     private Boolean needsEquipment;
 
-    @NotNull private List<Long> httpRefIds;
+    private List<Long> httpRefIds;
 
-    @NotNull @NotEmptyList
+    @NotEmpty
     private List<Long> bodyPartIds;
 }

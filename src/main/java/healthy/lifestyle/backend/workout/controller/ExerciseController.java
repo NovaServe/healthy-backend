@@ -1,14 +1,14 @@
 package healthy.lifestyle.backend.workout.controller;
 
+import healthy.lifestyle.backend.shared.validation.annotation.*;
 import healthy.lifestyle.backend.user.service.AuthUtil;
-import healthy.lifestyle.backend.validation.DescriptionValidation;
-import healthy.lifestyle.backend.validation.TitleValidation;
 import healthy.lifestyle.backend.workout.dto.ExerciseCreateRequestDto;
 import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.workout.dto.ExerciseUpdateRequestDto;
 import healthy.lifestyle.backend.workout.service.ExerciseService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,14 +22,11 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequestMapping("${api.basePath}/${api.version}/workouts/exercises")
 public class ExerciseController {
-    private final ExerciseService exerciseService;
+    @Autowired
+    ExerciseService exerciseService;
 
-    private final AuthUtil authUtil;
-
-    public ExerciseController(ExerciseService exerciseService, AuthUtil authUtil) {
-        this.exerciseService = exerciseService;
-        this.authUtil = authUtil;
-    }
+    @Autowired
+    AuthUtil authUtil;
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -42,14 +39,16 @@ public class ExerciseController {
     }
 
     @GetMapping("/default/{exercise_id}")
-    public ResponseEntity<ExerciseResponseDto> getDefaultExerciseById(@PathVariable("exercise_id") long exercise_id) {
+    public ResponseEntity<ExerciseResponseDto> getDefaultExerciseById(
+            @PathVariable("exercise_id") @IdValidation long exercise_id) {
         ExerciseResponseDto responseDto = exerciseService.getExerciseById(exercise_id, true, null);
         return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping("/{exercise_id}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<ExerciseResponseDto> getCustomExerciseById(@PathVariable("exercise_id") long exercise_id) {
+    public ResponseEntity<ExerciseResponseDto> getCustomExerciseById(
+            @PathVariable("exercise_id") @IdValidation long exercise_id) {
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         ExerciseResponseDto responseDto = exerciseService.getExerciseById(exercise_id, false, userId);
@@ -60,8 +59,8 @@ public class ExerciseController {
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Page<ExerciseResponseDto>> getExercisesWithFilter(
             @RequestParam(required = false) Boolean isCustom,
-            @RequestParam(required = false) @TitleValidation String title,
-            @RequestParam(required = false) @DescriptionValidation String description,
+            @RequestParam(required = false) @TitleOptionalValidation(min = 2) String title,
+            @RequestParam(required = false) @DescriptionOptionalValidation(min = 2) String description,
             @RequestParam(required = false) Boolean needsEquipment,
             @RequestParam(required = false) List<Long> bodyPartsIds,
             @RequestParam(required = false, defaultValue = "title") String sortField,
@@ -88,8 +87,8 @@ public class ExerciseController {
 
     @GetMapping("/default")
     public ResponseEntity<Page<ExerciseResponseDto>> getDefaultExercises(
-            @RequestParam(required = false) @TitleValidation String title,
-            @RequestParam(required = false) @DescriptionValidation String description,
+            @RequestParam(required = false) @TitleOptionalValidation(min = 2) String title,
+            @RequestParam(required = false) @DescriptionOptionalValidation(min = 2) String description,
             @RequestParam(required = false) Boolean needsEquipment,
             @RequestParam(required = false) List<Long> bodyPartsIds,
             @RequestParam(required = false, defaultValue = "title") String sortField,
@@ -124,7 +123,7 @@ public class ExerciseController {
 
     @DeleteMapping("/{exerciseId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<?> deleteCustomExercise(@PathVariable("exerciseId") long exerciseId) {
+    public ResponseEntity<?> deleteCustomExercise(@PathVariable("exerciseId") @IdValidation long exerciseId) {
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         exerciseService.deleteCustomExercise(exerciseId, userId);

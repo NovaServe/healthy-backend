@@ -11,11 +11,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.nutrition.dto.NutritionResponseDto;
 import healthy.lifestyle.backend.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.nutrition.model.NutritionType;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.URL;
@@ -69,7 +69,7 @@ public class NutritionControllerTest {
     }
 
     @Test
-    void getDefaultNutritionByIdTest_shouldReturnDefaultNutritionDtoWith200_whenValidRequest() throws Exception {
+    void getDefaultNutritionById_shouldReturnDtoWith200_whenValidId() throws Exception {
         // Given
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
         HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
@@ -112,7 +112,7 @@ public class NutritionControllerTest {
     }
 
     @Test
-    void getDefaultNutritionByIdTest_shouldReturnErrorMessageWith404_whenDefaultNutritionNotFound() throws Exception {
+    void getDefaultNutritionById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         long nonExistentDefaultNutritionId = 1000L;
         ApiException expectedException =
