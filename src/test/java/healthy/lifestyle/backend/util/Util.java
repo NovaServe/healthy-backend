@@ -51,6 +51,8 @@ public interface Util {
 
     MentalType createAffirmationType();
 
+    MentalType createMentalType(int seed);
+
     Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType);
 
     Nutrition createCustomNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType, User user);

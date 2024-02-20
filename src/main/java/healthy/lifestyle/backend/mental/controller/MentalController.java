@@ -1,11 +1,14 @@
 package healthy.lifestyle.backend.mental.controller;
 
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
+import healthy.lifestyle.backend.mental.dto.MentalTypeResponseDto;
 import healthy.lifestyle.backend.mental.service.MentalService;
+import healthy.lifestyle.backend.mental.service.MentalTypeService;
 import healthy.lifestyle.backend.user.service.AuthUtil;
 import healthy.lifestyle.backend.validation.DescriptionValidation;
 import healthy.lifestyle.backend.validation.TitleValidation;
 import jakarta.validation.constraints.PositiveOrZero;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,10 +26,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class MentalController {
     private final MentalService mentalService;
 
+    private final MentalTypeService mentalTypeService;
+
     private final AuthUtil authUtil;
 
-    public MentalController(MentalService mentalService, AuthUtil authUtil) {
+    public MentalController(MentalService mentalService, MentalTypeService mentalTypeService, AuthUtil authUtil) {
         this.mentalService = mentalService;
+        this.mentalTypeService = mentalTypeService;
         this.authUtil = authUtil;
     }
 
@@ -79,5 +85,11 @@ public class MentalController {
         Page<MentalResponseDto> dtoPage = mentalService.getMentalWithFilter(
                 false, null, title, description, mentalTypeId, sortField, sortDirection, pageNumber, pageSize);
         return ResponseEntity.ok(dtoPage);
+    }
+
+    @GetMapping("/mental_type")
+    public ResponseEntity<List<MentalTypeResponseDto>> getMentalType() {
+        List<MentalTypeResponseDto> responseDtoList = mentalTypeService.getMentalType();
+        return ResponseEntity.ok(responseDtoList);
     }
 }

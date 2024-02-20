@@ -260,7 +260,7 @@
                              references="http_refs(id)"/>
             </column>
         </createTable>
-        <sqlFile path="sql/mental_types_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+        <sqlFile path="sql/default_mentals.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
     </changeSet>
 
     <changeSet id="nutritions" author="Volodymyr Bardakov" context="structure">
@@ -305,11 +305,11 @@
             </column>
             <column name="nutrition_id" type="bigint">
                 <constraints nullable="false" foreignKeyName="fk_nutrition_id"
-                             references="nutritions(id)" />
+                             references="nutritions(id)"/>
             </column>
             <column name="http_ref_id" type="bigint">
                 <constraints nullable="false" foreignKeyName="fk_http_ref_id"
-                             references="http_refs(id)" />
+                             references="http_refs(id)"/>
             </column>
         </createTable>
 

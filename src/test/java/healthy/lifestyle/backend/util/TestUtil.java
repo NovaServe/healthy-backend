@@ -235,6 +235,11 @@ public class TestUtil implements Util {
     }
 
     @Override
+    public MentalType createMentalType(int seed) {
+        return MentalType.builder().id((long) seed).name("MentalType " + seed).build();
+    }
+
+    @Override
     public Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType) {
         return this.createNutritionBase(seed, false, httpRefs, null, nutritionType);
     }

@@ -51,4 +51,7 @@ public class ApiUrl {
 
     @Value("${api.basePath}/${api.version}/mentals/default")
     private String defaultMentalsUrl;
+
+    @Value("${api.basePath}/${api.version}/mentals/mental_type")
+    private String mentalTypeUrl;
 }

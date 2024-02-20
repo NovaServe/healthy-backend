@@ -16,6 +16,7 @@ import healthy.lifestyle.backend.config.ContainerConfig;
 import healthy.lifestyle.backend.exception.ApiException;
 import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
+import healthy.lifestyle.backend.mental.dto.MentalTypeResponseDto;
 import healthy.lifestyle.backend.mental.model.Mental;
 import healthy.lifestyle.backend.mental.model.MentalType;
 import healthy.lifestyle.backend.user.model.Country;
@@ -507,5 +508,47 @@ public class MentalControllerTest {
         assertThat(mentalResponseDtoList)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "httpRefs", "type", "mentalTypeId")
                 .isEqualTo(expectedFilteredMentals);
+    }
+
+    @Test
+    void getMentalTypeTest_shouldReturnMentalTypesWith200_whenValidRequest() throws Exception {
+        // Given
+        MentalType mentalType1 = dbUtil.createMentalType(1);
+        MentalType mentalType2 = dbUtil.createMentalType(2);
+        MentalType mentalType3 = dbUtil.createMentalType(3);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.MENTAL_TYPE).contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        List<MentalTypeResponseDto> responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<List<MentalTypeResponseDto>>() {});
+
+        assertEquals(3, responseDto.size());
+        assertEquals(mentalType1.getId(), responseDto.get(0).getId());
+        assertEquals(mentalType1.getName(), responseDto.get(0).getName());
+        assertEquals(mentalType2.getId(), responseDto.get(1).getId());
+        assertEquals(mentalType2.getName(), responseDto.get(1).getName());
+        assertEquals(mentalType3.getId(), responseDto.get(2).getId());
+        assertEquals(mentalType3.getName(), responseDto.get(2).getName());
+    }
+
+    @Test
+    void getMentalTypeTest_shouldReturnErrorMessageWith500_whenNoMentalTypes() throws Exception {
+        // Given
+        ApiException expectedException = new ApiException(ErrorMessage.NOT_FOUND, null, HttpStatus.NOT_FOUND);
+
+        // When
+        mockMvc.perform(get(URL.MENTAL_TYPE).contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andDo(print());
     }
 }
