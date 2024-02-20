@@ -1,14 +1,14 @@
 package healthy.lifestyle.backend.user.controller;
 
+import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.user.dto.CountryResponseDto;
 import healthy.lifestyle.backend.user.dto.SignupRequestDto;
 import healthy.lifestyle.backend.user.dto.UserResponseDto;
 import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.user.service.*;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,17 +20,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("${api.basePath}/${api.version}/users")
 public class UserController {
-    private final CountryService countryService;
+    @Autowired
+    CountryService countryService;
 
-    private final UserService userService;
+    @Autowired
+    UserService userService;
 
-    private final AuthUtil authUtil;
-
-    public UserController(CountryService countryService, UserService userService, AuthUtil authUtil) {
-        this.countryService = countryService;
-        this.userService = userService;
-        this.authUtil = authUtil;
-    }
+    @Autowired
+    AuthUtil authUtil;
 
     @PostMapping()
     public ResponseEntity<?> signup(@Valid @RequestBody SignupRequestDto requestDto) {
@@ -50,8 +47,8 @@ public class UserController {
     @PatchMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<UserResponseDto> updateUser(
-            @PathVariable("userId") @NotNull @PositiveOrZero Long userId,
-            @Valid @RequestBody UserUpdateRequestDto requestDto) {
+            @PathVariable("userId") @IdValidation long userId, @Valid @RequestBody UserUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException {
         authUtil.checkAuthUserIdAndParamUserId(
                 SecurityContextHolder.getContext().getAuthentication(), userId);
         UserResponseDto responseDto = userService.updateUser(userId, requestDto);
@@ -60,7 +57,7 @@ public class UserController {
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<?> deleteUser(@PathVariable("userId") @NotNull @PositiveOrZero Long userId) {
+    public ResponseEntity<?> deleteUser(@PathVariable("userId") @IdValidation long userId) {
         authUtil.checkAuthUserIdAndParamUserId(
                 SecurityContextHolder.getContext().getAuthentication(), userId);
         userService.deleteUser(userId);

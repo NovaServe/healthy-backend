@@ -7,9 +7,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
-import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.util.VerificationUtil;
 import healthy.lifestyle.backend.user.dto.SignupRequestDto;
 import healthy.lifestyle.backend.user.dto.UserResponseDto;
 import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
@@ -63,6 +64,9 @@ class UserServiceTest {
     private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Spy
+    private VerificationUtil verificationUtil;
+
+    @Spy
     private TestUtil testUtil;
 
     @Spy
@@ -72,7 +76,7 @@ class UserServiceTest {
     ModelMapper modelMapper;
 
     @Test
-    void createUserTest_shouldReturnUserDto() {
+    void createUser_shouldReturnDto_whenValidRequest() {
         // Given
         Role role = testUtil.createUserRole();
         Country country = testUtil.createCountry(1);
@@ -101,7 +105,7 @@ class UserServiceTest {
     }
 
     @Test
-    void getUserDetailsByIdTest_shouldReturnUserDto() {
+    void getUserDetailsById_shouldReturnDto_whenValidId() {
         // Given
         User user = testUtil.createUser(1);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
@@ -119,7 +123,7 @@ class UserServiceTest {
     }
 
     @Test
-    void getUserDetailsByIdTest_shouldThrowErrorWith404_whenUserNotFound() {
+    void getUserDetailsById_shouldThrowErrorWith404_whenUserNotFound() {
         // Given
         User user = testUtil.createUser(2);
         ApiException expectedException =
@@ -137,15 +141,16 @@ class UserServiceTest {
     }
 
     @ParameterizedTest
-    @MethodSource("updateUserMultipleValidInputs")
-    void updateUserTest_shouldReturnUserResponseDto_whenValidInput(
+    @MethodSource("updateUserValidFields")
+    void updateUser_shouldReturnUpdatedDto_whenValidFields(
             String username,
             String email,
             String fullName,
             Long countryId,
             Integer age,
             String password,
-            String confirmPassword) {
+            String confirmPassword)
+            throws NoSuchFieldException, IllegalAccessException {
         // Given
         User user = testUtil.createUser(1);
         Country newCountry = testUtil.createCountry(2);
@@ -202,7 +207,7 @@ class UserServiceTest {
         else assertTrue(passwordEncoder.matches(initialPassword, user.getPassword()));
     }
 
-    static Stream<Arguments> updateUserMultipleValidInputs() {
+    static Stream<Arguments> updateUserValidFields() {
         return Stream.of(
                 Arguments.of("new-username", null, null, 1L, null, null, null),
                 Arguments.of(null, "new-email@email.com", null, 1L, null, null, null),
@@ -212,24 +217,17 @@ class UserServiceTest {
                 Arguments.of(null, null, null, 1L, null, "new-password", "new-password"));
     }
 
-    @ParameterizedTest
-    @MethodSource("updateUserMultipleValidInputsButNotDifferent")
-    void updateUserTest_shouldThrowErrorWith400_whenValidButNotDifferentInput(
-            String username, String email, String fullName, Integer age, String password, String confirmPassword) {
+    @Test
+    void updateUser_shouldThrowErrorWith400_whenNotDifferentFields() {
         // Given
         User user = testUtil.createUser(1);
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
-        if (age != null) {
-            user.setAge(age);
-            requestDto.setAge(age);
-        }
-        requestDto.setUsername(username);
-        requestDto.setEmail(email);
-        requestDto.setFullName(fullName);
+        requestDto.setUsername(user.getUsername());
+        requestDto.setEmail(user.getEmail());
+        requestDto.setFullName(user.getFullName());
         requestDto.setCountryId(user.getCountry().getId());
-        requestDto.setPassword(password);
-        requestDto.setConfirmPassword(confirmPassword);
-
+        requestDto.setPassword("Password-1");
+        requestDto.setConfirmPassword("Password-1");
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
         // When
@@ -242,49 +240,13 @@ class UserServiceTest {
         verify(userRepository, times(0)).save(any(User.class));
 
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getHttpStatus().value());
-
-        boolean allFieldsAreNotDifferent = username != null
-                && email != null
-                && fullName != null
-                && age != null
-                && password != null
-                && confirmPassword != null;
-        if (allFieldsAreNotDifferent) {
-            StringBuilder errorMessage = new StringBuilder();
-            errorMessage.append(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName());
-            errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName());
-            errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName());
-            errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName());
-            errorMessage.append(" ");
-            errorMessage.append(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName());
-            assertEquals(errorMessage.toString(), exception.getMessage());
-        } else {
-            if (username != null)
-                assertEquals(ErrorMessage.USERNAME_IS_NOT_DIFFERENT.getName(), exception.getMessage());
-            if (email != null) assertEquals(ErrorMessage.EMAIL_IS_NOT_DIFFERENT.getName(), exception.getMessage());
-            if (fullName != null)
-                assertEquals(ErrorMessage.FULL_NAME_IS_NOT_DIFFERENT.getName(), exception.getMessage());
-            if (age != null) assertEquals(ErrorMessage.AGE_IS_NOT_DIFFERENT.getName(), exception.getMessage());
-            if (password != null && confirmPassword != null)
-                assertEquals(ErrorMessage.PASSWORD_IS_NOT_DIFFERENT.getName(), exception.getMessage());
-        }
-    }
-
-    static Stream<Arguments> updateUserMultipleValidInputsButNotDifferent() {
-        return Stream.of(
-                Arguments.of("Username-1", null, null, null, null, null),
-                Arguments.of(null, "email-1@email.com", null, null, null, null),
-                Arguments.of(null, null, "Full Name One", null, null, null),
-                Arguments.of(null, null, null, 20, null, null),
-                Arguments.of(null, null, null, null, "Password-1", "Password-1"),
-                Arguments.of("Username-1", "email-1@email.com", "Full Name One", 20, "Password-1", "Password-1"));
+        assertEquals(
+                ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + "username, email, fullName, password",
+                exception.getMessage());
     }
 
     @Test
-    void updateUserTest_shouldThrowErrorWith404_whenUserNotFound() {
+    void updateUser_shouldThrowErrorWith404_whenUserNotFound() {
         // Given
         User user = testUtil.createUser(1);
         long nonExistentUserId = 1000L;
@@ -309,19 +271,17 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUserTest_shouldThrowErrorWith500_whenCountryNotFound() {
+    void updateUser_shouldThrowErrorWith500_whenCountryNotFound() {
         // Given
         User user = testUtil.createUser(1);
         long nonExistentCountryId = 1000L;
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
         requestDto.setUsername("New-username");
         requestDto.setCountryId(nonExistentCountryId);
-        ApiException expectedException =
-                new ApiException(ErrorMessage.COUNTRY_NOT_FOUND, nonExistentCountryId, HttpStatus.NOT_FOUND);
-
-        // Mocking
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(countryRepository.findById(nonExistentCountryId)).thenReturn(Optional.empty());
+        ApiException expectedException =
+                new ApiException(ErrorMessage.COUNTRY_NOT_FOUND, nonExistentCountryId, HttpStatus.NOT_FOUND);
 
         // When
         ApiException actualException =
@@ -337,7 +297,7 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteUserTest_shouldReturnVoid() {
+    void deleteUser_shouldReturnVoid_whenValidId() {
         // Given
         User user = testUtil.createUser(1);
 
@@ -377,7 +337,7 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteUserTest_shouldThrowErrorWith404_whenUserNotFound() {
+    void deleteUser_shouldThrowErrorWith404_whenUserNotFound() {
         // Given
         long randomUserId = 1000L;
         ApiException expectedException =

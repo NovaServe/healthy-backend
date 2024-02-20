@@ -1,7 +1,7 @@
 package healthy.lifestyle.backend.user.dto;
 
-import healthy.lifestyle.backend.validation.*;
-import jakarta.validation.constraints.*;
+import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
+import healthy.lifestyle.backend.user.validation.annotation.*;
 import lombok.*;
 
 @Getter
@@ -9,31 +9,31 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@PasswordsMatchValidation.List({@PasswordsMatchValidation(password = "password", confirmPassword = "confirmPassword")})
+@FieldsValuesMatchOptionalValidation.List({
+    @FieldsValuesMatchOptionalValidation(
+            field = "password",
+            fieldMatch = "confirmPassword",
+            message = "{validation.message.passwords-mismatch}")
+})
 public class UserUpdateRequestDto {
-    @Size(min = 6, max = 20)
-    @UsernameValidation
+    @UsernameOptionalValidation
     private String username;
 
-    @Email
-    @Size(min = 6, max = 64)
+    @EmailOptionalValidation
     private String email;
 
-    @Size(min = 10, max = 64)
-    @PasswordValidation
-    private String password;
-
-    @Size(min = 10, max = 64)
-    @PasswordValidation
-    private String confirmPassword;
-
-    @Size(min = 4, max = 64)
-    @FullNameValidation
+    @FullNameOptionalValidation
     private String fullName;
 
-    @NotNull @PositiveOrZero
+    @IdValidation
     private Long countryId;
 
-    @AgeValidation
+    @AgeOptionalValidation
     private Integer age;
+
+    @PasswordOptionalValidation
+    private String password;
+
+    @PasswordOptionalValidation
+    private String confirmPassword;
 }

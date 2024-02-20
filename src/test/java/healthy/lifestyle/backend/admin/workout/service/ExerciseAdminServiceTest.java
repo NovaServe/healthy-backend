@@ -42,8 +42,8 @@ public class ExerciseAdminServiceTest {
     ModelMapper modelMapper;
 
     @ParameterizedTest
-    @MethodSource("multipleFilters")
-    void getExercisesWithFilterTest_shouldReturnEntityResponseDtoList_whenParamsAreValid(
+    @MethodSource("getExercisesValidFilters")
+    void getExercisesWithFilter_shouldReturnDtoList_whenValidFilters(
             String title, String description, Boolean isCustom, Boolean needsEquipment, List<Integer> resultSeeds) {
         // Given
         User user1 = testUtil.createUser(1);
@@ -90,7 +90,8 @@ public class ExerciseAdminServiceTest {
         for (int i = 0; i < resultSeeds.size(); i++) {
             Assertions.assertEquals(
                     "Exercise " + resultSeeds.get(i), result.get(i).getTitle());
-            Assertions.assertEquals("Desc " + resultSeeds.get(i), result.get(i).getDescription());
+            Assertions.assertEquals(
+                    "Description " + resultSeeds.get(i), result.get(i).getDescription());
             Assertions.assertEquals(
                     expectedExercises.get(i).isCustom(), result.get(i).isCustom());
             Assertions.assertEquals(
@@ -101,12 +102,12 @@ public class ExerciseAdminServiceTest {
                 .findWithFilter(eq(title), eq(description), eq(isCustom), eq(needsEquipment));
     }
 
-    static Stream<Arguments> multipleFilters() {
+    static Stream<Arguments> getExercisesValidFilters() {
         return Stream.of(
                 // Positive cases for default exercises
                 Arguments.of(null, null, false, null, List.of(1, 2)),
                 Arguments.of("Exercise 1", null, false, null, List.of(1)),
-                Arguments.of("Exercise 2", "Desc 2", false, false, List.of(2)),
+                Arguments.of("Exercise 2", "Description 2", false, false, List.of(2)),
 
                 // Negative cases for default exercises
                 Arguments.of("NonExistentValue", "NonExistentValue", false, null, Collections.emptyList()),
@@ -115,7 +116,7 @@ public class ExerciseAdminServiceTest {
                 // Positive cases for custom exercises
                 Arguments.of(null, null, true, null, List.of(3, 4)),
                 Arguments.of("Exercise 3", null, true, true, List.of(3)),
-                Arguments.of("Exercise 4", "Desc 4", true, false, List.of(4)),
+                Arguments.of("Exercise 4", "Description 4", true, false, List.of(4)),
 
                 // Negative cases for custom exercises
                 Arguments.of("NonExistentValue", "NonExistentValue", true, null, Collections.emptyList()),

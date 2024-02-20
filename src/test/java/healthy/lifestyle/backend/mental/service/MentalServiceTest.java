@@ -14,6 +14,8 @@ import healthy.lifestyle.backend.mental.model.Mental;
 import healthy.lifestyle.backend.mental.model.MentalType;
 import healthy.lifestyle.backend.mental.repository.MentalRepository;
 import healthy.lifestyle.backend.mental.repository.MentalTypeRepository;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserServiceImpl;
 import healthy.lifestyle.backend.util.DtoUtil;
@@ -40,6 +42,9 @@ import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 class MentalServiceTest {
+    @InjectMocks
+    MentalServiceImpl mentalService;
+
     @Mock
     private MentalRepository mentalRepository;
 
@@ -63,7 +68,7 @@ class MentalServiceTest {
     DtoUtil dtoUtil = new DtoUtil();
 
     @Test
-    void getMentalByIdTest_shouldReturnDefaultMentalDto() {
+    void getMentalById_shouldReturnDefaultMentalDto_whenValidId() {
         // Given
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
         MentalType mentalType = testUtil.createAffirmationType();
@@ -92,7 +97,7 @@ class MentalServiceTest {
     }
 
     @Test
-    void getMentalByIdTest_shouldThrowErrorWith404_whenMentalNotFound() {
+    void getMentalById_shouldThrowErrorWith404_whenNotFound() {
         // Given
         long nonExistingMentalId = 1000L;
         ApiException expectedException =
@@ -138,7 +143,7 @@ class MentalServiceTest {
     }
 
     @Test
-    void getMentalByIdTest_shouldThrowErrorWith400_whenRequestedMentalDoesntBelongToUser() {
+    void getMentalById_shouldThrowErrorWith400_whenMentalUserMismatch() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
@@ -167,7 +172,7 @@ class MentalServiceTest {
     }
 
     @Test
-    void getMentalByIdTest_shouldReturnCustomMentalDto() {
+    void getMentalById_shouldReturnCustomMentalDto_whenValidId() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);

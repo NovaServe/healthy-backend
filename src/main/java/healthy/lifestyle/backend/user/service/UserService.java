@@ -12,7 +12,8 @@ public interface UserService {
 
     UserResponseDto getUserDetailsById(long userId);
 
-    UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto);
+    UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException;
 
     void deleteUser(long userId);
 

@@ -9,13 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @TestConfiguration
 public class BeanConfig {
     @Bean
-    public DbUtil jpaUtil() {
+    public DbUtil dbUtil() {
         return new DbUtil();
-    }
-
-    @Bean
-    public TestUtil dataUtil() {
-        return new TestUtil();
     }
 
     @Bean

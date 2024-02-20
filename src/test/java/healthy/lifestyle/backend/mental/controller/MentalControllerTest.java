@@ -13,18 +13,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.mental.dto.MentalTypeResponseDto;
 import healthy.lifestyle.backend.mental.model.Mental;
 import healthy.lifestyle.backend.mental.model.MentalType;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
-import healthy.lifestyle.backend.util.DtoUtil;
-import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.util.URL;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.Collections;
@@ -66,12 +64,6 @@ public class MentalControllerTest {
     @Autowired
     DbUtil dbUtil;
 
-    @Autowired
-    TestUtil testUtil;
-
-    @Autowired
-    DtoUtil dtoUtil;
-
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
             new PostgreSQLContainer<>(DockerImageName.parse(ContainerConfig.POSTGRES));
@@ -89,7 +81,7 @@ public class MentalControllerTest {
     }
 
     @Test
-    void getDefaultMentalByIdTest_shouldReturnDefaultMentalDtoWith200_whenValidRequest() throws Exception {
+    void getDefaultMentalById_shouldReturnDefaultMentalDtoWith200_whenValidRequest() throws Exception {
         // Given
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
         HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
@@ -132,7 +124,7 @@ public class MentalControllerTest {
     }
 
     @Test
-    void getDefaultMentalByIdTest_shouldReturnErrorMessageWith404_whenDefaultMentalNotFound() throws Exception {
+    void getDefaultMentalById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         long nonExistentDefaultMentalId = 1000L;
         ApiException expectedException =
@@ -149,7 +141,7 @@ public class MentalControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomMentalByIdTest_shouldReturnCustomMentalDtoWith200_whenValidRequest() throws Exception {
+    void getCustomMentalById_shouldReturnDtoWith200_whenValidRequest() throws Exception {
         // Given
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
         HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
@@ -193,7 +185,7 @@ public class MentalControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomMentalByIdTest_shouldReturnErrorMessageWith404_whenCustomMentalNotFound() throws Exception {
+    void getCustomMentalById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         long nonExistentCustomMentalId = 1000L;
         ApiException expectedException =
@@ -210,8 +202,7 @@ public class MentalControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomMentalByIdTest_shouldReturnErrorMessageWith400_whenRequestedMentalBelongsToAnotherUser()
-            throws Exception {
+    void getCustomMentalById_shouldReturnErrorMessageWith400_whenMentalUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);

@@ -89,7 +89,7 @@ class ExerciseAdminRepositoryTest {
         assertEquals(resultSeeds.size(), result.size());
         for (int i = 0; i < resultSeeds.size(); i++) {
             assertEquals("Exercise " + resultSeeds.get(i), result.get(i).getTitle());
-            assertEquals("Desc " + resultSeeds.get(i), result.get(i).getDescription());
+            assertEquals("Description " + resultSeeds.get(i), result.get(i).getDescription());
         }
     }
 
@@ -98,7 +98,7 @@ class ExerciseAdminRepositoryTest {
                 // Positive cases for default exercises
                 Arguments.of(null, null, false, true, List.of(1)),
                 Arguments.of("Exercise 1", null, false, true, List.of(1)),
-                Arguments.of(null, "Desc 2", false, false, List.of(2)),
+                Arguments.of(null, "Description 2", false, false, List.of(2)),
 
                 // Negative cases for default exercises
                 Arguments.of("NonExistentValue", "NonExistentValue", false, false, Collections.emptyList()),
@@ -108,7 +108,7 @@ class ExerciseAdminRepositoryTest {
                 // Positive cases for custom exercises
                 Arguments.of(null, null, true, true, List.of(3)),
                 Arguments.of("Exercise 4", null, true, false, List.of(4)),
-                Arguments.of("Exercise 3", "Desc 3", true, true, List.of(3)),
+                Arguments.of("Exercise 3", "Description 3", true, true, List.of(3)),
 
                 // Negative cases for custom exercises
                 Arguments.of("NonExistentValue", null, true, true, Collections.emptyList()),

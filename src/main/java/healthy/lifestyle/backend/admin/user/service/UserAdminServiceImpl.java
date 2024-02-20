@@ -11,33 +11,27 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserAdminServiceImpl implements UserAdminService {
+    @Autowired
+    UserAdminRepository userAdminRepository;
 
-    private final UserAdminRepository userAdminRepository;
+    @Autowired
+    RoleRepository roleRepository;
 
-    private final RoleRepository roleRepository;
+    @Autowired
+    CountryRepository countryRepository;
 
-    private final CountryRepository countryRepository;
-
-    private final ModelMapper modelMapper;
-
-    public UserAdminServiceImpl(
-            UserAdminRepository userAdminRepository,
-            RoleRepository roleRepository,
-            CountryRepository countryRepository,
-            ModelMapper modelMapper) {
-        this.userAdminRepository = userAdminRepository;
-        this.roleRepository = roleRepository;
-        this.countryRepository = countryRepository;
-        this.modelMapper = modelMapper;
-    }
+    @Autowired
+    ModelMapper modelMapper;
 
     @Override
     public List<UserResponseDto> getUsersWithFilter(
             Long roleId, String username, String email, String fullName, Long countryId, Integer age) {
+
         Optional<Role> role = roleId != null ? roleRepository.findById(roleId) : Optional.empty();
         Optional<Country> country = countryId != null ? countryRepository.findById(countryId) : Optional.empty();
         List<User> users = userAdminRepository.findWithFilter(

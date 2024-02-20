@@ -11,13 +11,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.dto.LoginRequestDto;
 import healthy.lifestyle.backend.user.dto.LoginResponseDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
+import healthy.lifestyle.backend.user.validation.UserValidationMessage;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.URL;
@@ -77,7 +78,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void loginTest_shouldReturnTokenWith200_whenValidRequest() throws Exception {
+    void login_shouldReturnTokenWith200_whenValidRequest() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
 
@@ -104,11 +105,9 @@ class AuthControllerTest {
         assertTrue(tokenParts[2].length() >= 10);
     }
 
-    // TODO: Add UsernameOrEmail validation based on the allowed symbols.
-
     @ParameterizedTest
-    @MethodSource("loginUsernamePasswordMismatch")
-    void loginTest_shouldReturnErrorMessageWith401_whenUsernamePasswordMismatch(String usernameOrEmail, String password)
+    @MethodSource("loginWrongCredentials")
+    void login_shouldReturnErrorMessageWith401_whenWrongCredentials(String usernameOrEmail, String password)
             throws Exception {
         // Given
         User user = dbUtil.createUser(1);
@@ -120,54 +119,28 @@ class AuthControllerTest {
         requestDto.setPassword(password);
 
         // When
-        //        mockMvc.perform(post(URL.LOGIN)
-        //                        .contentType(MediaType.APPLICATION_JSON)
-        //                        .content(objectMapper.writeValueAsString(requestDto)))
-        //
-        //                // Then
-        //                .andExpect(status().isUnauthorized())
-        //                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
-        //                .andDo(print());
+        mockMvc.perform(post(URL.LOGIN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andDo(print());
     }
 
-    static Stream<Arguments> loginUsernamePasswordMismatch() {
-        return Stream.of(Arguments.of("Username-1", "Password-2"), Arguments.of("Username-2", "Password-1"));
-    }
-
-    // TODO: Add UsernameOrEmail validation based on the allowed symbols.
-    @ParameterizedTest
-    @MethodSource("loginOneFieldIsInvalid")
-    void loginTest_shouldReturnValidationMessageWith400_whenOneFieldIsInvalid(
-            String usernameOrEmail, String password, String errorFieldName, String errorMessage) throws Exception {
-        // Given
-        User user = dbUtil.createUser(1);
-
-        LoginRequestDto requestDto = dtoUtil.loginRequestDtoEmpty();
-        requestDto.setUsernameOrEmail(usernameOrEmail);
-        requestDto.setPassword(password);
-
-        // When
-        //        mockMvc.perform(post(URL.LOGIN)
-        //                        .contentType(MediaType.APPLICATION_JSON)
-        //                        .content(objectMapper.writeValueAsString(requestDto)))
-        //
-        //                // Then
-        //                .andExpect(status().isBadRequest())
-        //                .andExpect(jsonPath(errorFieldName, is(errorMessage)))
-        //                .andDo(print());
-    }
-
-    static Stream<Arguments> loginOneFieldIsInvalid() {
+    static Stream<Arguments> loginWrongCredentials() {
         return Stream.of(
-                Arguments.of("Username%^&", "Password-1", "$.usernameOrEmail", "Not allowed symbols"),
-                Arguments.of("email()@email.com", "Password-1", "$.usernameOrEmail", "Not allowed symbols"),
-                Arguments.of("Username-1", "Password 2", "$.password", "Not allowed symbols"));
+                Arguments.of("Username-1", "Password-2"),
+                Arguments.of("Username-2", "Password-1"),
+                Arguments.of("email-1@email.com", "Password-2"),
+                Arguments.of("email-2@email.com", "Password-1"));
     }
 
     @ParameterizedTest
-    @MethodSource("loginOneFieldIsNull")
-    void loginTest_shouldReturnValidationMessageWith400_whenOneFieldIsNull(
-            String usernameOrEmail, String password, String errorFieldName, String errorMessage) throws Exception {
+    @MethodSource("loginInvalidUsernameOrEmailOrPassword")
+    void login_shouldReturnValidationMessageWith400_whenInvalidUsernameOrEmailOrPassword(
+            String usernameOrEmail, String password, String errorField, String errorMessage) throws Exception {
         // Given
         User user = dbUtil.createUser(1);
 
@@ -182,19 +155,52 @@ class AuthControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(errorFieldName, is(errorMessage)))
+                .andExpect(jsonPath("$." + errorField, is(errorMessage)))
                 .andDo(print());
     }
 
-    static Stream<Arguments> loginOneFieldIsNull() {
+    static Stream<Arguments> loginInvalidUsernameOrEmailOrPassword() {
         return Stream.of(
-                Arguments.of(null, "Password-1", "$.usernameOrEmail", "must not be blank"),
-                Arguments.of("Username-1", null, "$.password", "must not be blank"));
+                Arguments.of(null, "Password-1", "usernameOrEmail", "Must not be null"),
+                Arguments.of("", "Password-1", "usernameOrEmail", "Must not be blank"),
+                Arguments.of(" ", "Password-1", "usernameOrEmail", "Must not be blank"),
+                Arguments.of(
+                        "username!",
+                        "Password-1",
+                        "usernameOrEmail",
+                        "Username can include lower and upper-case letters, digits, and symbols: . - _"),
+                Arguments.of(
+                        "user", "Password-1", "usernameOrEmail", UserValidationMessage.USERNAME_LENGTH_RANGE.getName()),
+                Arguments.of(
+                        "email@@email..com",
+                        "Password-1",
+                        "usernameOrEmail",
+                        "Email can contain lower and upper-case letters, digits, and symbols: . - _"),
+                Arguments.of(
+                        "email!@email.com",
+                        "Password-1",
+                        "usernameOrEmail",
+                        "Email can contain lower and upper-case letters, digits, and symbols: . - _"),
+                Arguments.of(
+                        "email@", "Password-1", "usernameOrEmail", UserValidationMessage.EMAIL_LENGTH_RANGE.getName()),
+                Arguments.of("username-valid", null, "password", UserValidationMessage.PASSWORD_LENGTH_RANGE.getName()),
+                Arguments.of("username-valid", "", "password", UserValidationMessage.PASSWORD_LENGTH_RANGE.getName()),
+                Arguments.of("username-valid", " ", "password", UserValidationMessage.PASSWORD_LENGTH_RANGE.getName()),
+                Arguments.of(
+                        "username-valid",
+                        "password",
+                        "password",
+                        UserValidationMessage.PASSWORD_LENGTH_RANGE.getName()),
+                Arguments.of(
+                        "username-valid",
+                        "password with space",
+                        "password",
+                        "Password can include lower and upper-case letters, digits, and symbols: . , - _ < > : ; ! ? # $ % ^ & * ( ) + ="));
     }
 
     @Test
-    @WithMockUser(username = "username-one", password = "password-one", roles = "USER")
-    void validateTokenTest_shouldReturnVoidWith200_whenTokenIsValid() throws Exception {
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void validateToken_shouldReturnVoidWith200_whenTokenIsValid() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);

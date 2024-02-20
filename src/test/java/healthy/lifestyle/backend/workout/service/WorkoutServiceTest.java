@@ -4,10 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
-import healthy.lifestyle.backend.exception.ErrorMessage;
-import healthy.lifestyle.backend.shared.Util;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.util.VerificationUtil;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserServiceImpl;
 import healthy.lifestyle.backend.util.DtoUtil;
@@ -49,14 +49,14 @@ class WorkoutServiceTest {
     ModelMapper modelMapper;
 
     @Spy
-    Util util;
+    VerificationUtil verificationUtil;
 
     TestUtil testUtil = new TestUtil();
 
     DtoUtil dtoUtil = new DtoUtil();
 
     @Test
-    void createCustomWorkoutTest_shouldCreateNewWorkout() {
+    void createCustomWorkout_shouldReturnCreatedDto_whenValidFields() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -104,7 +104,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void createCustomWorkoutTest_shouldThrowErrorWith400_whenWorkoutWithSameTitleExists() {
+    void createCustomWorkout_shouldThrowErrorWith400_whenAlreadyExistsWithSameTitle() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -143,7 +143,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void createCustomWorkoutTest_shouldThrowErrorWith404_whenExerciseNotFound() {
+    void createCustomWorkout_shouldThrowErrorWith404_whenExerciseNotFound() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -186,7 +186,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void createCustomWorkoutTest_shouldThrowErrorWith400_whenExerciseBelongsToAnotherUser() {
+    void createCustomWorkout_shouldThrowErrorWith400_whenExerciseUserMismatch() {
         // Given
         User user1 = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -233,7 +233,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldReturnDefaultWorkout() {
+    void getDefaultWorkoutById_shouldReturnDto_whenValidId() {
         // Given
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
         HttpRef defaultHttpRef1 = testUtil.createDefaultHttpRef(1);
@@ -256,7 +256,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldThrowErrorWith404_whenWorkoutNotFound() {
+    void getDefaultWorkoutById_shouldThrowErrorWith404_whenNotFound() {
         // Given
         long nonExistentWorkoutId = 1000L;
         ApiException expectedException =
@@ -275,7 +275,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void getDefaultWorkoutByIdTest_shouldThrowErrorWith400_whenCustomWorkoutRequestedInsteadOfDefault() {
+    void getDefaultWorkoutById_shouldThrowErrorWith400_whenCustomWorkoutRequested() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -302,7 +302,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void getCustomWorkoutByIdTest_shouldReturnCustomWorkout() {
+    void getCustomWorkoutById_shouldReturnDto_whenValidId() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -327,7 +327,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void getCustomWorkoutByIdTest_shouldThrowErrorWith400_whenDefaultWorkoutRequestedInsteadOfDefault() {
+    void getCustomWorkoutById_shouldThrowErrorWith400_whenDefaultWorkoutRequested() {
         // Given
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
         HttpRef defaultHttpRef1 = testUtil.createDefaultHttpRef(1);
@@ -353,7 +353,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void updateCustomWorkoutTest_shouldReturnWorkoutResponseDto_whenValidRequest()
+    void updateCustomWorkout_shouldReturnUpdatedDto_whenValidFields()
             throws NoSuchFieldException, IllegalAccessException {
         // Given
         User user = testUtil.createUser(1);
@@ -419,7 +419,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void updateCustomWorkoutTest_shouldThrowErrorWith400_whenEmptyDtoProvided() {
+    void updateCustomWorkout_shouldThrowErrorWith400_whenEmptyFields() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart = testUtil.createBodyPart(1);
@@ -448,7 +448,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void updateCustomWorkoutTest_shouldThrowErrorWith404_whenWorkoutNotFound() {
+    void updateCustomWorkout_shouldThrowErrorWith404_whenNotFound() {
         // Given
         User user = testUtil.createUser(1);
         long nonExistingWorkoutId = 1000L;
@@ -473,7 +473,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void updateCustomWorkoutTest_shouldThrowErrorWith400_whenDefaultWorkoutRequestedInsteadOfCustom() {
+    void updateCustomWorkout_shouldThrowErrorWith400_whenDefaultWorkoutRequested() {
         // Given
         User user = testUtil.createUser(1);
         Workout workout = testUtil.createDefaultWorkout(1, Collections.emptyList());
@@ -498,7 +498,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void updateCustomWorkoutTest_shouldThrowUserResourceMismatchAnd400_whenWorkoutDoesntBelongToUser() {
+    void updateCustomWorkout_shouldThrowErrorWith400_whenWorkoutUserMismatch() {
         // Given
         User user1 = testUtil.createUser(1);
         User user2 = testUtil.createUser(2);
@@ -535,7 +535,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void updateCustomWorkoutTest_shouldThrowErrorWith400_whenWorkoutTitleDuplicated() {
+    void updateCustomWorkout_shouldThrowErrorWith400_whenWorkoutTitleDuplicated() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -574,7 +574,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void updateCustomWorkoutTest_shouldThrowErrorWith404_whenExerciseNotFound() {
+    void updateCustomWorkout_shouldThrowErrorWith404_whenExerciseNotFound() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -612,7 +612,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void updateCustomWorkoutTest_shouldThrowErrorWith400_whenExerciseDoesntBelongToUser() {
+    void updateCustomWorkout_shouldThrowErrorWith400_whenExerciseUserMismatch() {
         // Given
         User user1 = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -653,7 +653,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void deleteCustomWorkoutTest_shouldReturnDeletedId_whenValidUserIdAndWorkoutIdGiven() {
+    void deleteCustomWorkout_shouldReturnDeletedId_whenValidRequest() {
         // Given
         User user = testUtil.createUser(1);
         BodyPart bodyPart1 = testUtil.createBodyPart(1);
@@ -677,7 +677,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void deleteCustomWorkoutTest_shouldThrowErrorWith404_whenWorkoutNotFound() {
+    void deleteCustomWorkout_shouldThrowErrorWith404_whenNotFound() {
         // Given
         long randomUserId = 1;
         long nonExistentWorkoutId = 2;

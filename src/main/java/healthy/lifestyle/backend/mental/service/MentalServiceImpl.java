@@ -8,6 +8,8 @@ import healthy.lifestyle.backend.mental.model.Mental;
 import healthy.lifestyle.backend.mental.model.MentalType;
 import healthy.lifestyle.backend.mental.repository.MentalRepository;
 import healthy.lifestyle.backend.mental.repository.MentalTypeRepository;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserService;
 import healthy.lifestyle.backend.workout.dto.HttpRefResponseDto;
@@ -16,6 +18,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,29 +29,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MentalServiceImpl implements MentalService {
+    @Autowired
+    MentalRepository mentalRepository;
 
-    private final MentalRepository mentalRepository;
+    @Autowired
+    HttpRefRepository httpRefRepository;
 
-    private final HttpRefRepository httpRefRepository;
+    @Autowired
+    UserService userService;
 
-    private final UserService userService;
+    @Autowired
+    MentalTypeRepository mentalTypeRepository;
 
-    private final MentalTypeRepository mentalTypeRepository;
-
-    private final ModelMapper modelMapper;
-
-    public MentalServiceImpl(
-            MentalRepository mentalRepository,
-            HttpRefRepository httpRefRepository,
-            UserService userService,
-            MentalTypeRepository mentalTypeRepository,
-            ModelMapper modelMapper) {
-        this.mentalRepository = mentalRepository;
-        this.httpRefRepository = httpRefRepository;
-        this.userService = userService;
-        this.mentalTypeRepository = mentalTypeRepository;
-        this.modelMapper = modelMapper;
-    }
+    @Autowired
+    ModelMapper modelMapper;
 
     @Override
     @Transactional

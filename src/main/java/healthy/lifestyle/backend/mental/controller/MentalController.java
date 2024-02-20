@@ -3,8 +3,10 @@ package healthy.lifestyle.backend.mental.controller;
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.mental.dto.MentalTypeResponseDto;
 import healthy.lifestyle.backend.mental.service.MentalService;
+import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.mental.service.MentalTypeService;
 import healthy.lifestyle.backend.user.service.AuthUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import healthy.lifestyle.backend.validation.DescriptionValidation;
 import healthy.lifestyle.backend.validation.TitleValidation;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -24,8 +26,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @RequestMapping("${api.basePath}/${api.version}/mentals")
 public class MentalController {
-    private final MentalService mentalService;
+    @Autowired
+    MentalService mentalService;
 
+    @Autowired
+    AuthUtil authUtil;
     private final MentalTypeService mentalTypeService;
 
     private final AuthUtil authUtil;
@@ -38,7 +43,7 @@ public class MentalController {
 
     @GetMapping("/default/{mental_id}")
     public ResponseEntity<MentalResponseDto> getDefaultMentalById(
-            @PathVariable("mental_id") @PositiveOrZero long mental_id) {
+            @PathVariable("mental_id") @IdValidation long mental_id) {
         MentalResponseDto responseDto = mentalService.getMentalById(mental_id, true, null);
         return ResponseEntity.ok(responseDto);
     }
@@ -46,7 +51,7 @@ public class MentalController {
     @GetMapping("/{mental_id}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<MentalResponseDto> getCustomMentalById(
-            @PathVariable("mental_id") @PositiveOrZero long mental_id) {
+            @PathVariable("mental_id") @IdValidation long mental_id) {
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         MentalResponseDto responseDto = mentalService.getMentalById(mental_id, false, userId);

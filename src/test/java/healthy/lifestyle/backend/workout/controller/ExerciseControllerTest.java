@@ -15,14 +15,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.config.BeanConfig;
 import healthy.lifestyle.backend.config.ContainerConfig;
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.util.DbUtil;
 import healthy.lifestyle.backend.util.DtoUtil;
-import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.util.URL;
 import healthy.lifestyle.backend.workout.dto.*;
 import healthy.lifestyle.backend.workout.model.BodyPart;
@@ -68,9 +67,6 @@ class ExerciseControllerTest {
     DbUtil dbUtil;
 
     @Autowired
-    TestUtil testUtil;
-
-    @Autowired
     DtoUtil dtoUtil;
 
     @Autowired
@@ -96,7 +92,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomExerciseTest_shouldReturnExerciseDtoWith201_whenValidRequest() throws Exception {
+    void createCustomExercise_shouldReturnDtoWith201_whenValidFields() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -165,7 +161,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomExerciseTest_shouldReturnExerciseDtoWith201_whenEmptyHttpRefsListGiven() throws Exception {
+    void createCustomExercise_shouldReturnDtoWith201_whenValidMandatoryFields() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -173,6 +169,7 @@ class ExerciseControllerTest {
         boolean needsEquipment = false;
         ExerciseCreateRequestDto requestDto = dtoUtil.exerciseCreateRequestDto(
                 1, needsEquipment, List.of(bodyPart1.getId(), bodyPart2.getId()), Collections.emptyList());
+        requestDto.setDescription(null);
 
         // When
         MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_EXERCISES)
@@ -192,10 +189,9 @@ class ExerciseControllerTest {
         String responseContent = mvcResult.getResponse().getContentAsString();
         ExerciseResponseDto responseDto = objectMapper.readValue(responseContent, ExerciseResponseDto.class);
 
+        assertTrue(requestDto.getHttpRefs().isEmpty());
         assertEquals(
                 requestDto.getBodyParts().size(), responseDto.getBodyParts().size());
-        assertTrue(requestDto.getHttpRefs().isEmpty());
-
         assertThat(responseDto.getBodyParts())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises")
                 .isEqualTo(List.of(bodyPart1, bodyPart2));
@@ -203,7 +199,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomExerciseTest_shouldReturnValidationMessageWith400_whenBodyPartsEmptyListGiven() throws Exception {
+    void createCustomExercise_shouldReturnValidationMessageWith400_whenBodyPartsMissed() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
@@ -219,13 +215,13 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.bodyParts", is("Should be not empty list")))
+                .andExpect(jsonPath("$.bodyParts", is("must not be empty")))
                 .andDo(print());
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomExerciseTest_shouldReturnErrorMessageWith400_whenBodyPartNotFound() throws Exception {
+    void createCustomExercise_shouldReturnErrorMessageWith400_whenBodyPartNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         boolean needsEquipment = false;
@@ -248,7 +244,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void createCustomExerciseTest_shouldReturnErrorMessageWith400_whenHttpRefNotFound() throws Exception {
+    void createCustomExercise_shouldReturnErrorMessageWith400_whenHttpRefNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -272,7 +268,7 @@ class ExerciseControllerTest {
     }
 
     @Test
-    void getDefaultExerciseByIdTest_shouldReturnDefaultExerciseDtoWith200_whenValidRequest() throws Exception {
+    void getDefaultExerciseById_shouldReturnDtoWith200_whenValidRequest() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -329,7 +325,7 @@ class ExerciseControllerTest {
     }
 
     @Test
-    void getDefaultExerciseByIdTest_shouldReturnErrorMessageWith404_whenDefaultExerciseNotFound() throws Exception {
+    void getDefaultExerciseById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         long nonExistentDefaultExerciseId = 1000L;
         ApiException expectedException =
@@ -347,7 +343,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomExerciseByIdTest_shouldReturnCustomExerciseDtoWith200_whenValidRequest() throws Exception {
+    void getCustomExerciseById_shouldReturnDtoWith200_whenValidRequest() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -405,7 +401,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomExerciseByIdTest_shouldReturnErrorMessageWith404_whenCustomExerciseNotFound() throws Exception {
+    void getCustomExerciseById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
         long nonExistentCustomExerciseId = 1000L;
         ApiException expectedException =
@@ -423,8 +419,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getCustomExerciseByIdTest_shouldReturnErrorMessageWith400_whenRequestedExerciseBelongsToAnotherUser()
-            throws Exception {
+    void getCustomExerciseById_shouldReturnErrorMessageWith400_whenExerciseUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -448,9 +443,9 @@ class ExerciseControllerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("getExercisesWithFilter_multipleDefaultFilters")
+    @MethodSource("getExercisesWithFilterValidDefaultFilters")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getExercisesWithFilterTest_shouldReturnDefaultFilteredExercisesWith200_whenValidFilters(
+    void getExercisesWithFilter_shouldReturnDefaultFilteredPageWith200_whenValidFilters(
             String title,
             String description,
             Boolean needsEquipment,
@@ -529,27 +524,26 @@ class ExerciseControllerTest {
                 .isEqualTo(expectedFilteredExercises);
     }
 
-    static Stream<Arguments> getExercisesWithFilter_multipleDefaultFilters() {
+    static Stream<Arguments> getExercisesWithFilterValidDefaultFilters() {
         return Stream.of(
                 // Default, positive
                 Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
                 Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
-                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of(null, "description", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
+                Arguments.of("exercise", "description", true, 2, 0, 2, 1, 2, List.of(0L, 1L)),
                 Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
                 Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
-                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of(null, "description", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
+                Arguments.of("exercise", "description", false, 2, 0, 2, 1, 2, List.of(2L, 3L)),
 
                 // Default, empty
-                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
-                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
+                Arguments.of("non existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
+                Arguments.of(null, "non existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getExercisesWithFilterTest_shouldReturnDefaultFilteredExercisesWith200_whenBodyPartsIdsGiven()
-            throws Exception {
+    void getExercisesWithFilter_shouldReturnDefaultFilteredPageWith200_whenFilteredWithBodyPartsIds() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -603,9 +597,9 @@ class ExerciseControllerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("getExercisesWithFilter_multipleCustomFilters")
+    @MethodSource("getExercisesWithFilterValidCustomFilters")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getExercisesWithFilterTest_shouldReturnCustomFilteredExercisesWith200_whenValidFilters(
+    void getExercisesWithFilter_shouldReturnCustomFilteredPageWith200_whenValidFilters(
             String title,
             String description,
             Boolean needsEquipment,
@@ -702,27 +696,26 @@ class ExerciseControllerTest {
                 .isEqualTo(expectedFilteredExercises);
     }
 
-    static Stream<Arguments> getExercisesWithFilter_multipleCustomFilters() {
+    static Stream<Arguments> getExercisesWithFilterValidCustomFilters() {
         return Stream.of(
                 // Custom, positive
                 Arguments.of(null, null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
                 Arguments.of("exercise", null, true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of(null, "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
-                Arguments.of("exercise", "desc", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of(null, "description", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
+                Arguments.of("exercise", "description", true, 2, 0, 2, 1, 2, List.of(4L, 5L)),
                 Arguments.of(null, null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
                 Arguments.of("exercise", null, false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-                Arguments.of(null, "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
-                Arguments.of("exercise", "desc", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of(null, "description", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
+                Arguments.of("exercise", "description", false, 2, 0, 2, 1, 2, List.of(6L, 7L)),
 
                 // Custom, empty
-                Arguments.of("non-existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
-                Arguments.of(null, "non-existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
+                Arguments.of("non existent", null, true, 2, 0, 0, 0, 0, Collections.emptyList()),
+                Arguments.of(null, "non existent", false, 2, 0, 0, 0, 0, Collections.emptyList()));
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getExercisesWithFilterTest_shouldReturnCustomFilteredExercisesWith200_whenBodyPartsIdsGiven()
-            throws Exception {
+    void getExercisesWithFilter_shouldReturnCustomFilteredPageWith200_whenFilteredWithBodyPartsIds() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -791,7 +784,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getExercisesWithFilterTest_shouldReturnDefaultAndCustomFilteredExercisesWith200() throws Exception {
+    void getExercisesWithFilter_shouldReturnDefaultAndCustomFilteredPageWith200() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -863,7 +856,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getExercisesWithFilterTest_shouldReturnDefaultAndCustomFilteredExercisesWith200_whenBodyPartsIdsGiven()
+    void getExercisesWithFilter_shouldReturnDefaultAndCustomFilteredPageWith200_whenFilteredWithBodyPartsIds()
             throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
@@ -931,7 +924,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void getExercisesWithFilterTest_shouldReturnValidationErrorMessageWith400_whenInvalidFilterArgs() throws Exception {
+    void getExercisesWithFilter_shouldReturnValidationErrorMessageWith400_whenInvalidFilters() throws Exception {
         // Given
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
@@ -956,20 +949,27 @@ class ExerciseControllerTest {
 
         // When
         mockMvc.perform(get(URL.CUSTOM_EXERCISES)
-                        .param("title", "!@#")
-                        .param("description", "!@#")
+                        .param("title", "title!")
+                        .param("description", "description^")
                         .contentType(MediaType.APPLICATION_JSON))
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", containsString("Not allowed symbols")))
+                .andExpect(jsonPath(
+                        "$.title",
+                        is("Title can include lower and upper-case letters, digits, spaces, and symbols . , - ( ) /")))
+                .andExpect(
+                        jsonPath(
+                                "$.description",
+                                is(
+                                        "Description can include lower and upper-case letters, digits, spaces, and symbols: . , - : ; ! ? ' \" # % ( ) + =")))
                 .andDo(print());
     }
 
     @ParameterizedTest
-    @MethodSource("updateCustomExerciseMultipleValidInputs")
+    @MethodSource("updateCustomExerciseValidFilters")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnExerciseDtoWith200_whenValidRequest(
+    void updateCustomExercise_shouldReturnUpdatedDtoWith200_whenValidFilters(
             String updateTitle, String updateDescription, Boolean updateNeedsEquipment) throws Exception {
         // Given
         User user = dbUtil.createUser(1);
@@ -1041,7 +1041,7 @@ class ExerciseControllerTest {
         assertThat(responseDto.getHttpRefs()).usingRecursiveComparison().isEqualTo(expectedHttpRefs);
     }
 
-    static Stream<Arguments> updateCustomExerciseMultipleValidInputs() {
+    static Stream<Arguments> updateCustomExerciseValidFilters() {
         return Stream.of(
                 Arguments.of("Update title", "Update description", false),
                 Arguments.of("Update title", "Update description", null),
@@ -1053,7 +1053,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnExerciseDtoWith200_whenEmptyHttpRefsIdsListGiven() throws Exception {
+    void updateCustomExercise_shouldReturnUpdatedDtoWith200_whenHttpRefsIdsNotGiven() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
@@ -1094,9 +1094,9 @@ class ExerciseControllerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("updateCustomExerciseMultipleInvalidInputs")
+    @MethodSource("updateCustomExerciseInvalidFilters")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnValidationMessageWith400_whenInvalidRequest(
+    void updateCustomExercise_shouldReturnValidationMessageWith400_whenInvalidFilters(
             String updateTitle,
             String updateDescription,
             Boolean updateNeedsEquipment,
@@ -1128,25 +1128,30 @@ class ExerciseControllerTest {
 
                 // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(errorFieldName, is(errorMessage)))
+                .andExpect(jsonPath("$." + errorFieldName, is(errorMessage)))
                 .andDo(print());
     }
 
-    static Stream<Arguments> updateCustomExerciseMultipleInvalidInputs() {
+    static Stream<Arguments> updateCustomExerciseInvalidFilters() {
         return Stream.of(
                 // Invalid title
                 Arguments.of(
-                        "Update title$%",
-                        null, null, List.of(1L), Collections.emptyList(), "$.title", "Not allowed symbols"),
-                // Invalid description
-                Arguments.of(
+                        "Update title!",
                         null,
-                        "Update description#@!",
                         null,
                         List.of(1L),
                         Collections.emptyList(),
-                        "$.description",
-                        "Not allowed symbols"),
+                        "title",
+                        "Title can include lower and upper-case letters, digits, spaces, and symbols . , - ( ) /"),
+                // Invalid description
+                Arguments.of(
+                        null,
+                        "Update description^",
+                        null,
+                        List.of(1L),
+                        Collections.emptyList(),
+                        "description",
+                        "Description can include lower and upper-case letters, digits, spaces, and symbols: . , - : ; ! ? ' \" # % ( ) + ="),
                 // Empty list of bodyPartIds
                 Arguments.of(
                         null,
@@ -1154,17 +1159,15 @@ class ExerciseControllerTest {
                         null,
                         Collections.emptyList(),
                         Collections.emptyList(),
-                        "$.bodyPartIds",
-                        "Should be not empty list"),
+                        "bodyPartIds",
+                        "must not be empty"),
                 // Null bodyPartIds
-                Arguments.of(null, null, null, null, Collections.emptyList(), "$.bodyPartIds", "must not be null"),
-                // Null httpRefIds
-                Arguments.of(null, null, null, List.of(1L), null, "$.httpRefIds", "must not be null"));
+                Arguments.of(null, null, null, null, Collections.emptyList(), "bodyPartIds", "must not be empty"));
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnErrorMessageWith400_whenEmptyRequest() throws Exception {
+    void updateCustomExercise_shouldReturnErrorMessageWith400_whenEmptyRequest() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
@@ -1190,7 +1193,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnErrorMessageWith404_whenExerciseNotFound() throws Exception {
+    void updateCustomExercise_shouldReturnErrorMessageWith404_whenExerciseNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         ExerciseUpdateRequestDto requestDto = dtoUtil.exerciseUpdateRequestDtoEmpty();
@@ -1213,7 +1216,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnErrorMessageWith400_whenExerciseDoesntBelongToUser() throws Exception {
+    void updateCustomExercise_shouldReturnErrorMessageWith400_whenExerciseUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -1249,8 +1252,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnErrorMessageWith400_whenExerciseWithNewTitleAlreadyExists()
-            throws Exception {
+    void updateCustomExercise_shouldReturnErrorMessageWith400_whenExerciseWithNewTitleAlreadyExists() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
@@ -1282,7 +1284,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnErrorMessageWith404_whenBodyPartNotFound() throws Exception {
+    void updateCustomExercise_shouldReturnErrorMessageWith404_whenBodyPartNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
@@ -1313,7 +1315,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnErrorMessageWith400_whenNewHttpRefDoesntBelongToUser() throws Exception {
+    void updateCustomExercise_shouldReturnErrorMessageWith400_whenNewHttpRefUserMismatch() throws Exception {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
@@ -1347,9 +1349,9 @@ class ExerciseControllerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("updateCustomExerciseMultipleValidButNotDifferentInputs")
+    @MethodSource("updateCustomExerciseNotDifferentFields")
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void updateCustomExerciseTest_shouldReturnErrorMessageWith400_whenNewFieldValueIsNotDifferent(
+    void updateCustomExercise_shouldReturnErrorMessageWith400_whenFieldsAreNotDifferent(
             String updateTitle, String updateDescription, Boolean updateNeedsEquipment) throws Exception {
         // Given
         User user = dbUtil.createUser(1);
@@ -1384,16 +1386,16 @@ class ExerciseControllerTest {
                 .andDo(print());
     }
 
-    static Stream<Arguments> updateCustomExerciseMultipleValidButNotDifferentInputs() {
+    static Stream<Arguments> updateCustomExerciseNotDifferentFields() {
         return Stream.of(
                 Arguments.of("Exercise 1", null, null),
-                Arguments.of(null, "Desc 1", null),
+                Arguments.of(null, "Description 1", null),
                 Arguments.of(null, null, true));
     }
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomExerciseTest_shouldReturnVoidWith204_whenValidRequest() throws Exception {
+    void deleteCustomExercise_shouldReturnVoidWith204_whenValidRequest() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
@@ -1418,7 +1420,7 @@ class ExerciseControllerTest {
 
     @Test
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
-    void deleteCustomExerciseTest_shouldReturnErrorMessageWith404_whenWrongExerciseNotFound() throws Exception {
+    void deleteCustomExercise_shouldReturnErrorMessageWith404_whenExerciseNotFound() throws Exception {
         // Given
         User user = dbUtil.createUser(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);

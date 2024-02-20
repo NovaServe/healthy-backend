@@ -1,25 +1,24 @@
 package healthy.lifestyle.backend.workout.service;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.workout.dto.BodyPartResponseDto;
 import healthy.lifestyle.backend.workout.model.BodyPart;
 import healthy.lifestyle.backend.workout.repository.BodyPartRepository;
 import java.util.Comparator;
 import java.util.List;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
 public class BodyPartServiceImpl implements BodyPartService {
-    private final BodyPartRepository bodyPartRepository;
-    private final ModelMapper modelMapper;
+    @Autowired
+    BodyPartRepository bodyPartRepository;
 
-    public BodyPartServiceImpl(BodyPartRepository bodyPartRepository, ModelMapper modelMapper) {
-        this.bodyPartRepository = bodyPartRepository;
-        this.modelMapper = modelMapper;
-    }
+    @Autowired
+    ModelMapper modelMapper;
 
     @Override
     public List<BodyPartResponseDto> getBodyParts() {

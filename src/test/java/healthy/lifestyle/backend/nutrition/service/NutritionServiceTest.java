@@ -6,16 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.nutrition.dto.NutritionResponseDto;
 import healthy.lifestyle.backend.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.nutrition.repository.NutritionRepository;
 import healthy.lifestyle.backend.nutrition.repository.NutritionTypeRepository;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserServiceImpl;
-import healthy.lifestyle.backend.util.DtoUtil;
 import healthy.lifestyle.backend.util.TestUtil;
 import healthy.lifestyle.backend.workout.model.HttpRef;
 import healthy.lifestyle.backend.workout.repository.HttpRefRepository;
@@ -33,6 +32,9 @@ import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class NutritionServiceTest {
+    @InjectMocks
+    NutritionServiceImpl nutritionService;
+
     @Mock
     private NutritionRepository nutritionRepository;
 
@@ -48,15 +50,10 @@ public class NutritionServiceTest {
     @Spy
     ModelMapper modelMapper;
 
-    @InjectMocks
-    NutritionServiceImpl nutritionService;
-
     TestUtil testUtil = new TestUtil();
 
-    DtoUtil dtoUtil = new DtoUtil();
-
     @Test
-    void getDefaultNutritionByIdTest_shouldReturnDefaultNutritionDto() {
+    void getDefaultNutritionById_shouldReturnDto_whenValidId() {
         // Given
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
         NutritionType nutritionType1 = testUtil.createSupplementType(1);
@@ -89,7 +86,7 @@ public class NutritionServiceTest {
     }
 
     @Test
-    void getDefaultNutritionByIdTest_shouldThrowErrorWith404_whenNutritionNotFound() {
+    void getDefaultNutritionById_shouldThrowErrorWith404_whenNotFound() {
         // Given
         long nonExistingNutritionId = 1000L;
         ApiException expectedException =
@@ -110,7 +107,7 @@ public class NutritionServiceTest {
     }
 
     @Test
-    void getDefaultNutritionByIdTest_shouldThrowErrorWith400_whenDefaultNutritionRequestedInsteadOfCustom() {
+    void getDefaultNutritionById_shouldThrowErrorWith400_whenCustomNutritionRequested() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
@@ -136,7 +133,7 @@ public class NutritionServiceTest {
     }
 
     @Test
-    void getDefaultNutritionByIdTest_shouldThrowErrorWith400_whenRequestedNutritionDoesntBelongToUser() {
+    void getDefaultNutritionById_shouldThrowErrorWith400_whenNutritionUserMismatch() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
