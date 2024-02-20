@@ -3,14 +3,11 @@ package healthy.lifestyle.backend.mental.controller;
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.mental.dto.MentalTypeResponseDto;
 import healthy.lifestyle.backend.mental.service.MentalService;
-import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.mental.service.MentalTypeService;
+import healthy.lifestyle.backend.shared.validation.annotation.*;
 import healthy.lifestyle.backend.user.service.AuthUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import healthy.lifestyle.backend.validation.DescriptionValidation;
-import healthy.lifestyle.backend.validation.TitleValidation;
-import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,9 +28,8 @@ public class MentalController {
 
     @Autowired
     AuthUtil authUtil;
-    private final MentalTypeService mentalTypeService;
 
-    private final AuthUtil authUtil;
+    private final MentalTypeService mentalTypeService;
 
     public MentalController(MentalService mentalService, MentalTypeService mentalTypeService, AuthUtil authUtil) {
         this.mentalService = mentalService;
@@ -62,8 +58,8 @@ public class MentalController {
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Page<MentalResponseDto>> getMentalsWithFilter(
             @RequestParam(required = false) Boolean isCustom,
-            @RequestParam(required = false) @TitleValidation String title,
-            @RequestParam(required = false) @DescriptionValidation String description,
+            @RequestParam(required = false) @TitleOptionalValidation(min = 2) String title,
+            @RequestParam(required = false) @DescriptionOptionalValidation(min = 2) String description,
             @RequestParam(required = false) Long mentalTypeId,
             @RequestParam(required = false, defaultValue = "title") String sortField,
             @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
@@ -80,8 +76,8 @@ public class MentalController {
 
     @GetMapping("/default")
     public ResponseEntity<Page<MentalResponseDto>> getDefaultMentals(
-            @RequestParam(required = false) @TitleValidation String title,
-            @RequestParam(required = false) @DescriptionValidation String description,
+            @RequestParam(required = false) @TitleOptionalValidation(min = 2) String title,
+            @RequestParam(required = false) @DescriptionOptionalValidation(min = 2) String description,
             @RequestParam(required = false) Long mentalTypeId,
             @RequestParam(required = false, defaultValue = "title") String sortField,
             @RequestParam(required = false, defaultValue = "ASC") String sortDirection,

@@ -1,10 +1,10 @@
 package healthy.lifestyle.backend.mental.service;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.mental.dto.MentalTypeResponseDto;
 import healthy.lifestyle.backend.mental.model.MentalType;
 import healthy.lifestyle.backend.mental.repository.MentalTypeRepository;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import java.util.Comparator;
 import java.util.List;
 import org.modelmapper.ModelMapper;

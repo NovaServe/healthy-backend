@@ -1,14 +1,12 @@
 package healthy.lifestyle.backend.mental.service;
 
-import healthy.lifestyle.backend.exception.ApiException;
-import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
-import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.mental.model.Mental;
 import healthy.lifestyle.backend.mental.model.MentalType;
 import healthy.lifestyle.backend.mental.repository.MentalRepository;
 import healthy.lifestyle.backend.mental.repository.MentalTypeRepository;
 import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserService;
