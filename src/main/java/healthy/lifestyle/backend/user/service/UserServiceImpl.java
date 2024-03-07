@@ -1,5 +1,8 @@
 package healthy.lifestyle.backend.user.service;
 
+import healthy.lifestyle.backend.activity.workout.model.Exercise;
+import healthy.lifestyle.backend.activity.workout.model.Workout;
+import healthy.lifestyle.backend.activity.workout.service.RemovalService;
 import healthy.lifestyle.backend.shared.exception.ApiException;
 import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
@@ -11,9 +14,6 @@ import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.repository.CountryRepository;
 import healthy.lifestyle.backend.user.repository.RoleRepository;
 import healthy.lifestyle.backend.user.repository.UserRepository;
-import healthy.lifestyle.backend.workout.model.Exercise;
-import healthy.lifestyle.backend.workout.model.Workout;
-import healthy.lifestyle.backend.workout.service.RemovalService;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;

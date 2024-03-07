@@ -9,19 +9,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.config.BeanConfig;
-import healthy.lifestyle.backend.config.ContainerConfig;
+import com.google.firebase.messaging.FirebaseMessaging;
 import healthy.lifestyle.backend.shared.exception.ApiException;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.testconfig.BeanConfig;
+import healthy.lifestyle.backend.testconfig.ContainerConfig;
+import healthy.lifestyle.backend.testutil.DbUtil;
+import healthy.lifestyle.backend.testutil.DtoUtil;
+import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.dto.LoginRequestDto;
 import healthy.lifestyle.backend.user.dto.LoginResponseDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.validation.UserValidationMessage;
-import healthy.lifestyle.backend.util.DbUtil;
-import healthy.lifestyle.backend.util.DtoUtil;
-import healthy.lifestyle.backend.util.URL;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,6 +51,9 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 @Import(BeanConfig.class)
 class AuthControllerTest {
+    @MockBean
+    FirebaseMessaging firebaseMessaging;
+
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
             new PostgreSQLContainer<>(DockerImageName.parse(ContainerConfig.POSTGRES));

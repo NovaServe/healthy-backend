@@ -11,10 +11,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.config.BeanConfig;
-import healthy.lifestyle.backend.config.ContainerConfig;
+import com.google.firebase.messaging.FirebaseMessaging;
+import healthy.lifestyle.backend.activity.workout.model.BodyPart;
+import healthy.lifestyle.backend.activity.workout.model.Exercise;
+import healthy.lifestyle.backend.activity.workout.model.HttpRef;
+import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.shared.exception.ApiException;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.testconfig.BeanConfig;
+import healthy.lifestyle.backend.testconfig.ContainerConfig;
+import healthy.lifestyle.backend.testutil.DbUtil;
+import healthy.lifestyle.backend.testutil.DtoUtil;
+import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.dto.CountryResponseDto;
 import healthy.lifestyle.backend.user.dto.SignupRequestDto;
 import healthy.lifestyle.backend.user.dto.UserResponseDto;
@@ -23,13 +31,6 @@ import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.validation.UserValidationMessage;
-import healthy.lifestyle.backend.util.DbUtil;
-import healthy.lifestyle.backend.util.DtoUtil;
-import healthy.lifestyle.backend.util.URL;
-import healthy.lifestyle.backend.workout.model.BodyPart;
-import healthy.lifestyle.backend.workout.model.Exercise;
-import healthy.lifestyle.backend.workout.model.HttpRef;
-import healthy.lifestyle.backend.workout.model.Workout;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -73,6 +75,9 @@ public class UserControllerTest {
 
     @Autowired
     DtoUtil dtoUtil;
+
+    @MockBean
+    FirebaseMessaging firebaseMessaging;
 
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =

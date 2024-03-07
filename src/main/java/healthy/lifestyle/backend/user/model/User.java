@@ -1,11 +1,12 @@
 package healthy.lifestyle.backend.user.model;
 
-import healthy.lifestyle.backend.mental.model.Mental;
-import healthy.lifestyle.backend.nutrition.model.Nutrition;
-import healthy.lifestyle.backend.workout.model.BodyPart;
-import healthy.lifestyle.backend.workout.model.Exercise;
-import healthy.lifestyle.backend.workout.model.HttpRef;
-import healthy.lifestyle.backend.workout.model.Workout;
+import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
+import healthy.lifestyle.backend.activity.workout.model.BodyPart;
+import healthy.lifestyle.backend.activity.workout.model.Exercise;
+import healthy.lifestyle.backend.activity.workout.model.HttpRef;
+import healthy.lifestyle.backend.activity.workout.model.Workout;
+import healthy.lifestyle.backend.reminder.workout.model.WorkoutReminder;
 import jakarta.persistence.*;
 import java.util.*;
 import lombok.*;
@@ -59,6 +60,13 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private Set<Nutrition> nutritions;
+
+    @OneToMany(mappedBy = "user")
+    private Set<WorkoutReminder> workoutReminders;
+
+    // In fact, one-to-one
+    @OneToMany(mappedBy = "user")
+    private Set<Profile> profile;
 
     public List<Exercise> getExercisesSortedById() {
         return this.getExercises().stream()

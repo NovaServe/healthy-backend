@@ -4,10 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
+import healthy.lifestyle.backend.testutil.TestUtil;
 import healthy.lifestyle.backend.user.dto.CountryResponseDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.repository.CountryRepository;
-import healthy.lifestyle.backend.util.TestUtil;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
