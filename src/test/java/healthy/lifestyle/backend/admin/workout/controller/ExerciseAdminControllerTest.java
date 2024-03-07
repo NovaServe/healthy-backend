@@ -6,15 +6,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.config.BeanConfig;
-import healthy.lifestyle.backend.config.ContainerConfig;
+import healthy.lifestyle.backend.activity.workout.dto.ExerciseResponseDto;
+import healthy.lifestyle.backend.activity.workout.model.BodyPart;
+import healthy.lifestyle.backend.activity.workout.model.Exercise;
+import healthy.lifestyle.backend.activity.workout.model.HttpRef;
+import healthy.lifestyle.backend.testconfig.BeanConfig;
+import healthy.lifestyle.backend.testconfig.ContainerConfig;
+import healthy.lifestyle.backend.testutil.DbUtil;
+import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.model.User;
-import healthy.lifestyle.backend.util.DbUtil;
-import healthy.lifestyle.backend.util.URL;
-import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
-import healthy.lifestyle.backend.workout.model.BodyPart;
-import healthy.lifestyle.backend.workout.model.Exercise;
-import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.*;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;

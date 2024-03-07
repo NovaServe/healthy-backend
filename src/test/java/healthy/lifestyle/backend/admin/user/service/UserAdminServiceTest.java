@@ -3,13 +3,13 @@ package healthy.lifestyle.backend.admin.user.service;
 import static org.mockito.Mockito.*;
 
 import healthy.lifestyle.backend.admin.user.repository.UserAdminRepository;
+import healthy.lifestyle.backend.testutil.TestUtil;
 import healthy.lifestyle.backend.user.dto.UserResponseDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.repository.CountryRepository;
 import healthy.lifestyle.backend.user.repository.RoleRepository;
-import healthy.lifestyle.backend.util.TestUtil;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;

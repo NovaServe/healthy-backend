@@ -7,13 +7,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.config.BeanConfig;
-import healthy.lifestyle.backend.config.ContainerConfig;
+import com.google.firebase.messaging.FirebaseMessaging;
+import healthy.lifestyle.backend.testconfig.BeanConfig;
+import healthy.lifestyle.backend.testconfig.ContainerConfig;
+import healthy.lifestyle.backend.testutil.*;
 import healthy.lifestyle.backend.user.dto.UserResponseDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
-import healthy.lifestyle.backend.util.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -26,9 +27,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -43,8 +46,8 @@ import org.testcontainers.utility.DockerImageName;
 @AutoConfigureMockMvc
 @Testcontainers
 @Import(BeanConfig.class)
+@ActiveProfiles("test")
 public class UserAdminControllerTest {
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -53,6 +56,9 @@ public class UserAdminControllerTest {
 
     @Autowired
     DbUtil dbUtil;
+
+    @MockBean
+    FirebaseMessaging firebaseMessaging;
 
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =

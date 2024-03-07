@@ -38,7 +38,8 @@ public enum ErrorMessage {
     MENTAL_NOT_FOUND("Mental with id %d not found"),
     FIELDS_VALUES_ARE_NOT_DIFFERENT(
             "Existent values of the following fields don't differ from the updated values you have sent: "),
-    WORKOUT_SHOULD_HAVE_EXERCISES("Workout should have at least one exercise");
+    WORKOUT_SHOULD_HAVE_EXERCISES("Workout should have at least one exercise"),
+    INTERNAL_SERVER_ERROR("Internal server error");
 
     private final String name;
 

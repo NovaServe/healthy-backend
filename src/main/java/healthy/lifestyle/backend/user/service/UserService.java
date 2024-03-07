@@ -1,9 +1,9 @@
 package healthy.lifestyle.backend.user.service;
 
+import healthy.lifestyle.backend.activity.workout.model.Exercise;
+import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.user.dto.*;
 import healthy.lifestyle.backend.user.model.User;
-import healthy.lifestyle.backend.workout.model.Exercise;
-import healthy.lifestyle.backend.workout.model.Workout;
 
 public interface UserService {
     void createUser(SignupRequestDto requestDto);

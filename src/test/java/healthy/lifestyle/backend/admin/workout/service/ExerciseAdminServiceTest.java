@@ -2,13 +2,13 @@ package healthy.lifestyle.backend.admin.workout.service;
 
 import static org.mockito.Mockito.*;
 
+import healthy.lifestyle.backend.activity.workout.dto.ExerciseResponseDto;
+import healthy.lifestyle.backend.activity.workout.model.BodyPart;
+import healthy.lifestyle.backend.activity.workout.model.Exercise;
+import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.admin.workout.repository.ExerciseAdminRepository;
+import healthy.lifestyle.backend.testutil.TestUtil;
 import healthy.lifestyle.backend.user.model.User;
-import healthy.lifestyle.backend.util.TestUtil;
-import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
-import healthy.lifestyle.backend.workout.model.BodyPart;
-import healthy.lifestyle.backend.workout.model.Exercise;
-import healthy.lifestyle.backend.workout.model.HttpRef;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
