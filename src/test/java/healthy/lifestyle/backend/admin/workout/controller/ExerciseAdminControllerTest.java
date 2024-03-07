@@ -6,11 +6,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.firebase.messaging.FirebaseMessaging;
 import healthy.lifestyle.backend.activity.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.activity.workout.model.BodyPart;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
-import healthy.lifestyle.backend.notification.firebase.FirebaseMessagingService;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
@@ -55,7 +55,7 @@ class ExerciseAdminControllerTest {
     DbUtil dbUtil;
 
     @MockBean
-    FirebaseMessagingService firebaseMessagingService;
+    FirebaseMessaging firebaseMessaging;
 
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
