@@ -10,6 +10,7 @@ import healthy.lifestyle.backend.activity.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.activity.workout.model.BodyPart;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
+import healthy.lifestyle.backend.notification.firebase.FirebaseMessagingService;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
@@ -25,6 +26,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -44,13 +46,16 @@ import org.testcontainers.utility.DockerImageName;
 @Import(BeanConfig.class)
 class ExerciseAdminControllerTest {
     @Autowired
-    private MockMvc mockMvc;
+    MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    ObjectMapper objectMapper;
 
     @Autowired
     DbUtil dbUtil;
+
+    @MockBean
+    FirebaseMessagingService firebaseMessagingService;
 
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
