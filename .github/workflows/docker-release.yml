@@ -76,7 +76,7 @@ jobs:
           ls -l /vartest/log/test/
 
       - name: Build jar
-        run: ./gradlew clean build --info
+        run: ./gradlew clean build
 
       - name: Build Docker image
         if: ${{ needs.checkversions.outputs.test == 0 }}
