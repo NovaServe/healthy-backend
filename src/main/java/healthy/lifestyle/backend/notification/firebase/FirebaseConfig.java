@@ -6,20 +6,18 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 import java.io.FileInputStream;
 import java.io.IOException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class FirebaseConfig {
+    @Value("${firebase.credentials.file}")
+    String firebaseCredentialsFile;
+
     @Bean
     FirebaseMessaging firebaseMessaging() throws IOException {
-        //        GoogleCredentials googleCredentials = GoogleCredentials
-        //                .fromStream(new FileInputStream("service-account.json"));
-        //        FirebaseOptions options = FirebaseOptions.builder()
-        //                .setCredentials(googleCredentials)
-        //                .build();
-
-        FileInputStream serviceAccount = new FileInputStream("firebase-service-account.json");
+        FileInputStream serviceAccount = new FileInputStream(firebaseCredentialsFile);
 
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
