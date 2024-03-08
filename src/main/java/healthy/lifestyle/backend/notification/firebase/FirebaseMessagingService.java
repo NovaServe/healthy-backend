@@ -18,7 +18,7 @@ public class FirebaseMessagingService {
 
     private static final Logger logger = LoggerFactory.getLogger(FirebaseMessagingService.class);
 
-    public void sendNotificationByToken(FirebaseMessageDto firebaseMessageDto) {
+    public void sendMessage(FirebaseMessageDto firebaseMessageDto) {
 
         Notification notification = Notification.builder()
                 .setTitle(firebaseMessageDto.getTitle())

@@ -2,7 +2,6 @@ package healthy.lifestyle.backend.notification.scheduler;
 
 import healthy.lifestyle.backend.notification.firebase.FirebaseMessageDto;
 import healthy.lifestyle.backend.notification.firebase.FirebaseMessagingService;
-import healthy.lifestyle.backend.notification.kafka.KafkaProducer;
 import healthy.lifestyle.backend.notification.shared.ActivityType;
 import java.time.Instant;
 import java.util.*;
@@ -20,9 +19,6 @@ public class NotificationService {
 
     @Autowired
     TaskScheduler taskScheduler;
-
-    @Autowired
-    KafkaProducer kafkaProducer;
 
     @Autowired
     FirebaseMessagingService firebaseMessagingService;
@@ -45,8 +41,7 @@ public class NotificationService {
             FirebaseMessageDto firebaseMessageDto = FirebaseMessageDto.buildFromTaskDto(taskDto);
             Runnable runnable = () -> {
                 try {
-                    // firebaseMessagingService.sendNotificationByToken(firebaseMessageDto);
-                    kafkaProducer.sendMessage(taskDto);
+                    firebaseMessagingService.sendMessage(firebaseMessageDto);
                 } catch (Exception e) {
                     logger.error("Error occurred while sending notification: {}", e.getMessage());
                 }

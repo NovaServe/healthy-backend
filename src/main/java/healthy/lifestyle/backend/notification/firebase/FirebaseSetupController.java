@@ -34,7 +34,7 @@ public class FirebaseSetupController {
                 .body("Workout starts in 15 min")
                 .build();
 
-        firebaseMessagingService.sendNotificationByToken(firebaseMessageDto);
+        firebaseMessagingService.sendMessage(firebaseMessageDto);
 
         return ResponseEntity.ok().build();
     }
