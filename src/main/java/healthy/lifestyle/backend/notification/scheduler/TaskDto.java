@@ -11,6 +11,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaskDto {
+    private long userId;
+
     private NotificationType notificationType;
 
     private int notifyBeforeInMinutes;
@@ -24,6 +26,4 @@ public class TaskDto {
     private ZonedDateTime notificationStartDateTimeInServerZone;
 
     private ZonedDateTime activityStartDateTimeInUserZone;
-
-    private String firebaseUserToken;
 }

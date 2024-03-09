@@ -1,7 +1,7 @@
 package healthy.lifestyle.backend.notification.scheduler;
 
 import healthy.lifestyle.backend.notification.firebase.FirebaseMessageDto;
-import healthy.lifestyle.backend.notification.firebase.FirebaseMessagingService;
+import healthy.lifestyle.backend.notification.firebase.FirebaseService;
 import healthy.lifestyle.backend.notification.shared.ActivityType;
 import java.time.Instant;
 import java.util.*;
@@ -21,7 +21,7 @@ public class NotificationService {
     TaskScheduler taskScheduler;
 
     @Autowired
-    FirebaseMessagingService firebaseMessagingService;
+    FirebaseService firebaseService;
 
     private final Map<TaskDto, ScheduledFuture> taskMapping = new ConcurrentHashMap<>();
 
@@ -36,12 +36,11 @@ public class NotificationService {
     //    }
 
     public void addScheduledFuture(List<TaskDto> taskDtoList) {
-
         for (TaskDto taskDto : taskDtoList) {
             FirebaseMessageDto firebaseMessageDto = FirebaseMessageDto.buildFromTaskDto(taskDto);
             Runnable runnable = () -> {
                 try {
-                    firebaseMessagingService.sendMessage(firebaseMessageDto);
+                    firebaseService.sendMessage(taskDto.getUserId(), firebaseMessageDto);
                 } catch (Exception e) {
                     logger.error("Error occurred while sending notification: {}", e.getMessage());
                 }
@@ -49,9 +48,7 @@ public class NotificationService {
 
             ScheduledFuture<?> scheduledFuture =
                     taskScheduler.schedule(runnable, Instant.from(taskDto.getNotificationStartDateTimeInServerZone()));
-
             taskMapping.put(taskDto, scheduledFuture);
-
             logger.info(
                     "Event has been scheduled to send {} with title: {}, body: {}",
                     taskDto.getNotificationStartDateTimeInServerZone(),
@@ -64,7 +61,7 @@ public class NotificationService {
         addScheduledFuture(List.of(taskDto));
     }
 
-    public void cancelScheduledFuture(ActivityType activityType, long activityId, long reminderId) {
+    public void cancelAndRemoveScheduledFuture(ActivityType activityType, long activityId, long reminderId) {
         Iterator<Map.Entry<TaskDto, ScheduledFuture>> iterator =
                 taskMapping.entrySet().iterator();
 
@@ -82,7 +79,7 @@ public class NotificationService {
         }
     }
 
-    public void clearDoneTasks() {
+    public void removeDoneTasks() {
         Iterator<Map.Entry<TaskDto, ScheduledFuture>> iterator =
                 taskMapping.entrySet().iterator();
 
@@ -95,9 +92,5 @@ public class NotificationService {
                 iterator.remove();
             }
         }
-    }
-
-    private void clearTasks(boolean mayInterruptIfRunning) {
-        taskMapping.forEach((taskDto, scheduledFuture) -> scheduledFuture.cancel(mayInterruptIfRunning));
     }
 }

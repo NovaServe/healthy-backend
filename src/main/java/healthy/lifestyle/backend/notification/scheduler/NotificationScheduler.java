@@ -16,7 +16,7 @@ public class NotificationScheduler {
 
     @Scheduled(cron = "0 0 * * * *") // Run every hour
     public void addScheduledFuture() {
-        notificationService.clearDoneTasks();
+        notificationService.removeDoneTasks();
         logger.info("Every-hour scheduler has been started");
 
         //        List<TaskDto> taskDtoList = new ArrayList<>();

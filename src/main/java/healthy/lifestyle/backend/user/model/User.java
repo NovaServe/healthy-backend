@@ -6,6 +6,7 @@ import healthy.lifestyle.backend.activity.workout.model.BodyPart;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
+import healthy.lifestyle.backend.notification.model.FirebaseUserToken;
 import healthy.lifestyle.backend.reminder.workout.model.WorkoutReminder;
 import jakarta.persistence.*;
 import java.util.*;
@@ -67,6 +68,9 @@ public class User {
     // In fact, one-to-one
     @OneToMany(mappedBy = "user")
     private Set<Profile> profile;
+
+    @OneToMany(mappedBy = "user")
+    private Set<FirebaseUserToken> firebaseUserTokens;
 
     public List<Exercise> getExercisesSortedById() {
         return this.getExercises().stream()
