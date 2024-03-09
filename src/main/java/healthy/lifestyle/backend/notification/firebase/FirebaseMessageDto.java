@@ -9,16 +9,11 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FirebaseMessageDto {
-
-    private String firebaseUserToken;
-
     private String title;
 
     private String body;
 
     private String image;
-
-    // private Map<String, String> data;
 
     public static FirebaseMessageDto buildFromTaskDto(TaskDto taskDto) {
         String title = "";
@@ -47,10 +42,6 @@ public class FirebaseMessageDto {
             }
         }
 
-        return FirebaseMessageDto.builder()
-                .title(title)
-                .body(message)
-                .firebaseUserToken(taskDto.getFirebaseUserToken())
-                .build();
+        return FirebaseMessageDto.builder().title(title).body(message).build();
     }
 }

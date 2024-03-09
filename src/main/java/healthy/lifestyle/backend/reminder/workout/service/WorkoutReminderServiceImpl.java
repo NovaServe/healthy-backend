@@ -240,8 +240,6 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
 
         List<WorkoutReminderDay> days = workoutReminder.getDaysSortedById();
         TimeZone userTimeZone = TimeZone.getTimeZone("Europe/Kyiv");
-        String userFirebaseToken =
-                "c53jkPvhaFctXO_MxPpP2V:APA91bFpNv0Yvkw2Rof7Blt--Sl87wSTv2ZELMoIy3wKjt4b_4cGrI9wfMUuVQ_NjDcM3RK7KZbNmutuId39UaLoxJ8hJuOCy3fYKPyy01CGhNc0vSq4gLlt6FOQwZEiL1RZY70hUkZD";
 
         for (WorkoutReminderDay day : days) {
 
@@ -255,8 +253,7 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
                         day.getMinutes(),
                         day.getHours(),
                         day.getMinutes(),
-                        userTimeZone,
-                        userFirebaseToken);
+                        userTimeZone);
             }
 
             boolean isTimeInBetweenSchedulers_notifyBeforeTime = dateTimeService.isTimeInBetweenSchedulers(
@@ -269,8 +266,7 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
                         day.getMinutesNotifyBefore(),
                         day.getHours(),
                         day.getMinutes(),
-                        userTimeZone,
-                        userFirebaseToken);
+                        userTimeZone);
             }
 
             boolean isTimeInBetweenSchedulers_notifyBeforeDefaultTime = dateTimeService.isTimeInBetweenSchedulers(
@@ -283,8 +279,7 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
                         day.getMinutesNotifyBeforeDefault(),
                         day.getHours(),
                         day.getMinutes(),
-                        userTimeZone,
-                        userFirebaseToken);
+                        userTimeZone);
             }
         }
     }
@@ -296,8 +291,7 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
             int notificationMinutes,
             int activityHour,
             int activityMinutes,
-            TimeZone userTimeZone,
-            String userFirebaseToken) {
+            TimeZone userTimeZone) {
 
         LocalDateTime notificationStartDateTime = LocalDateTime.of(
                 dateTimeService.getCurrentYear(),
@@ -320,6 +314,7 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
                 ZonedDateTime.of(activityStartDateTime, userTimeZone.toZoneId());
 
         TaskDto taskDto = TaskDto.builder()
+                .userId(workoutReminder.getUser().getId())
                 .notificationType(notificationType)
                 .notifyBeforeInMinutes(workoutReminder.getNotifyBeforeInMinutes())
                 .activityId(workoutReminder.getWorkout().getId())
@@ -327,7 +322,6 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
                 .reminderId(workoutReminder.getId())
                 .notificationStartDateTimeInServerZone(notificationStartDateTimeInServerZone)
                 .activityStartDateTimeInUserZone(activityStartDateTimeInUserZone)
-                .firebaseUserToken(userFirebaseToken)
                 .build();
 
         notificationService.addScheduledFuture(taskDto);
