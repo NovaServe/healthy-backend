@@ -242,8 +242,8 @@
                 <constraints nullable="true" unique="false" foreignKeyName="fk_user_id"
                              references="users(id)"/>
             </column>
-            <column name="type_id" type="bigint">
-                <constraints nullable="false" foreignKeyName="fk_type_id" references="mental_types(id)"/>
+            <column name="mental_type_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_mental_type_id" references="mental_types(id)"/>
             </column>
         </createTable>
 
@@ -261,7 +261,7 @@
             </column>
         </createTable>
 
-        <sqlFile path="sql/mental_types_init.sql" relativeToChangelogFile="true" endDelimiter=";"
+        <sqlFile path="sql/default_mentals.sql" relativeToChangelogFile="true" endDelimiter=";"
                  splitStatements="true"/>
     </changeSet>
 
