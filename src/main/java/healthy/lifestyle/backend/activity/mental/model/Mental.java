@@ -41,7 +41,7 @@ public class Mental {
     private Set<HttpRef> httpRefs;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type_id") // FOREIGN KEY(type_id) REFERENCES mental_types(id)
+    @JoinColumn(name = "mental_type_id") // FOREIGN KEY(mental_type_id) REFERENCES mental_types(id)
     private MentalType type;
 
     public List<HttpRef> getHttpRefsSortedById() {

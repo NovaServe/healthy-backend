@@ -1,3 +1,0 @@
-INSERT INTO mental_types(name) VALUES
-('MEDITATION'),
-('AFFIRMATION');
