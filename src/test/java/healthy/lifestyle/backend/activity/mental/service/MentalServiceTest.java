@@ -22,6 +22,7 @@ import healthy.lifestyle.backend.user.service.UserServiceImpl;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
@@ -190,5 +192,49 @@ class MentalServiceTest {
         assertThat(httpRefs_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
                 .isEqualTo(mentalDtoActual.getHttpRefs());
+    }
+
+    @Test
+    void getMentals_shouldReturnPageMentalsDto() {
+        int currentPageNumber = 0;
+        int itemsPerPage = 2;
+        String orderBy = "ASC";
+        String sortBy = "id";
+
+        User user = testUtil.createUser(1);
+        HttpRef defaultHttpRef1 = testUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = testUtil.createDefaultHttpRef(2);
+        MentalType mentalType1 = testUtil.createAffirmationType();
+        MentalType mentalType2 = testUtil.createMeditationType();
+        Mental defaultMental1 = testUtil.createDefaultMental(1, List.of(defaultHttpRef1), mentalType1);
+        Mental defaultMental2 = testUtil.createDefaultMental(2, List.of(defaultHttpRef2), mentalType1);
+        Mental defaultMental3 = testUtil.createDefaultMental(3, List.of(defaultHttpRef2), mentalType2);
+        Mental defaultMental4 = testUtil.createDefaultMental(4, List.of(defaultHttpRef1), mentalType2);
+
+        List<Mental> filteredMentalList = Stream.of(defaultMental1, defaultMental2, defaultMental3, defaultMental4)
+                .sorted(Comparator.comparingLong(Mental::getId))
+                .toList();
+        Pageable pageable =
+                PageRequest.of(currentPageNumber, itemsPerPage, Sort.by(Sort.Direction.fromString(orderBy), sortBy));
+
+        Page<Mental> mockMentalPage = new PageImpl<>(filteredMentalList, pageable, filteredMentalList.size());
+
+        when(mentalRepository.findDefaultAndCustomMentals(user.getId(), pageable))
+                .thenReturn(mockMentalPage);
+
+        // When
+        Page<MentalResponseDto> dtoPage =
+                mentalService.getMentals(user.getId(), sortBy, orderBy, currentPageNumber, itemsPerPage);
+
+        // Then
+        verify((mentalRepository), times(1)).findDefaultAndCustomMentals(user.getId(), pageable);
+
+        assertThat(mockMentalPage)
+                .usingRecursiveComparison()
+                .ignoringFields("user", "httpRefs", "type")
+                .isEqualTo(dtoPage);
+
+        assertEquals(filteredMentalList.size(), dtoPage.getTotalElements());
+        assertEquals(4, dtoPage.getContent().size());
     }
 }

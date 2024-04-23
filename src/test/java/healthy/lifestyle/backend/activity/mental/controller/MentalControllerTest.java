@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.messaging.FirebaseMessaging;
 import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
@@ -23,7 +24,9 @@ import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -218,5 +221,128 @@ public class MentalControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
                 .andDo(print());
+    }
+
+    @Test
+    void getAllMentals_shouldReturnListDefaultMentalsWith200_whenValidRequest() throws Exception {
+        // Given
+        int pageNumber = 0;
+        int pageSize = 10;
+        String sortDirection = "ASC";
+        String sortField = "title";
+
+        User user = dbUtil.createUser(1);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        MentalType mentalType2 = dbUtil.createMeditationType();
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+
+        Mental defaultMental1 = dbUtil.createDefaultMental(1, List.of(defaultHttpRef1), mentalType1);
+        Mental defaultMental2 = dbUtil.createDefaultMental(2, List.of(defaultHttpRef2), mentalType2);
+        Mental defaultMental3 = dbUtil.createDefaultMental(3, List.of(defaultHttpRef1), mentalType2);
+        Mental defaultMental4 = dbUtil.createDefaultMental(4, List.of(defaultHttpRef2), mentalType1);
+        Mental customMental = dbUtil.createCustomMental(5, List.of(defaultHttpRef1), mentalType1, user);
+
+        List<Mental> expectedMentalList = Stream.of(defaultMental1, defaultMental2, defaultMental3, defaultMental4)
+                .sorted(Comparator.comparingLong(Mental::getId))
+                .toList();
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.ALL_MENTALS)
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(expectedMentalList.size())))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<MentalResponseDto> responseDto =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<MentalResponseDto>>() {});
+
+        assertThat(responseDto)
+                .usingRecursiveComparison()
+                .ignoringFields("user", "httpRefs", "mentalTypeId")
+                .isEqualTo(expectedMentalList);
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getAllMentals_shouldReturnListMentalsDtoWith200_whenValidRequest() throws Exception {
+        // Given
+        int pageNumber = 0;
+        int pageSize = 10;
+        String sortDirection = "ASC";
+        String sortField = "title";
+
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        User user1 = dbUtil.createUser(1, role, country);
+        User user2 = dbUtil.createUser(2, role, country);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        MentalType mentalType2 = dbUtil.createMeditationType();
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user1);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user2);
+
+        Mental defaultMental1 = dbUtil.createDefaultMental(1, List.of(defaultHttpRef1), mentalType1);
+        Mental defaultMental2 = dbUtil.createDefaultMental(2, List.of(defaultHttpRef2), mentalType2);
+        Mental defaultMental3 = dbUtil.createDefaultMental(3, List.of(defaultHttpRef1), mentalType2);
+        Mental defaultMental4 = dbUtil.createDefaultMental(4, List.of(defaultHttpRef2), mentalType1);
+
+        Mental customMental1 = dbUtil.createCustomMental(5, List.of(customHttpRef1), mentalType1, user1);
+        Mental customMental2 =
+                dbUtil.createCustomMental(6, List.of(defaultHttpRef1, customHttpRef1), mentalType2, user1);
+        Mental customMental3 =
+                dbUtil.createCustomMental(7, List.of(defaultHttpRef2, customHttpRef1), mentalType2, user1);
+        Mental customMental4 = dbUtil.createCustomMental(8, List.of(customHttpRef2), mentalType1, user2);
+        Mental customMental5 =
+                dbUtil.createCustomMental(9, List.of(defaultHttpRef2, customHttpRef2), mentalType2, user2);
+
+        List<Mental> expectedMentalList = Stream.of(
+                        defaultMental1,
+                        defaultMental2,
+                        defaultMental3,
+                        defaultMental4,
+                        customMental1,
+                        customMental2,
+                        customMental3)
+                .sorted(Comparator.comparingLong(Mental::getId))
+                .toList();
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.ALL_MENTALS)
+                        .param("sortField", sortField)
+                        .param("sortDirection", sortDirection)
+                        .param("pageSize", String.valueOf(pageSize))
+                        .param("pageNumber", String.valueOf(pageNumber))
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(expectedMentalList.size())))
+                .andExpect(jsonPath("$.size", is(pageSize)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<MentalResponseDto> responseDto =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<MentalResponseDto>>() {});
+
+        assertThat(responseDto)
+                .usingRecursiveComparison()
+                .ignoringFields("user", "httpRefs", "mentalTypeId")
+                .isEqualTo(expectedMentalList);
     }
 }
