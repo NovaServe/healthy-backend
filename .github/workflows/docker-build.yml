@@ -2,7 +2,7 @@ name: PR Pipeline
 
 on:
   pull_request:
-    branches: [ "v*" ]
+    branches: [ "main" ]
 
 jobs:
 
