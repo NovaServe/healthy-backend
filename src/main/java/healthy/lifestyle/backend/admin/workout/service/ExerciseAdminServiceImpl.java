@@ -1,10 +1,12 @@
 package healthy.lifestyle.backend.admin.workout.service;
 
+import healthy.lifestyle.backend.activity.workout.dto.BodyPartResponseDto;
+import healthy.lifestyle.backend.activity.workout.dto.ExerciseResponseDto;
+import healthy.lifestyle.backend.activity.workout.dto.HttpRefResponseDto;
+import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.admin.workout.repository.ExerciseAdminRepository;
 import healthy.lifestyle.backend.shared.exception.ApiException;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
-import healthy.lifestyle.backend.workout.dto.*;
-import healthy.lifestyle.backend.workout.model.Exercise;
 import java.util.Comparator;
 import java.util.List;
 import org.modelmapper.ModelMapper;

@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.admin.workout.repository;
 
-import healthy.lifestyle.backend.workout.model.Exercise;
+import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

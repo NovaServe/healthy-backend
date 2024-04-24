@@ -2,13 +2,14 @@ package healthy.lifestyle.backend.admin.user.repository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import healthy.lifestyle.backend.config.BeanConfig;
-import healthy.lifestyle.backend.config.ContainerConfig;
+import com.google.firebase.messaging.FirebaseMessaging;
+import healthy.lifestyle.backend.testconfig.BeanConfig;
+import healthy.lifestyle.backend.testconfig.ContainerConfig;
+import healthy.lifestyle.backend.testutil.DbUtil;
+import healthy.lifestyle.backend.testutil.Shared;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
-import healthy.lifestyle.backend.util.DbUtil;
-import healthy.lifestyle.backend.util.Shared;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -30,7 +33,11 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest
 @Testcontainers
 @Import(BeanConfig.class)
+@ActiveProfiles("test")
 public class UserAdminRepositoryTest {
+    @MockBean
+    FirebaseMessaging firebaseMessaging;
+
     @Container
     static PostgreSQLContainer<?> postgresqlContainer =
             new PostgreSQLContainer<>(DockerImageName.parse(ContainerConfig.POSTGRES));

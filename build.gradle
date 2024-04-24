@@ -20,6 +20,16 @@ jar {
 	enabled = false
 }
 
+//configurations {
+//	all*.exclude group: 'commons-logging', module: 'commons-logging'
+//}
+
+configurations {
+	configureEach {
+		exclude group: 'commons-logging', module: 'commons-logging'
+	}
+}
+
 dependencies {
 	// Rest
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -29,6 +39,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
 	runtimeOnly 'org.postgresql:postgresql'
 	implementation 'org.liquibase:liquibase-core'
+
+	// Kafka
+	implementation 'org.springframework.kafka:spring-kafka'
+	testImplementation 'org.springframework.kafka:spring-kafka-test'
+
+	// Firebase Cloud Messaging
+	implementation group: 'com.google.firebase', name: 'firebase-admin', version: '9.2.0'
 
 	// Security
 	implementation 'org.springframework.boot:spring-boot-starter-security'

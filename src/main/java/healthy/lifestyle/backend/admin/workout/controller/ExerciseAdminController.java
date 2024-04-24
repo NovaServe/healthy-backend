@@ -1,9 +1,9 @@
 package healthy.lifestyle.backend.admin.workout.controller;
 
+import healthy.lifestyle.backend.activity.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.admin.workout.service.ExerciseAdminService;
 import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
-import healthy.lifestyle.backend.workout.dto.ExerciseResponseDto;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

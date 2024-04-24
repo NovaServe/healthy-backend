@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +26,9 @@ public class AuthController {
     @Autowired
     UserService userService;
 
+    @Value("${firebase.vapid-key}")
+    String firebaseVapidKey;
+
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto requestDto) {
         LoginResponseDto responseDto = authService.login(requestDto);
@@ -39,6 +43,7 @@ public class AuthController {
         UserResponseDto user = userService.getUserDetailsById(userId);
         Map<Integer, String> response = new HashMap<>();
         response.put(1, user.getFullName());
+        response.put(2, firebaseVapidKey);
         return ResponseEntity.ok(response);
     }
 }

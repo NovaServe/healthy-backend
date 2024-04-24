@@ -2,7 +2,7 @@ name: PR Pipeline
 
 on:
   pull_request:
-    branches: [ "v*" ]
+    branches: [ "main" ]
 
 jobs:
 
@@ -55,4 +55,4 @@ jobs:
          ls -l /vartest/log/test/
        
      - name: Build
-       run: ./gradlew clean build --info
+       run: ./gradlew clean build
