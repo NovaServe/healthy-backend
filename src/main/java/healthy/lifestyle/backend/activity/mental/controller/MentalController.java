@@ -1,9 +1,11 @@
 package healthy.lifestyle.backend.activity.mental.controller;
 
 import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.service.MentalService;
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.user.service.AuthUtil;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -11,10 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @Validated
 @Controller
@@ -44,7 +43,6 @@ public class MentalController {
     }
 
     @GetMapping("/all_mentals")
-    // @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Page<MentalResponseDto>> getAllMentals(
             @RequestParam(required = false, defaultValue = "title") String sortField,
             @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
@@ -55,5 +53,16 @@ public class MentalController {
         Page<MentalResponseDto> responseDtoPage =
                 mentalService.getMentals(userId, sortField, sortDirection, pageNumber, pageSize);
         return ResponseEntity.ok(responseDtoPage);
+    }
+
+    @PatchMapping("/{mentalId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<MentalResponseDto> updateCustomMental(
+            @PathVariable("mentalId") long mentalId, @Valid @RequestBody MentalUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException {
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        MentalResponseDto responseDto = mentalService.updateCustomMental(mentalId, userId, requestDto);
+        return ResponseEntity.ok(responseDto);
     }
 }
