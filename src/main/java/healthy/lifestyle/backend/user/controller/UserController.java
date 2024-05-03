@@ -1,10 +1,7 @@
 package healthy.lifestyle.backend.user.controller;
 
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
-import healthy.lifestyle.backend.user.dto.CountryResponseDto;
-import healthy.lifestyle.backend.user.dto.SignupRequestDto;
-import healthy.lifestyle.backend.user.dto.UserResponseDto;
-import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
+import healthy.lifestyle.backend.user.dto.*;
 import healthy.lifestyle.backend.user.service.*;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -22,6 +19,9 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     @Autowired
     CountryService countryService;
+
+    @Autowired
+    TimezoneService timezoneService;
 
     @Autowired
     UserService userService;
@@ -67,6 +67,12 @@ public class UserController {
     @GetMapping("/countries")
     public ResponseEntity<List<CountryResponseDto>> getCountries() {
         List<CountryResponseDto> responseDtoList = countryService.getCountries();
+        return ResponseEntity.ok(responseDtoList);
+    }
+
+    @GetMapping("/timezones")
+    public ResponseEntity<List<TimezoneResponseDto>> getTimezones(){
+        List<TimezoneResponseDto> responseDtoList = timezoneService.getTimezones();
         return ResponseEntity.ok(responseDtoList);
     }
 }

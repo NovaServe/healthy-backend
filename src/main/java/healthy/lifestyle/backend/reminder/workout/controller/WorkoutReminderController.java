@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequestMapping("${api.basePath}/${api.version}/calendar/workouts")
 public class WorkoutReminderController {
+
     @Autowired
     AuthUtil authUtil;
 
@@ -46,7 +47,6 @@ public class WorkoutReminderController {
             @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
             @RequestParam(required = false, defaultValue = "10") int pageSize,
             @RequestParam(required = false, defaultValue = "0") int pageNumber) {
-
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         Page<WorkoutReminderResponseDto> responseDto = workoutReminderService.getWorkoutRemindersWithFilter(

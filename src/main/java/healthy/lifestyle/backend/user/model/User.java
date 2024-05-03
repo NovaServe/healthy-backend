@@ -44,6 +44,10 @@ public class User {
     @JoinColumn(name = "country_id") // FOREIGN KEY(country_id) REFERENCES countries(id)
     private Country country;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "timezone_id") // FOREIGN KEY(timezone_id) REFERENCES timezones(id)
+    private Timezone timezone;
+
     @Column(name = "age", nullable = true, unique = false)
     private Integer age;
 

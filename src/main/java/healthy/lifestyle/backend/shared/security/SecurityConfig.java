@@ -54,6 +54,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getCountriesUrl())
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, apiUrl.getTimezonesUrl())
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getDefaultExerciseDetailsUrl())
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getDefaultHttpRefsUrl())

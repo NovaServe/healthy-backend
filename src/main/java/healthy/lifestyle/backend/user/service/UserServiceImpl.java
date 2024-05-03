@@ -10,9 +10,11 @@ import healthy.lifestyle.backend.shared.util.VerificationUtil;
 import healthy.lifestyle.backend.user.dto.*;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.repository.CountryRepository;
 import healthy.lifestyle.backend.user.repository.RoleRepository;
+import healthy.lifestyle.backend.user.repository.TimezoneRepository;
 import healthy.lifestyle.backend.user.repository.UserRepository;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +37,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     CountryRepository countryRepository;
+
+    @Autowired
+    TimezoneRepository timezoneRepository;
 
     @Autowired
     PasswordEncoder passwordEncoder;
@@ -65,6 +70,12 @@ public class UserServiceImpl implements UserService {
                 .findById(requestDto.getCountryId())
                 .orElseThrow(() -> new ApiException(
                         ErrorMessage.COUNTRY_NOT_FOUND, requestDto.getCountryId(), HttpStatus.NOT_FOUND));
+
+        Timezone timezone = timezoneRepository
+                .findById(requestDto.getTimezoneId())
+                .orElseThrow(() -> new ApiException(
+                        ErrorMessage.TIMEZONE_NOT_FOUND, requestDto.getTimezoneId(), HttpStatus.NOT_FOUND));
+
         User user = User.builder()
                 .username(requestDto.getUsername())
                 .email(requestDto.getEmail())
@@ -72,6 +83,7 @@ public class UserServiceImpl implements UserService {
                 .fullName(requestDto.getFullName())
                 .role(role)
                 .country(country)
+                .timezone(timezone)
                 .age(requestDto.getAge())
                 .build();
         userRepository.save(user);
@@ -152,6 +164,15 @@ public class UserServiceImpl implements UserService {
                     .orElseThrow(() -> new ApiException(
                             ErrorMessage.COUNTRY_NOT_FOUND, requestDto.getCountryId(), HttpStatus.NOT_FOUND));
             user.setCountry(country);
+        }
+
+        if (requestDto.getTimezoneId() != null
+                && !requestDto.getTimezoneId().equals(user.getTimezone().getId())) {
+            Timezone timezone = timezoneRepository
+                    .findById(requestDto.getTimezoneId())
+                    .orElseThrow(() -> new ApiException(
+                            ErrorMessage.TIMEZONE_NOT_FOUND, requestDto.getTimezoneId(), HttpStatus.NOT_FOUND));
+            user.setTimezone(timezone);
         }
 
         User savedUser = userRepository.save(user);

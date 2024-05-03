@@ -31,6 +31,9 @@ public class ApiUrl {
     @Value("${api.basePath}/${api.version}/users/countries")
     private String countriesUrl;
 
+    @Value("${api.basePath}/${api.version}/users/timezones")
+    private String timezonesUrl;
+
     @Value("${api.basePath}/${api.version}/workouts/exercises/default/{exercise_id}")
     private String defaultExerciseDetailsUrl;
 

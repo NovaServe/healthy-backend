@@ -10,6 +10,7 @@ public enum ErrorMessage {
     HTTP_REF_NOT_FOUND("Http ref with id %d not found"),
     BODY_PART_NOT_FOUND("Body part with id %d not found"),
     COUNTRY_NOT_FOUND("Country with id %d not found"),
+    TIMEZONE_NOT_FOUND("Timezone with id %d not found"),
     EXERCISE_NOT_FOUND("Exercise with id %d not found"),
     WORKOUT_NOT_FOUND("Workout with id %d not found"),
     USER_NOT_FOUND("User with id %d not found"),

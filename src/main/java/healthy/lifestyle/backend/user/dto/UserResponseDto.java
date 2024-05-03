@@ -18,5 +18,7 @@ public class UserResponseDto {
 
     private Long countryId;
 
+    private Long timezoneId;
+
     private Integer age;
 }
