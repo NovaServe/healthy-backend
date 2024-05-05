@@ -1,8 +1,13 @@
 package healthy.lifestyle.backend.activity.mental.controller;
 
+import static java.util.Objects.nonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -12,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.messaging.FirebaseMessaging;
 import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.model.Mental;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
@@ -20,15 +26,21 @@ import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
+import healthy.lifestyle.backend.testutil.DtoUtil;
 import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -59,6 +71,9 @@ public class MentalControllerTest {
 
     @Autowired
     DbUtil dbUtil;
+
+    @Autowired
+    DtoUtil dtoUtil;
 
     @MockBean
     FirebaseMessaging firebaseMessaging;
@@ -344,5 +359,333 @@ public class MentalControllerTest {
                 .usingRecursiveComparison()
                 .ignoringFields("user", "httpRefs", "mentalTypeId")
                 .isEqualTo(expectedMentalList);
+    }
+
+    @ParameterizedTest
+    @MethodSource("updateCustomMentalValidFilters")
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateCustomMental_shouldReturnUpdatedDtoWith200_whenValidFilters(
+            String updateTitle, String updateDescription, String updatedMentalType) throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+
+        MentalType mentalType1 = dbUtil.createMeditationType();
+        MentalType mentalType2 = dbUtil.createAffirmationType();
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(3);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(4);
+
+        Mental customMental = dbUtil.createCustomMental(
+                1, List.of(customHttpRef1, customHttpRef2, defaultHttpRef1, defaultHttpRef2), mentalType1, user);
+
+        HttpRef customHttpRefToAdd = dbUtil.createCustomHttpRef(5, user);
+        HttpRef defaultHttpRefToAdd = dbUtil.createDefaultHttpRef(6);
+
+        Optional<Long> mentalType = Stream.of(mentalType1, mentalType2)
+                .filter(mentalTypes -> mentalTypes.getName().equals(updatedMentalType))
+                .map(MentalType::getId)
+                .findFirst();
+        MentalUpdateRequestDto requestDto = dtoUtil.mentalUpdateRequestDto(
+                2,
+                List.of(
+                        customHttpRef1.getId(),
+                        defaultHttpRef1.getId(),
+                        customHttpRefToAdd.getId(),
+                        defaultHttpRefToAdd.getId()),
+                mentalType1.getId());
+        requestDto.setTitle(updateTitle);
+        requestDto.setDescription(updateDescription);
+        mentalType.ifPresent(requestDto::setMentalTypeId);
+
+        String initialTitle = customMental.getTitle();
+        String initialDescription = customMental.getDescription();
+        Long initialNeedsMental = customMental.getType().getId();
+
+        // Expected nested objects
+        List<HttpRef> expectedHttpRefs =
+                List.of(customHttpRef1, defaultHttpRef1, customHttpRefToAdd, defaultHttpRefToAdd);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(patch(URL.CUSTOM_MENTAL_ID, customMental.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(notNullValue())))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        MentalResponseDto responseDto = objectMapper.readValue(responseContent, MentalResponseDto.class);
+
+        assertTrue(responseDto.isCustom());
+
+        if (nonNull(updateTitle)) assertEquals(requestDto.getTitle(), responseDto.getTitle());
+        else assertEquals(initialTitle, responseDto.getTitle());
+
+        if (nonNull(updateDescription)) assertEquals(requestDto.getDescription(), responseDto.getDescription());
+        else assertEquals(initialDescription, responseDto.getDescription());
+
+        if (mentalType.isPresent()) assertEquals(requestDto.getMentalTypeId(), responseDto.getMentalTypeId());
+        else assertEquals(initialNeedsMental, responseDto.getMentalTypeId());
+        assertThat(responseDto.getHttpRefs()).usingRecursiveComparison().isEqualTo(expectedHttpRefs);
+    }
+
+    static Stream<Arguments> updateCustomMentalValidFilters() {
+        return Stream.of(
+                Arguments.of("Update title", "Update description", "AFFIRMATION"),
+                Arguments.of("Update title", "Update description", null),
+                Arguments.of("Update title", null, "AFFIRMATION"),
+                Arguments.of(null, "Update description", "AFFIRMATION"),
+                Arguments.of("Update title", "Update description", "MEDITATION"),
+                Arguments.of("Update title", "Update description", null),
+                Arguments.of("Update title", null, "MEDITATION"),
+                Arguments.of(null, "Update description", "MEDITATION"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("updateCustomMentalInvalidFilters")
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateCustomMental_shouldReturnValidationMessageWith400_whenInvalidFilters(
+            String updateTitle,
+            String updateDescription,
+            List<Long> updateHttpRefsIds,
+            String updatedMentalType,
+            String errorFieldName,
+            String errorMessage)
+            throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        MentalType mentalType1 = dbUtil.createMeditationType();
+        MentalType mentalType2 = dbUtil.createAffirmationType();
+
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(3);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(4);
+
+        Mental customMental = dbUtil.createCustomMental(
+                1, List.of(customHttpRef1, customHttpRef2, defaultHttpRef1, defaultHttpRef2), mentalType1, user);
+        Optional<Long> mentalType = Stream.of(mentalType1, mentalType2)
+                .filter(mentalTypes -> mentalTypes.getName().equals(updatedMentalType))
+                .map(MentalType::getId)
+                .findFirst();
+
+        MentalUpdateRequestDto requestDto = dtoUtil.mentalUpdateRequestDtoEmpty();
+        requestDto.setTitle(updateTitle);
+        requestDto.setDescription(updateDescription);
+        requestDto.setHttpRefIds(updateHttpRefsIds);
+        mentalType.ifPresent(requestDto::setMentalTypeId);
+
+        // When
+        mockMvc.perform(patch(URL.CUSTOM_MENTAL_ID, customMental.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$." + errorFieldName, is(errorMessage)))
+                .andDo(print());
+    }
+
+    static Stream<Arguments> updateCustomMentalInvalidFilters() {
+        return Stream.of(
+                // Invalid title
+                Arguments.of(
+                        "Update title!",
+                        null,
+                        Collections.emptyList(),
+                        "MEDITATION",
+                        "title",
+                        "Title can include lower and upper-case letters, digits, spaces, and symbols . , - ( ) /"),
+                // Invalid description
+                Arguments.of(
+                        null,
+                        "Update description^",
+                        Collections.emptyList(),
+                        "MEDITATION",
+                        "description",
+                        "Description can include lower and upper-case letters, digits, spaces, and symbols: . , - : ; ! ? ' \" # % ( ) + ="));
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateCustomMental_shouldReturnUpdatedDtoWith200_whenHttpRefsIdsNotGiven() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+
+        MentalType mentalType1 = dbUtil.createMeditationType();
+        MentalType mentalType2 = dbUtil.createAffirmationType();
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(3);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(4);
+
+        Mental customMental = dbUtil.createCustomMental(
+                1, List.of(customHttpRef1, customHttpRef2, defaultHttpRef1, defaultHttpRef2), mentalType1, user);
+
+        // Http refs should be removed from the target exercise. Other fields should remain the same.
+        MentalUpdateRequestDto requestDto = dtoUtil.mentalUpdateRequestDtoEmpty();
+        List<Long> newHttpRefs = Collections.emptyList();
+        requestDto.setHttpRefIds(newHttpRefs);
+        requestDto.setMentalTypeId(customMental.getType().getId());
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(patch(URL.CUSTOM_MENTAL_ID, customMental.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(notNullValue())))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        MentalResponseDto responseDto = objectMapper.readValue(responseContent, MentalResponseDto.class);
+
+        assertTrue(responseDto.isCustom());
+        assertEquals(customMental.getTitle(), responseDto.getTitle());
+        assertEquals(customMental.getDescription(), responseDto.getDescription());
+        assertEquals(customMental.getType().getId(), responseDto.getMentalTypeId());
+        assertThat(responseDto.getHttpRefs()).usingRecursiveComparison().isEqualTo(Collections.emptyList());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateCustomMental_shouldReturnErrorMessageWith404_whenCustomMentalNotFound() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+
+        MentalType mentalType1 = dbUtil.createMeditationType();
+        MentalType mentalType2 = dbUtil.createAffirmationType();
+        HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
+        long nonExistentMentalId = 1000L;
+
+        MentalUpdateRequestDto requestDto =
+                dtoUtil.mentalUpdateRequestDto(2, List.of(defaultHttpRef.getId()), mentalType2.getId());
+
+        ApiException expectedException =
+                new ApiException(ErrorMessage.MENTAL_NOT_FOUND, nonExistentMentalId, HttpStatus.NOT_FOUND);
+
+        // When
+        mockMvc.perform(patch(URL.CUSTOM_MENTAL_ID, nonExistentMentalId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateCustomMental_shouldReturnErrorMessageWith400_whenEmptyRequest() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+
+        MentalType mentalType1 = dbUtil.createMeditationType();
+        MentalType mentalType2 = dbUtil.createAffirmationType();
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(3);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(4);
+
+        Mental customMental = dbUtil.createCustomMental(
+                1, List.of(customHttpRef1, customHttpRef2, defaultHttpRef1, defaultHttpRef2), mentalType1, user);
+
+        MentalUpdateRequestDto requestDto = dtoUtil.mentalUpdateRequestDtoEmpty();
+        requestDto.setMentalTypeId(customMental.getType().getId());
+        requestDto.setHttpRefIds(customMental.getHttpRefsIdsSorted());
+
+        // When
+        mockMvc.perform(patch(URL.CUSTOM_MENTAL_ID, customMental.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(ErrorMessage.NO_UPDATES_REQUEST.getName())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateCustomMental_shouldReturnErrorMessageWith400_whenMentalUserMismatch() throws Exception {
+        // Given
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        User user = dbUtil.createUser(1, role, country);
+
+        MentalType mentalType1 = dbUtil.createMeditationType();
+        MentalType mentalType2 = dbUtil.createAffirmationType();
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(3);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(4);
+
+        Mental customMental1 = dbUtil.createCustomMental(
+                1, List.of(customHttpRef1, customHttpRef2, defaultHttpRef1, defaultHttpRef2), mentalType1, user);
+
+        User user2 = dbUtil.createUser(2, role, country);
+        Mental customMental2 =
+                dbUtil.createCustomMental(2, List.of(customHttpRef1, defaultHttpRef1), mentalType1, user2);
+
+        MentalUpdateRequestDto requestDto = dtoUtil.mentalUpdateRequestDtoEmpty();
+        requestDto.setMentalTypeId(customMental1.getType().getId());
+        requestDto.setHttpRefIds(Collections.emptyList());
+
+        ApiException expectedException =
+                new ApiException(ErrorMessage.USER_MENTAL_MISMATCH, customMental2.getId(), HttpStatus.BAD_REQUEST);
+
+        // When
+        mockMvc.perform(patch(URL.CUSTOM_MENTAL_ID, customMental2.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void updateCustomMental_shouldReturnErrorMessageWith400_whenMentalWithNewTitleAlreadyExists() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+
+        MentalType mentalType1 = dbUtil.createMeditationType();
+        MentalType mentalType2 = dbUtil.createAffirmationType();
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(3);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(4);
+
+        Mental customMental1 = dbUtil.createCustomMental(
+                1, List.of(customHttpRef1, customHttpRef2, defaultHttpRef1, defaultHttpRef2), mentalType1, user);
+        Mental customMental2 =
+                dbUtil.createCustomMental(2, List.of(customHttpRef1, defaultHttpRef1), mentalType2, user);
+
+        MentalUpdateRequestDto requestDto = dtoUtil.mentalUpdateRequestDtoEmpty();
+
+        requestDto.setMentalTypeId(customMental1.getType().getId());
+        requestDto.setHttpRefIds(Collections.emptyList());
+        requestDto.setTitle(customMental2.getTitle());
+
+        ApiException expectedException = new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+
+        // When
+        mockMvc.perform(patch(URL.CUSTOM_MENTAL_ID, customMental1.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andDo(print());
     }
 }
