@@ -112,7 +112,7 @@ public class MentalServiceImpl implements MentalService {
             throw new ApiException(ErrorMessage.USER_MENTAL_MISMATCH, mentalId, HttpStatus.BAD_REQUEST);
         }
 
-        boolean fieldsAreNull = verificationUtil.areFieldsNull(requestDto, "title", "description", "mentalTypeId");
+        boolean fieldsAreNull = verificationUtil.areFieldsNull(requestDto, "title", "description");
         boolean httpRefsAreDifferent =
                 verificationUtil.areNestedEntitiesDifferent(mental.getHttpRefsIdsSorted(), requestDto.getHttpRefIds());
         boolean mentalTypeAreDifferent = verificationUtil.areNestedEntitiesDifferent(
@@ -124,7 +124,7 @@ public class MentalServiceImpl implements MentalService {
         }
 
         List<String> fieldsWithSameValues =
-                verificationUtil.getFieldsWithSameValues(mental, requestDto, "title", "description", "mentalTypeId");
+                verificationUtil.getFieldsWithSameValues(mental, requestDto, "title", "description");
         if (!fieldsWithSameValues.isEmpty()) {
             String errorMessage =
                     ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + String.join(", ", fieldsWithSameValues);

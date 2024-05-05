@@ -62,7 +62,7 @@ public class MentalController {
             throws NoSuchFieldException, IllegalAccessException {
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        MentalResponseDto responseDto = mentalService.updateCustomMental(mentalId, userId, requestDto);
+        MentalResponseDto responseDto = mentalService.updateCustomMental(userId, mentalId, requestDto);
         return ResponseEntity.ok(responseDto);
     }
 }
