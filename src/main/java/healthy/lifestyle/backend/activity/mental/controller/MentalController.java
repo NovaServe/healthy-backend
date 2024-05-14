@@ -8,6 +8,7 @@ import healthy.lifestyle.backend.user.service.AuthUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -64,5 +65,14 @@ public class MentalController {
                 SecurityContextHolder.getContext().getAuthentication());
         MentalResponseDto responseDto = mentalService.updateCustomMental(userId, mentalId, requestDto);
         return ResponseEntity.ok(responseDto);
+    }
+
+    @DeleteMapping("/{mentalId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<?> deleteCustomMental(@PathVariable("mentalId") @IdValidation long mentalId) {
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        mentalService.deleteCustomMental(mentalId, userId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

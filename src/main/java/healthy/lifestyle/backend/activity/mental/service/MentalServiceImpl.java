@@ -205,4 +205,14 @@ public class MentalServiceImpl implements MentalService {
         mentalResponseDto.setHttpRefs(mentalHttpRefsSorted);
         return mentalResponseDto;
     }
+
+    @Override
+    @Transactional
+    public void deleteCustomMental(long mentalId, long userId) {
+        Mental mental = mentalRepository
+                .findCustomByMentalIdAndUserId(mentalId, userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.MENTAL_NOT_FOUND, mentalId, HttpStatus.NOT_FOUND));
+        userService.deleteMentalFromUser(userId, mental);
+        mentalRepository.delete(mental);
+    }
 }
