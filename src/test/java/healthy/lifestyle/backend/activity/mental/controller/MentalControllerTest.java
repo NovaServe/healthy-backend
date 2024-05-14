@@ -4,10 +4,9 @@ import static java.util.Objects.nonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -686,6 +685,54 @@ public class MentalControllerTest {
                 // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void deleteCustomMental_shouldReturnVoidWith204_whenValidRequest() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(2);
+        Mental customMental1 =
+                dbUtil.createCustomMental(1, List.of(customHttpRef1, defaultHttpRef1), mentalType1, user);
+
+        long mentalIdToBeRemoved = customMental1.getId();
+
+        // When
+        mockMvc.perform(delete(URL.CUSTOM_MENTAL_ID, customMental1.getId()).contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$").doesNotExist())
+                .andDo(print());
+
+        assertNull(dbUtil.getMentalById(mentalIdToBeRemoved));
+        assertTrue(dbUtil.httpRefsExistByIds(List.of(customHttpRef1.getId(), defaultHttpRef1.getId())));
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void deleteCustomMental_shouldReturnErrorMessageWith404_whenMentalNotFound() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(2);
+        Mental customMental1 =
+                dbUtil.createCustomMental(1, List.of(customHttpRef1, defaultHttpRef1), mentalType1, user);
+        long nonExistentMentalId = 1000L;
+
+        ApiException expectedException =
+                new ApiException(ErrorMessage.MENTAL_NOT_FOUND, nonExistentMentalId, HttpStatus.NOT_FOUND);
+
+        // When
+        mockMvc.perform(delete(URL.CUSTOM_MENTAL_ID, nonExistentMentalId).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
                 .andDo(print());
     }
 }
