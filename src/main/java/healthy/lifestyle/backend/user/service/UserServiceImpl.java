@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.user.service;
 
+import healthy.lifestyle.backend.activity.mental.model.Mental;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.activity.workout.service.RemovalService;
@@ -204,6 +205,17 @@ public class UserServiceImpl implements UserService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void deleteWorkoutFromUser(User user, Workout workout) {
         if (user.getWorkouts() != null) user.getWorkouts().remove(workout);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void addMentalToUser(long userId, Mental mental) {
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
+        if (user.getMentals() == null) user.setMentals(new HashSet<>());
+        user.getMentals().add(mental);
         userRepository.save(user);
     }
 }

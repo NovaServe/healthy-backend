@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.activity.mental.service;
 
+import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import org.springframework.data.domain.Page;
@@ -12,4 +13,6 @@ public interface MentalService {
 
     MentalResponseDto updateCustomMental(long userId, long mentalId, MentalUpdateRequestDto requestDto)
             throws NoSuchFieldException, IllegalAccessException;
+
+    MentalResponseDto createCustomMental(long userId, MentalCreateRequestDto requestDto);
 }

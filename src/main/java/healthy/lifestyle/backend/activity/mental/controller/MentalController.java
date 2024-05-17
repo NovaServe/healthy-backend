@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.activity.mental.controller;
 
+import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.service.MentalService;
@@ -8,6 +9,7 @@ import healthy.lifestyle.backend.user.service.AuthUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -64,5 +66,14 @@ public class MentalController {
                 SecurityContextHolder.getContext().getAuthentication());
         MentalResponseDto responseDto = mentalService.updateCustomMental(userId, mentalId, requestDto);
         return ResponseEntity.ok(responseDto);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<MentalResponseDto> createCustomMental(@Valid @RequestBody MentalCreateRequestDto requestDto) {
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        MentalResponseDto responseDto = mentalService.createCustomMental(userId, requestDto);
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 }
