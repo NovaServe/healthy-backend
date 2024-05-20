@@ -1,6 +1,5 @@
 package healthy.lifestyle.backend.reminder.workout.dto;
 
-import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import lombok.*;
 
 @Getter
@@ -8,9 +7,6 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkoutReminderCreateRequestDto {
-    @IdValidation
-    private Long workoutId;
-
+public class WorkoutReminderUpdateRequestDto {
     private String jsonDescription;
 }

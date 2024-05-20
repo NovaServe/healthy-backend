@@ -16,7 +16,7 @@ public class WorkoutReminderResponseDto {
 
     private String workoutTitle;
 
-    private String xmlDescription;
+    private String jsonDescription;
 
     @JsonProperty(value = "isActive")
     private boolean isActive;

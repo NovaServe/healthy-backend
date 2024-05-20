@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.reminder.workout.controller;
 
 import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderCreateRequestDto;
 import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderResponseDto;
+import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderUpdateRequestDto;
 import healthy.lifestyle.backend.reminder.workout.service.WorkoutReminderService;
 import healthy.lifestyle.backend.user.service.AuthUtil;
 import jakarta.validation.Valid;
@@ -66,6 +67,17 @@ public class WorkoutReminderController {
                 SecurityContextHolder.getContext().getAuthentication());
         Page<WorkoutReminderResponseDto> responseDto = workoutReminderService.getWorkoutRemindersWithFilter(
                 userId, isActive, sortField, sortDirection, pageSize, pageNumber);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
+
+    @PostMapping("/{reminderId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<WorkoutReminderResponseDto> updateReminder(
+            @PathVariable long reminderId, @Valid @RequestBody WorkoutReminderUpdateRequestDto requestDto)
+            throws NoSuchFieldException, IllegalAccessException{
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        WorkoutReminderResponseDto responseDto = workoutReminderService.updateReminder(userId, reminderId, requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 }

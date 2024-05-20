@@ -22,6 +22,6 @@ public class WorkoutReminder extends ReminderBase {
     @JoinColumn(name = "workout_id", nullable = false)
     private Workout workout;
 
-    @JoinColumn(name = "xml_description", nullable = false)
-    private String xmlDescription;
+    @JoinColumn(name = "json_description", nullable = false)
+    private String jsonDescription;
 }
