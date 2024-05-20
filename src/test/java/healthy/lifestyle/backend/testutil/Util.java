@@ -10,6 +10,7 @@ import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.List;
 
@@ -44,6 +45,10 @@ public interface Util {
     Role createAdminRole();
 
     Country createCountry(int seed);
+
+    Timezone createTimezone();
+
+    Timezone createTimezone(long timezoneId, String GMT, String name);
 
     Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType);
 

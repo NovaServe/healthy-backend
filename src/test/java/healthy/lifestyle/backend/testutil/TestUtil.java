@@ -12,6 +12,7 @@ import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.*;
 import org.modelmapper.ModelMapper;
@@ -170,6 +171,16 @@ public class TestUtil implements Util {
     @Override
     public Country createCountry(int seed) {
         return Country.builder().id((long) seed).name("Country " + seed).build();
+    }
+
+    @Override
+    public Timezone createTimezone() {
+        return createTimezone(1L, "GMT0:00", "Europe/London");
+    }
+
+    @Override
+    public Timezone createTimezone(long timezoneId, String GMT, String name) {
+        return Timezone.builder().id(timezoneId).GMT(GMT).name(name).build();
     }
 
     @Override

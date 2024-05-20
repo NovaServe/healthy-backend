@@ -36,6 +36,9 @@ public class User {
     @Column(name = "password", nullable = false, unique = false)
     private String password;
 
+    @Column(name = "age", nullable = true, unique = false)
+    private Integer age;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id") // FOREIGN KEY(role_id) REFERENCES roles(id)
     private Role role;
@@ -47,9 +50,6 @@ public class User {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "timezone_id") // FOREIGN KEY(timezone_id) REFERENCES timezones(id)
     private Timezone timezone;
-
-    @Column(name = "age", nullable = true, unique = false)
-    private Integer age;
 
     @OneToMany(mappedBy = "user")
     private Set<Exercise> exercises;
@@ -68,10 +68,6 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private Set<WorkoutReminder> workoutReminders;
-
-    // In fact, one-to-one
-    @OneToMany(mappedBy = "user")
-    private Set<Profile> profile;
 
     @OneToMany(mappedBy = "user")
     private Set<FirebaseUserToken> firebaseUserTokens;
