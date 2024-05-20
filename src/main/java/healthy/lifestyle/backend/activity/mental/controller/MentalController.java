@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.activity.mental.controller;
 
+import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.service.MentalService;
@@ -74,5 +75,14 @@ public class MentalController {
                 SecurityContextHolder.getContext().getAuthentication());
         mentalService.deleteCustomMental(mentalId, userId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<MentalResponseDto> createCustomMental(@Valid @RequestBody MentalCreateRequestDto requestDto) {
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        MentalResponseDto responseDto = mentalService.createCustomMental(userId, requestDto);
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 }

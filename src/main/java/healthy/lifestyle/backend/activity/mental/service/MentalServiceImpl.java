@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.activity.mental.service;
 
+import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.model.Mental;
@@ -214,5 +215,55 @@ public class MentalServiceImpl implements MentalService {
                 .orElseThrow(() -> new ApiException(ErrorMessage.MENTAL_NOT_FOUND, mentalId, HttpStatus.NOT_FOUND));
         userService.deleteMentalFromUser(userId, mental);
         mentalRepository.delete(mental);
+    }
+
+    @Override
+    @Transactional
+    public MentalResponseDto createCustomMental(long userId, MentalCreateRequestDto requestDto) {
+        List<Mental> mentalWithSameTitle =
+                mentalRepository.getDefaultAndCustomMentalByTitleAndUserId(requestDto.getTitle(), userId);
+
+        if (!mentalWithSameTitle.isEmpty()) {
+            throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
+        }
+
+        User user = userService.getUserById(userId);
+        Mental mental = Mental.builder()
+                .isCustom(true)
+                .user(user)
+                .title(requestDto.getTitle())
+                .type(new MentalType())
+                .httpRefs(new HashSet<>())
+                .build();
+
+        if (requestDto.getDescription() != null) mental.setDescription(requestDto.getDescription());
+        if (requestDto.getHttpRefs() != null && requestDto.getHttpRefs().size() > 0)
+            requestDto.getHttpRefs().forEach(id -> {
+                HttpRef httpRef = httpRefRepository
+                        .findById(id)
+                        .orElseThrow(() -> new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, id, HttpStatus.NOT_FOUND));
+
+                if (httpRef.isCustom() && httpRef.getUser().getId() != userId)
+                    throw new ApiException(
+                            ErrorMessage.USER_HTTP_REF_MISMATCH, httpRef.getId(), HttpStatus.BAD_REQUEST);
+
+                mental.getHttpRefs().add(httpRef);
+            });
+
+        MentalType mentalType = mentalTypeRepository
+                .findById(requestDto.getMentalTypeId())
+                .orElseThrow(() -> new ApiException(
+                        ErrorMessage.MENTAL_TYPE_NOT_FOUND, requestDto.getMentalTypeId(), HttpStatus.NOT_FOUND));
+        mental.setType(mentalType);
+
+        Mental mentalSaved = mentalRepository.save(mental);
+        userService.addMentalToUser(userId, mentalSaved);
+        MentalResponseDto mentalResponseDto = modelMapper.map(mentalSaved, MentalResponseDto.class);
+        List<HttpRefResponseDto> httpRefsSorted = mentalResponseDto.getHttpRefs().stream()
+                .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
+                .toList();
+
+        mentalResponseDto.setHttpRefs(httpRefsSorted);
+        return mentalResponseDto;
     }
 }

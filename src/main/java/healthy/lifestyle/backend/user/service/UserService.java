@@ -27,4 +27,6 @@ public interface UserService {
     void deleteWorkoutFromUser(User user, Workout workout);
 
     void deleteMentalFromUser(long userId, Mental mental);
+
+    void addMentalToUser(long userId, Mental mental);
 }
