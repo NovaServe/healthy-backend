@@ -209,6 +209,16 @@ public class MentalServiceImpl implements MentalService {
 
     @Override
     @Transactional
+    public void deleteCustomMental(long mentalId, long userId) {
+        Mental mental = mentalRepository
+                .findCustomByMentalIdAndUserId(mentalId, userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.MENTAL_NOT_FOUND, mentalId, HttpStatus.NOT_FOUND));
+        userService.deleteMentalFromUser(userId, mental);
+        mentalRepository.delete(mental);
+    }
+
+    @Override
+    @Transactional
     public MentalResponseDto createCustomMental(long userId, MentalCreateRequestDto requestDto) {
         List<Mental> mentalWithSameTitle =
                 mentalRepository.getDefaultAndCustomMentalByTitleAndUserId(requestDto.getTitle(), userId);

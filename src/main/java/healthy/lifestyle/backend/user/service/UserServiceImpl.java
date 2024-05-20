@@ -209,6 +209,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void deleteMentalFromUser(long userId, Mental mental) {
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
+        if (user.getMentals() != null) user.getMentals().remove(mental);
+        userRepository.save(user);
+    }
+
+    @Override
     @Transactional
     public void addMentalToUser(long userId, Mental mental) {
         User user = userRepository

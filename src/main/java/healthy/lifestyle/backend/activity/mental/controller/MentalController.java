@@ -68,6 +68,15 @@ public class MentalController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @DeleteMapping("/{mentalId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<?> deleteCustomMental(@PathVariable("mentalId") @IdValidation long mentalId) {
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        mentalService.deleteCustomMental(mentalId, userId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<MentalResponseDto> createCustomMental(@Valid @RequestBody MentalCreateRequestDto requestDto) {

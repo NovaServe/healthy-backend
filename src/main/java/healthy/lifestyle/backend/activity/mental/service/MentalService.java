@@ -14,5 +14,7 @@ public interface MentalService {
     MentalResponseDto updateCustomMental(long userId, long mentalId, MentalUpdateRequestDto requestDto)
             throws NoSuchFieldException, IllegalAccessException;
 
+    void deleteCustomMental(long mentalId, long userId);
+
     MentalResponseDto createCustomMental(long userId, MentalCreateRequestDto requestDto);
 }
