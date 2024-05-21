@@ -116,7 +116,8 @@ public class TestUtil implements Util {
         Role role = Role.builder().id((long) seed).name("ROLE_USER").build();
         Country country =
                 Country.builder().id((long) seed).name("Country-" + seed).build();
-        return this.createUserBase(seed, role, country, null, null, null, null);
+        Timezone timezone = createTimezone(seed);
+        return this.createUserBase(seed, role, country, null, timezone, null, null, null);
     }
 
     @Override
@@ -124,24 +125,26 @@ public class TestUtil implements Util {
         Role role = Role.builder().id((long) seed).name("ROLE_USER").build();
         Country country =
                 Country.builder().id((long) seed).name("Country-" + seed).build();
-        return this.createUserBase(seed, role, country, age, null, null, null);
+        Timezone timezone = createTimezone(seed);
+        return this.createUserBase(seed, role, country, age, timezone, null, null, null);
     }
 
     @Override
     public User createAdminUser(int seed) {
         Role role = Role.builder().name("ROLE_ADMIN").build();
         Country country = Country.builder().name("Country-" + seed).build();
-        return this.createUserBase(seed, role, country, null, null, null, null);
+        Timezone timezone = createTimezone(seed);
+        return this.createUserBase(seed, role, country, null, timezone, null, null, null);
     }
 
     @Override
-    public User createUser(int seed, Role role, Country country) {
-        return this.createUserBase(seed, role, country, null, null, null, null);
+    public User createUser(int seed, Role role, Country country, Timezone timezone) {
+        return this.createUserBase(seed, role, country, null, timezone, null, null, null);
     }
 
     @Override
-    public User createUser(int seed, Role role, Country country, int age) {
-        return this.createUserBase(seed, role, country, age, null, null, null);
+    public User createUser(int seed, Role role, Country country, int age, Timezone timezone) {
+        return this.createUserBase(seed, role, country, age, timezone, null, null, null);
     }
 
     private User createUserBase(
@@ -149,6 +152,7 @@ public class TestUtil implements Util {
             Role role,
             Country country,
             Integer age,
+            Timezone timezone,
             List<HttpRef> httpRefs,
             List<Exercise> exercises,
             List<Workout> workouts) {
@@ -160,6 +164,7 @@ public class TestUtil implements Util {
                 .fullName("Full Name " + Shared.numberToText(seed))
                 .role(role)
                 .country(country)
+                .timezone(timezone)
                 .age(age == null ? AGE_CONST + seed : age)
                 .password(passwordEncoder.encode("Password-" + seed))
                 .httpRefs(isNull(httpRefs) ? null : new HashSet<>(httpRefs))
@@ -175,12 +180,16 @@ public class TestUtil implements Util {
 
     @Override
     public Timezone createTimezone() {
-        return createTimezone(1L, "GMT0:00", "Europe/London");
+        return createTimezone(1);
     }
 
     @Override
-    public Timezone createTimezone(long timezoneId, String GMT, String name) {
-        return Timezone.builder().id(timezoneId).GMT(GMT).name(name).build();
+    public Timezone createTimezone(int seed) {
+        return Timezone.builder()
+                .id((long) seed)
+                .GMT("GMT+" + seed)
+                .name("TZ Name " + seed)
+                .build();
     }
 
     @Override

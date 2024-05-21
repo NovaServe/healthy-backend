@@ -20,9 +20,11 @@ import healthy.lifestyle.backend.activity.workout.repository.HttpRefRepository;
 import healthy.lifestyle.backend.activity.workout.repository.WorkoutRepository;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.repository.CountryRepository;
 import healthy.lifestyle.backend.user.repository.RoleRepository;
+import healthy.lifestyle.backend.user.repository.TimezoneRepository;
 import healthy.lifestyle.backend.user.repository.UserRepository;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +52,9 @@ public class DbUtil implements Util {
 
     @Autowired
     CountryRepository countryRepository;
+
+    @Autowired
+    TimezoneRepository timezoneRepository;
 
     @Autowired
     WorkoutRepository workoutRepository;
@@ -83,6 +88,7 @@ public class DbUtil implements Util {
         httpRefRepository.deleteAll();
         userRepository.deleteAll();
         countryRepository.deleteAll();
+        timezoneRepository.deleteAll();
         roleRepository.deleteAll();
     }
 
@@ -180,7 +186,8 @@ public class DbUtil implements Util {
         Role role = roleRepository.save(Role.builder().name("ROLE_USER").build());
         Country country =
                 countryRepository.save(Country.builder().name("Country-" + seed).build());
-        return this.createUserBase(seed, role, country, null, null, null, null);
+        Timezone timezone = createTimezone(seed);
+        return this.createUserBase(seed, role, country, null, timezone, null, null, null);
     }
 
     @Override
@@ -188,7 +195,8 @@ public class DbUtil implements Util {
         Role role = roleRepository.save(Role.builder().name("ROLE_USER").build());
         Country country =
                 countryRepository.save(Country.builder().name("Country-" + seed).build());
-        return this.createUserBase(seed, role, country, age, null, null, null);
+        Timezone timezone = createTimezone(seed);
+        return this.createUserBase(seed, role, country, age, timezone, null, null, null);
     }
 
     @Override
@@ -196,17 +204,18 @@ public class DbUtil implements Util {
         Role role = roleRepository.save(Role.builder().name("ROLE_ADMIN").build());
         Country country =
                 countryRepository.save(Country.builder().name("Country-" + seed).build());
-        return this.createUserBase(seed, role, country, null, null, null, null);
+        Timezone timezone = createTimezone(seed);
+        return this.createUserBase(seed, role, country, null, timezone, null, null, null);
     }
 
     @Override
-    public User createUser(int seed, Role role, Country country) {
-        return this.createUserBase(seed, role, country, null, null, null, null);
+    public User createUser(int seed, Role role, Country country, Timezone timezone) {
+        return this.createUserBase(seed, role, country, null, timezone, null, null, null);
     }
 
     @Override
-    public User createUser(int seed, Role role, Country country, int age) {
-        return this.createUserBase(seed, role, country, age, null, null, null);
+    public User createUser(int seed, Role role, Country country, int age, Timezone timezone) {
+        return this.createUserBase(seed, role, country, age, timezone, null, null, null);
     }
 
     private User createUserBase(
@@ -214,6 +223,7 @@ public class DbUtil implements Util {
             Role role,
             Country country,
             Integer age,
+            Timezone timezone,
             List<HttpRef> httpRefs,
             List<Exercise> exercises,
             List<Workout> workouts) {
@@ -225,6 +235,7 @@ public class DbUtil implements Util {
                 .role(role)
                 .country(country)
                 .age(isNull(age) ? AGE_CONST + seed : age)
+                .timezone(timezone)
                 .password(passwordEncoder().encode("Password-" + seed))
                 .httpRefs(isNull(httpRefs) ? null : new HashSet<>(httpRefs))
                 .exercises(isNull(exercises) ? null : new HashSet<>(exercises))
@@ -250,6 +261,17 @@ public class DbUtil implements Util {
     @Override
     public Country createCountry(int seed) {
         return countryRepository.save(Country.builder().name("Country " + seed).build());
+    }
+
+    @Override
+    public Timezone createTimezone() {
+        return createTimezone(1);
+    }
+
+    @Override
+    public Timezone createTimezone(int seed) {
+        return timezoneRepository.save(
+                Timezone.builder().GMT("GMT+" + seed).name("TZ Name " + seed).build());
     }
 
     public boolean httpRefsExistByIds(List<Long> ids) {

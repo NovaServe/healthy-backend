@@ -14,6 +14,7 @@ import healthy.lifestyle.backend.testutil.*;
 import healthy.lifestyle.backend.user.dto.UserResponseDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.Collections;
 import java.util.List;
@@ -96,11 +97,12 @@ public class UserAdminControllerTest {
         Country country1 = dbUtil.createCountry(1);
         Country country2 = dbUtil.createCountry(2);
         Country country3 = dbUtil.createCountry(3);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user1 = dbUtil.createUser(1, roleUser, country1, 34);
-        User user2 = dbUtil.createUser(2, roleUser, country2, 16);
-        User admin1 = dbUtil.createUser(3, roleAdmin, country2, 45);
-        User admin2 = dbUtil.createUser(4, roleAdmin, country2, 21);
+        User user1 = dbUtil.createUser(1, roleUser, country1, 34, timezone);
+        User user2 = dbUtil.createUser(2, roleUser, country2, 16, timezone);
+        User admin1 = dbUtil.createUser(3, roleAdmin, country2, 45, timezone);
+        User admin2 = dbUtil.createUser(4, roleAdmin, country2, 21, timezone);
 
         Optional<String> roleFilter = Stream.of(roleUser, roleAdmin)
                 .filter(role -> role.getName().equals(roleName))

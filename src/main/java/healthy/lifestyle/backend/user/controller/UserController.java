@@ -71,7 +71,7 @@ public class UserController {
     }
 
     @GetMapping("/timezones")
-    public ResponseEntity<List<TimezoneResponseDto>> getTimezones(){
+    public ResponseEntity<List<TimezoneResponseDto>> getTimezones() {
         List<TimezoneResponseDto> responseDtoList = timezoneService.getTimezones();
         return ResponseEntity.ok(responseDtoList);
     }

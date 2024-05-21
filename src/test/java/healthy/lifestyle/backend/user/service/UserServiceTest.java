@@ -23,9 +23,11 @@ import healthy.lifestyle.backend.user.dto.UserResponseDto;
 import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.repository.CountryRepository;
 import healthy.lifestyle.backend.user.repository.RoleRepository;
+import healthy.lifestyle.backend.user.repository.TimezoneRepository;
 import healthy.lifestyle.backend.user.repository.UserRepository;
 import java.util.*;
 import java.util.stream.Stream;
@@ -58,6 +60,9 @@ class UserServiceTest {
     private CountryRepository countryRepository;
 
     @Mock
+    private TimezoneRepository timezoneRepository;
+
+    @Mock
     private RemovalServiceImpl removalService;
 
     @Spy
@@ -80,12 +85,14 @@ class UserServiceTest {
         // Given
         Role role = testUtil.createUserRole();
         Country country = testUtil.createCountry(1);
-        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, 1L);
+        Timezone timezone = testUtil.createTimezone(1);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, 1L, timezone.getId());
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
         when(roleRepository.findByName(role.getName())).thenReturn(Optional.of(role));
         when(countryRepository.findById(country.getId())).thenReturn(Optional.of(country));
+        when(timezoneRepository.findById(timezone.getId())).thenReturn(Optional.of(timezone));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             Object[] args = invocation.getArguments();
             User saved = (User) args[0];
@@ -117,7 +124,7 @@ class UserServiceTest {
         verify(userRepository, times(1)).findById(user.getId());
         assertThat(responseDto)
                 .usingRecursiveComparison()
-                .ignoringFields("countryId")
+                .ignoringFields("countryId", "timezoneId")
                 .isEqualTo(user);
         assertEquals(user.getCountry().getId(), responseDto.getCountryId());
     }

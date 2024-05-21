@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.reminder.workout.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import healthy.lifestyle.backend.activity.workout.api.WorkoutApi;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
@@ -16,17 +17,15 @@ import healthy.lifestyle.backend.shared.exception.ApiException;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.api.UserApi;
 import healthy.lifestyle.backend.user.model.User;
+import java.sql.Timestamp;
+import java.time.*;
+import java.time.format.TextStyle;
+import java.util.Locale;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.sql.Timestamp;
-import java.time.*;
-import java.time.format.TextStyle;
-import java.util.Locale;
 
 @Service
 public class WorkoutReminderServiceImpl implements WorkoutReminderService {
@@ -64,18 +63,19 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
         Workout workout = workoutApi.getWorkoutById(requestDto.getWorkoutId());
         WorkoutReminder workoutReminder;
 
-        try
-        {
+        try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode days = mapper.readTree(requestDto.getJsonDescription());
 
             ZoneId srcZoneId = ZoneId.of(user.getTimezone().getName());
             ZoneId destZoneId = ZoneId.of("Europe/London");
 
-            ZonedDateTime startZonedDateTime = requestDto.getStartDate().atZone(srcZoneId).withZoneSameInstant(destZoneId);
-            ZonedDateTime endZonedDateTime = requestDto.getEndDate().atZone(srcZoneId).withZoneSameInstant(destZoneId);
+            ZonedDateTime startZonedDateTime =
+                    requestDto.getStartDate().atZone(srcZoneId).withZoneSameInstant(destZoneId);
+            ZonedDateTime endZonedDateTime =
+                    requestDto.getEndDate().atZone(srcZoneId).withZoneSameInstant(destZoneId);
 
-            for(JsonNode day : days){
+            for (JsonNode day : days) {
 
                 // Generate unique id for plan day
                 WorkoutReminderDayId dayId = new WorkoutReminderDayId();
@@ -84,10 +84,13 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
                 // After that just delete this entity from database after update counter
                 workoutDayIdRepository.delete(dayId);
 
-                //Convert day and time from user timezone to server timezone
-                DayOfWeek dayOfWeek = DayOfWeek.valueOf(day.get("week_day").asText().toUpperCase(Locale.ENGLISH));
+                // Convert day and time from user timezone to server timezone
+                DayOfWeek dayOfWeek =
+                        DayOfWeek.valueOf(day.get("week_day").asText().toUpperCase(Locale.ENGLISH));
                 LocalDateTime targetDate = requestDto.getStartDate().with(dayOfWeek);
-                LocalTime localTime = LocalTime.of(Integer.parseInt(day.get("hours").toString()), Integer.parseInt(day.get("minutes").toString()));
+                LocalTime localTime = LocalTime.of(
+                        Integer.parseInt(day.get("hours").toString()),
+                        Integer.parseInt(day.get("minutes").toString()));
                 LocalDateTime localDateTime = LocalDateTime.of(targetDate.toLocalDate(), localTime);
 
                 ZonedDateTime sourceZonedDateTime = localDateTime.atZone(srcZoneId);
@@ -95,8 +98,11 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
 
                 // Update json day
                 ((ObjectNode) day).put("json_id", dayId.getId().toString());
-                ((ObjectNode) day).put("week_day",
-                        ((DayOfWeek) targetZonedDateTime.getDayOfWeek()).getDisplayName(TextStyle.FULL, Locale.ENGLISH));
+                ((ObjectNode) day)
+                        .put(
+                                "week_day",
+                                ((DayOfWeek) targetZonedDateTime.getDayOfWeek())
+                                        .getDisplayName(TextStyle.FULL, Locale.ENGLISH));
                 ((ObjectNode) day).put("hours", targetZonedDateTime.getHour());
                 ((ObjectNode) day).put("minutes", targetZonedDateTime.getMinute());
             }
@@ -112,7 +118,7 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
                     .workout(workout)
                     .build();
 
-        } catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
@@ -123,5 +129,4 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
 
         return responseDto;
     }
-
 }

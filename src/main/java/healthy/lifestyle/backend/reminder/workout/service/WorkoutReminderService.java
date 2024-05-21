@@ -5,5 +5,4 @@ import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderResponseDto
 
 public interface WorkoutReminderService {
     WorkoutReminderResponseDto createWorkoutReminder(WorkoutReminderCreateRequestDto requestDto, long userId);
-
 }

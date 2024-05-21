@@ -2,12 +2,10 @@ package healthy.lifestyle.backend.reminder.workout.controller;
 
 import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderCreateRequestDto;
 import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderResponseDto;
-import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderUpdateRequestDto;
 import healthy.lifestyle.backend.reminder.workout.service.WorkoutReminderService;
 import healthy.lifestyle.backend.user.service.AuthUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

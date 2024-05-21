@@ -1,10 +1,8 @@
 package healthy.lifestyle.backend.reminder.workout.dto;
 
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
-import lombok.*;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import lombok.*;
 
 @Getter
 @Setter

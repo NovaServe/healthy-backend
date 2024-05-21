@@ -23,6 +23,7 @@ import healthy.lifestyle.backend.testutil.DbUtil;
 import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.Comparator;
 import java.util.List;
@@ -205,10 +206,11 @@ public class MentalControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
         MentalType mentalType1 = dbUtil.createAffirmationType();
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         Mental customMental = dbUtil.createCustomMental(3, List.of(defaultHttpRef1), mentalType1, user2);
         ApiException expectedException =
@@ -285,8 +287,9 @@ public class MentalControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         MentalType mentalType1 = dbUtil.createAffirmationType();
         MentalType mentalType2 = dbUtil.createMeditationType();
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);

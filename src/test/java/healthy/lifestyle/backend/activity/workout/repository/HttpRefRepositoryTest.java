@@ -10,6 +10,7 @@ import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,10 +77,11 @@ class HttpRefRepositoryTest {
         HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user1);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(5, user1);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(6, user2);
 
         if (userId != null) userId = user1.getId();
@@ -252,10 +254,11 @@ class HttpRefRepositoryTest {
         HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user1);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(5, user1);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(6, user2);
 
         long userId = user1.getId();
@@ -307,10 +310,11 @@ class HttpRefRepositoryTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user1);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user1);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef4 = dbUtil.createCustomHttpRef(5, user2);
 
         int currentPageNumber = 0;

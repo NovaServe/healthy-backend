@@ -81,19 +81,19 @@ public class DtoUtil {
                 .build();
     }
 
-    public SignupRequestDto signupRequestDto(int seed, Long countryId, Integer age) {
-        return this.signupRequestDtoBase(seed, countryId, age);
+    public SignupRequestDto signupRequestDto(int seed, Long countryId, Integer age, long timezoneId) {
+        return this.signupRequestDtoBase(seed, countryId, age, timezoneId);
     }
 
-    public SignupRequestDto signupRequestDto(int seed, Long countryId) {
-        return this.signupRequestDtoBase(seed, countryId, null);
+    public SignupRequestDto signupRequestDto(int seed, Long countryId, long timezoneId) {
+        return this.signupRequestDtoBase(seed, countryId, null, timezoneId);
     }
 
     public SignupRequestDto signupRequestDtoEmpty() {
         return SignupRequestDto.builder().build();
     }
 
-    private SignupRequestDto signupRequestDtoBase(int seed, Long countryId, Integer age) {
+    private SignupRequestDto signupRequestDtoBase(int seed, Long countryId, Integer age, long timezoneId) {
         int AGE_CONST = 20;
         return SignupRequestDto.builder()
                 .username("Username-" + seed)
@@ -103,6 +103,7 @@ public class DtoUtil {
                 .fullName("Full Name " + Shared.numberToText(seed))
                 .countryId(countryId)
                 .age(age == null ? AGE_CONST + seed : age)
+                .timezoneId(timezoneId)
                 .build();
     }
 

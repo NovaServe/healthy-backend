@@ -36,9 +36,9 @@ public interface Util {
 
     User createAdminUser(int seed);
 
-    User createUser(int seed, Role role, Country country);
+    User createUser(int seed, Role role, Country country, Timezone timezone);
 
-    User createUser(int seed, Role role, Country country, int age);
+    User createUser(int seed, Role role, Country country, int age, Timezone timezone);
 
     Role createUserRole();
 
@@ -48,7 +48,7 @@ public interface Util {
 
     Timezone createTimezone();
 
-    Timezone createTimezone(long timezoneId, String GMT, String name);
+    Timezone createTimezone(int seed);
 
     Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType);
 

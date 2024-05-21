@@ -2,10 +2,8 @@ package healthy.lifestyle.backend.calendar.model;
 
 import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
-
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

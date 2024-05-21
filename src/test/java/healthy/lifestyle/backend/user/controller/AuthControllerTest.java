@@ -21,6 +21,7 @@ import healthy.lifestyle.backend.user.dto.LoginRequestDto;
 import healthy.lifestyle.backend.user.dto.LoginResponseDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.validation.UserValidationMessage;
 import java.util.stream.Stream;
@@ -209,8 +210,9 @@ class AuthControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
         Integer age = 20;
-        User user = dbUtil.createUser(1, role, country);
+        User user = dbUtil.createUser(1, role, country, timezone);
 
         // When
         mockMvc.perform(get(URL.VALIDATE).contentType(MediaType.APPLICATION_JSON))

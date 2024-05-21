@@ -117,7 +117,9 @@ public class UserServiceImpl implements UserService {
 
         boolean fieldsAreNull =
                 verificationUtil.areFieldsNull(requestDto, "username", "email", "fullName", "age", "password");
-        if (fieldsAreNull && user.getCountry().getId().equals(requestDto.getCountryId())) {
+        if (fieldsAreNull
+                && user.getCountry().getId().equals(requestDto.getCountryId())
+                && user.getTimezone().getId().equals(requestDto.getTimezoneId())) {
             throw new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
         }
 

@@ -10,6 +10,7 @@ public class URL {
     public static final String USER_ID = "/api/v1/users/{userId}";
 
     public static final String COUNTRIES = "/api/v1/users/countries";
+    public static final String TIMEZONES = "/api/v1/users/timezones";
 
     public static final String BODY_PARTS = "/api/v1/workouts/bodyParts";
 

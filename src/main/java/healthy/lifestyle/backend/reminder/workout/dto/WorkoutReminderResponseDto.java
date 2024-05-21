@@ -1,11 +1,8 @@
 package healthy.lifestyle.backend.reminder.workout.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-
 import lombok.*;
 
 @Getter
