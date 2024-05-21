@@ -47,4 +47,5 @@ public class URL {
 
     public static final String CUSTOM_MENTAL_ID = "/api/v1/mentals/{mental_id}";
     public static final String ALL_MENTALS = "/api/v1/mentals/all_mentals";
+    public static final String CUSTOM_MENTALS = "/api/v1/mentals";
 }

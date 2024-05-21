@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.testutil;
 
+import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.workout.dto.*;
 import healthy.lifestyle.backend.user.dto.LoginRequestDto;
@@ -145,5 +146,14 @@ public class DtoUtil {
 
     public MentalUpdateRequestDto mentalUpdateRequestDtoEmpty() {
         return MentalUpdateRequestDto.builder().build();
+    }
+
+    public MentalCreateRequestDto mentalCreateRequestDto(int seed, List<Long> httpRefIds, Long mentalTypeId) {
+        return MentalCreateRequestDto.builder()
+                .title("Title-" + seed)
+                .description("Description-" + seed)
+                .httpRefs(httpRefIds)
+                .mentalTypeId(mentalTypeId)
+                .build();
     }
 }
