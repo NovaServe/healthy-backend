@@ -11,10 +11,13 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "workout_reminder_days")
-public class WorkoutReminderDay extends ReminderDayBase {
+@Table(name = "json_ids")
+public class WorkoutReminderDayId{
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "workout_reminder_id", nullable = false, unique = false)
-    private WorkoutReminder workoutReminder;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "json_id", nullable = false, unique = false)
+    private Long json_id;
 }

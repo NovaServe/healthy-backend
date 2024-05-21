@@ -39,45 +39,4 @@ public class WorkoutReminderController {
         // call update tasks
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
-
-    @GetMapping("/reminders")
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<Page<WorkoutReminderResponseDto>> getWorkoutRemindersWithFilter(
-            @RequestParam(required = false) Boolean isActive,
-            @RequestParam(required = false, defaultValue = "createdAt") String sortField,
-            @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
-            @RequestParam(required = false, defaultValue = "10") int pageSize,
-            @RequestParam(required = false, defaultValue = "0") int pageNumber) {
-        Long userId = authUtil.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        Page<WorkoutReminderResponseDto> responseDto = workoutReminderService.getWorkoutRemindersWithFilter(
-                userId, isActive, sortField, sortDirection, pageSize, pageNumber);
-        return new ResponseEntity<>(responseDto, HttpStatus.OK);
-    }
-
-    @GetMapping("/reminders/date")
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<Page<WorkoutReminderResponseDto>> getWorkoutRemindersWithDate(
-            @RequestParam(required = false) Boolean isActive,
-            @RequestParam(required = false, defaultValue = "createdAt") String sortField,
-            @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
-            @RequestParam(required = false, defaultValue = "10") int pageSize,
-            @RequestParam(required = false, defaultValue = "0") int pageNumber) {
-        Long userId = authUtil.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        Page<WorkoutReminderResponseDto> responseDto = workoutReminderService.getWorkoutRemindersWithFilter(
-                userId, isActive, sortField, sortDirection, pageSize, pageNumber);
-        return new ResponseEntity<>(responseDto, HttpStatus.OK);
-    }
-
-    @PostMapping("/{reminderId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<WorkoutReminderResponseDto> updateReminder(
-            @PathVariable long reminderId, @Valid @RequestBody WorkoutReminderUpdateRequestDto requestDto)
-            throws NoSuchFieldException, IllegalAccessException{
-        Long userId = authUtil.getUserIdFromAuthentication(
-                SecurityContextHolder.getContext().getAuthentication());
-        WorkoutReminderResponseDto responseDto = workoutReminderService.updateReminder(userId, reminderId, requestDto);
-        return new ResponseEntity<>(responseDto, HttpStatus.OK);
-    }
 }

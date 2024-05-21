@@ -364,35 +364,29 @@
             <column name="json_description" type="varchar">
                 <constraints nullable="false" unique="false"/>
             </column>
+            <column name="start_date" type="timestamp">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="end_date" type="timestamp">
+                <constraints nullable="false" unique="false"/>
+            </column>
             <column name="is_active" type="boolean">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="is_paused" type="boolean">
+            <column name="created_at" type="timestamp">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="created_at" type="date">
-                <constraints nullable="false" unique="false"/>
+            <column name="deactivated_at" type="timestamp">
+                <constraints nullable="true" unique="false"/>
             </column>
         </createTable>
 
-        <createTable tableName="workout_exercises">
+        <createTable tableName="json_ids">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="workout_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_workout_id" references="workouts(id)"/>
-            </column>
-            <column name="exercise_id" type="bigint">
-                <constraints nullable="true" unique="false" foreignKeyName="fk_exercise_id" references="exercises(id)"/>
-            </column>
-            <column name="is_active" type="boolean">
+            <column name="json_id" type="bigint">
                 <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="created_at" type="date">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="deactivated_at" type="date">
-                <constraints nullable="true" unique="false"/>
             </column>
         </createTable>
 
@@ -400,13 +394,22 @@
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
             </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_user_id" references="users(id)"/>
+            </column>
             <column name="workout_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_workout_id" references="workouts(id)"/>
+                <constraints nullable="true" unique="false" foreignKeyName="fk_workout_id" references="workouts(id)"/>
             </column>
-            <column name="exercise_id" type="bigint">
-                <constraints nullable="true" unique="false" foreignKeyName="fk_exercise_id" references="exercises(id)"/>
+            <column name="workout_reminder_id" type="bigint">
+                <constraints nullable="true" unique="false" foreignKeyName="fk_workout_reminder_id" references="workout_reminders(id)"/>
             </column>
-            <column name="created_at" type="date">
+            <column name="json_id" type="bigint">
+                <constraints nullable="false" unique="true" foreignKeyName="fk_json_id" references="json_ids(id)"/>
+            </column>
+            <column name="completed_exercises_json" type="jsonb">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
                 <constraints nullable="false" unique="false"/>
             </column>
         </createTable>
