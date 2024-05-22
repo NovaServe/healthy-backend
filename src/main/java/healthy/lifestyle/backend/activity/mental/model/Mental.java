@@ -49,4 +49,8 @@ public class Mental {
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
     }
+
+    public List<Long> getHttpRefsIdsSorted() {
+        return this.getHttpRefsSortedById().stream().map(HttpRef::getId).toList();
+    }
 }

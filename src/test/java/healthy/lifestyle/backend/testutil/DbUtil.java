@@ -355,6 +355,10 @@ public class DbUtil implements Util {
         return mentalTypeRepository.save(MentalType.builder().name(mentalType).build());
     }
 
+    public Mental getMentalById(long id) {
+        return mentalRepository.findById(id).orElse(null);
+    }
+
     @Override
     public Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType) {
         return this.createNutritionBase(seed, false, httpRefs, null, nutritionType);
