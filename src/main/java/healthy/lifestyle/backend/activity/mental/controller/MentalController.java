@@ -6,6 +6,7 @@ import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.service.MentalService;
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.user.service.AuthUtil;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ public class MentalController {
     @Autowired
     AuthUtil authUtil;
 
+    @Operation(summary = "Get default mental activity by id")
     @GetMapping("/default/{mental_id}")
     public ResponseEntity<MentalResponseDto> getDefaultMentalById(
             @PathVariable("mental_id") @IdValidation long mental_id) {
@@ -34,6 +36,7 @@ public class MentalController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @Operation(summary = "Get custom mental activity by id")
     @GetMapping("/{mental_id}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<MentalResponseDto> getCustomMentalById(
@@ -44,6 +47,7 @@ public class MentalController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @Operation(summary = "Get default and custom mental activities")
     @GetMapping("/all_mentals")
     public ResponseEntity<Page<MentalResponseDto>> getAllMentals(
             @RequestParam(required = false, defaultValue = "title") String sortField,
@@ -57,6 +61,7 @@ public class MentalController {
         return ResponseEntity.ok(responseDtoPage);
     }
 
+    @Operation(summary = "Get custom mental activity by id")
     @PatchMapping("/{mentalId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<MentalResponseDto> updateCustomMental(
@@ -68,6 +73,7 @@ public class MentalController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @Operation(summary = "Delete custom mental activity by id")
     @DeleteMapping("/{mentalId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> deleteCustomMental(@PathVariable("mentalId") @IdValidation long mentalId) {
@@ -77,6 +83,7 @@ public class MentalController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    @Operation(summary = "Create custom mental activity")
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<MentalResponseDto> createCustomMental(@Valid @RequestBody MentalCreateRequestDto requestDto) {

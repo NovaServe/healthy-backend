@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.activity.nutrition.controller;
 import healthy.lifestyle.backend.activity.nutrition.dto.NutritionResponseDto;
 import healthy.lifestyle.backend.activity.nutrition.service.NutritionService;
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -16,6 +17,7 @@ public class NutritionController {
     @Autowired
     NutritionService nutritionService;
 
+    @Operation(summary = "Get default nutrition by id")
     @GetMapping("/default/{nutrition_id}")
     public ResponseEntity<NutritionResponseDto> getDefaultNutritionById(
             @PathVariable("nutrition_id") @IdValidation long nutrition_id) {
