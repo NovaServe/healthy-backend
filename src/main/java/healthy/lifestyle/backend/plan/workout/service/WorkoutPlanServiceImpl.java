@@ -8,11 +8,11 @@ import healthy.lifestyle.backend.activity.workout.api.WorkoutApi;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.calendar.shared.service.DateTimeService;
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
+import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanResponseDto;
 import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
 import healthy.lifestyle.backend.plan.workout.model.WorkoutPlanDayId;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutDayIdRepository;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutPlanRepository;
-import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanResponseDto;
 import healthy.lifestyle.backend.shared.exception.ApiException;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.api.UserApi;
@@ -124,8 +124,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
 
         WorkoutPlan workoutPlanSaved = workoutPlanRepository.save(workoutPlan);
 
-        WorkoutPlanResponseDto responseDto =
-                modelMapper.map(workoutPlanSaved, WorkoutPlanResponseDto.class);
+        WorkoutPlanResponseDto responseDto = modelMapper.map(workoutPlanSaved, WorkoutPlanResponseDto.class);
 
         return responseDto;
     }

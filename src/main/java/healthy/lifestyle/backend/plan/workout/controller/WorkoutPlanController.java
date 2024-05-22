@@ -1,8 +1,8 @@
 package healthy.lifestyle.backend.plan.workout.controller;
 
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
-import healthy.lifestyle.backend.plan.workout.service.WorkoutPlanService;
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanResponseDto;
+import healthy.lifestyle.backend.plan.workout.service.WorkoutPlanService;
 import healthy.lifestyle.backend.user.service.AuthUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

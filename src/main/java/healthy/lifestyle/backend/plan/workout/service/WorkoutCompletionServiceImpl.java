@@ -3,9 +3,8 @@ package healthy.lifestyle.backend.plan.workout.service;
 import healthy.lifestyle.backend.activity.workout.api.WorkoutApi;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
-import healthy.lifestyle.backend.plan.workout.repository.WorkoutCompletionRecordRepository;
 import healthy.lifestyle.backend.plan.workout.model.WorkoutCompletionRecord;
-
+import healthy.lifestyle.backend.plan.workout.repository.WorkoutCompletionRecordRepository;
 import java.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 

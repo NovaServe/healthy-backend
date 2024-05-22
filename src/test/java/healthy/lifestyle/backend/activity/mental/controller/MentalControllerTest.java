@@ -621,7 +621,8 @@ public class MentalControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user = dbUtil.createUser(1, role, country, timezone);
 
         MentalType mentalType1 = dbUtil.createMeditationType();
         MentalType mentalType2 = dbUtil.createAffirmationType();
@@ -633,7 +634,7 @@ public class MentalControllerTest {
         Mental customMental1 = dbUtil.createCustomMental(
                 1, List.of(customHttpRef1, customHttpRef2, defaultHttpRef1, defaultHttpRef2), mentalType1, user);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         Mental customMental2 =
                 dbUtil.createCustomMental(2, List.of(customHttpRef1, defaultHttpRef1), mentalType1, user2);
 

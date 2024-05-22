@@ -1,7 +1,6 @@
 package healthy.lifestyle.backend.plan.workout.repository;
 
 import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
-
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
