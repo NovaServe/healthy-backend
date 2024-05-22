@@ -47,7 +47,7 @@ public class MentalController {
         return ResponseEntity.ok(responseDto);
     }
 
-    @Operation(summary = "Get default and custom mental activities")
+    @Operation(summary = "Get default mental activities")
     @GetMapping("/all_mentals")
     public ResponseEntity<Page<MentalResponseDto>> getAllMentals(
             @RequestParam(required = false, defaultValue = "title") String sortField,
