@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.messaging.FirebaseMessaging;
+import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.model.Mental;
@@ -730,6 +731,114 @@ public class MentalControllerTest {
 
         // When
         mockMvc.perform(delete(URL.CUSTOM_MENTAL_ID, nonExistentMentalId).contentType(MediaType.APPLICATION_JSON))
+                // Then
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void createCustomMental_ReturnVoidWith204_whenValidRequest() throws Exception {
+        User user = dbUtil.createUser(1);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user);
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(2);
+        MentalCreateRequestDto customMentalRequestDto = dtoUtil.mentalCreateRequestDto(
+                1, List.of(customHttpRef1.getId(), defaultHttpRef1.getId()), mentalType1.getId());
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_MENTALS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(customMentalRequestDto)))
+
+                // Then
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", is(notNullValue())))
+                .andExpect(jsonPath("$.title", is(customMentalRequestDto.getTitle())))
+                .andExpect(jsonPath("$.description", is(customMentalRequestDto.getDescription())))
+                .andExpect(jsonPath("$.isCustom", is(true)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        MentalResponseDto responseDto = objectMapper.readValue(responseContent, MentalResponseDto.class);
+
+        assertEquals(
+                customMentalRequestDto.getHttpRefs().size(),
+                responseDto.getHttpRefs().size());
+        assertThat(responseDto.getHttpRefs())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
+                .isEqualTo(List.of(customHttpRef1, defaultHttpRef1));
+
+        // Db
+        Mental createdMental = dbUtil.getMentalById(responseDto.getId());
+        assertEquals(responseDto.getId(), createdMental.getId());
+        assertEquals(customMentalRequestDto.getTitle(), createdMental.getTitle());
+        assertEquals(customMentalRequestDto.getDescription(), createdMental.getDescription());
+        assertEquals(
+                customMentalRequestDto.getMentalTypeId(),
+                createdMental.getType().getId());
+        assertTrue(createdMental.isCustom());
+        assertEquals(user.getId(), createdMental.getUser().getId());
+
+        assertEquals(
+                customMentalRequestDto.getHttpRefs().size(),
+                createdMental.getHttpRefs().size());
+
+        assertThat(createdMental.getHttpRefsSortedById())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
+                .isEqualTo(List.of(customHttpRef1, defaultHttpRef1));
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void createCustomMental_ReturnVoidWith201_whenValidMandatoryFields() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        MentalCreateRequestDto customMentalRequestDto =
+                dtoUtil.mentalCreateRequestDto(1, Collections.emptyList(), mentalType1.getId());
+        customMentalRequestDto.setDescription(null);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(post(URL.CUSTOM_MENTALS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(customMentalRequestDto)))
+
+                // Then
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", is(notNullValue())))
+                .andExpect(jsonPath("$.title", is(customMentalRequestDto.getTitle())))
+                .andExpect(jsonPath("$.description", is(customMentalRequestDto.getDescription())))
+                .andExpect(jsonPath("$.isCustom", is(true)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        MentalResponseDto responseDto = objectMapper.readValue(responseContent, MentalResponseDto.class);
+
+        assertTrue(customMentalRequestDto.getHttpRefs().isEmpty());
+        assertEquals(customMentalRequestDto.getMentalTypeId(), responseDto.getMentalTypeId());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void createCustomMental_shouldReturnErrorMessageWith400_whenHttpRefNotFound() throws Exception {
+        // Given
+        User user = dbUtil.createUser(1);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        long nonExistentHttpRefId = 1000L;
+        MentalCreateRequestDto mentalCreateRequestDto =
+                dtoUtil.mentalCreateRequestDto(1, Collections.singletonList(nonExistentHttpRefId), mentalType1.getId());
+        ApiException expectedException =
+                new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
+
+        // When
+        mockMvc.perform(post(URL.CUSTOM_MENTALS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(mentalCreateRequestDto)))
+
                 // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
