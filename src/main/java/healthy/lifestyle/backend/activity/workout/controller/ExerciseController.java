@@ -6,6 +6,7 @@ import healthy.lifestyle.backend.activity.workout.dto.ExerciseUpdateRequestDto;
 import healthy.lifestyle.backend.activity.workout.service.ExerciseService;
 import healthy.lifestyle.backend.shared.validation.annotation.*;
 import healthy.lifestyle.backend.user.service.AuthUtil;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ public class ExerciseController {
     @Autowired
     AuthUtil authUtil;
 
+    @Operation(summary = "Create custom exercise")
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<ExerciseResponseDto> createCustomExercise(
@@ -38,6 +40,7 @@ public class ExerciseController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Get default exercise by id")
     @GetMapping("/default/{exercise_id}")
     public ResponseEntity<ExerciseResponseDto> getDefaultExerciseById(
             @PathVariable("exercise_id") @IdValidation long exercise_id) {
@@ -45,6 +48,7 @@ public class ExerciseController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @Operation(summary = "Get custom exercise by id")
     @GetMapping("/{exercise_id}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<ExerciseResponseDto> getCustomExerciseById(
@@ -55,6 +59,7 @@ public class ExerciseController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @Operation(summary = "Get default and custom exercises")
     @GetMapping()
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Page<ExerciseResponseDto>> getExercisesWithFilter(
@@ -85,6 +90,7 @@ public class ExerciseController {
         return ResponseEntity.ok(dtoPage);
     }
 
+    @Operation(summary = "Get default exercises")
     @GetMapping("/default")
     public ResponseEntity<Page<ExerciseResponseDto>> getDefaultExercises(
             @RequestParam(required = false) @TitleOptionalValidation(min = 2) String title,
@@ -109,6 +115,7 @@ public class ExerciseController {
         return ResponseEntity.ok(dtoPage);
     }
 
+    @Operation(summary = "Update custom exercises")
     @PatchMapping("/{exerciseId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<ExerciseResponseDto> updateCustomExercise(
@@ -121,6 +128,7 @@ public class ExerciseController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @Operation(summary = "Delete custom exercises by id")
     @DeleteMapping("/{exerciseId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> deleteCustomExercise(@PathVariable("exerciseId") @IdValidation long exerciseId) {

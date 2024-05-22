@@ -8,6 +8,7 @@ import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptiona
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
 import healthy.lifestyle.backend.user.service.AuthUtil;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class HttpRefController {
     @Autowired
     AuthUtil authUtil;
 
+    @Operation(summary = "Create custom http reference")
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<HttpRefResponseDto> createCustomHttpRef(
@@ -39,6 +41,7 @@ public class HttpRefController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Get custom http reference by id")
     @GetMapping("/{httpRefId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<HttpRefResponseDto> getCustomHttpRefById(@PathVariable @IdValidation long httpRefId) {
@@ -48,6 +51,7 @@ public class HttpRefController {
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
+    @Operation(summary = "Get default and custom http references")
     @GetMapping()
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Page<HttpRefResponseDto>> getHttpRefsWithFilter(
@@ -67,6 +71,7 @@ public class HttpRefController {
         return new ResponseEntity<>(responseDtoPage, HttpStatus.OK);
     }
 
+    @Operation(summary = "Get default http references")
     @GetMapping("/default")
     public ResponseEntity<Page<HttpRefResponseDto>> getDefaultHttpRefsWithFilter(
             @RequestParam(required = false) @TitleOptionalValidation(min = 2) String name,
@@ -82,6 +87,7 @@ public class HttpRefController {
         return new ResponseEntity<>(responseDtoPage, HttpStatus.OK);
     }
 
+    @Operation(summary = "Update custom http reference by id")
     @PatchMapping("/{httpRefId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<HttpRefResponseDto> updateCustomHttpRef(
@@ -93,6 +99,7 @@ public class HttpRefController {
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
+    @Operation(summary = "Delete custom http reference by id")
     @DeleteMapping("/{httpRefId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> deleteCustomHttpRef(@PathVariable @IdValidation long httpRefId) {

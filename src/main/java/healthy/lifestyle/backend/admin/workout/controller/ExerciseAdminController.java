@@ -4,6 +4,7 @@ import healthy.lifestyle.backend.activity.workout.dto.ExerciseResponseDto;
 import healthy.lifestyle.backend.admin.workout.service.ExerciseAdminService;
 import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
+import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ public class ExerciseAdminController {
     @Autowired
     ExerciseAdminService exerciseAdminService;
 
+    @Operation(summary = "Get default and custom exercises (admin)")
     @GetMapping("/exercises")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<ExerciseResponseDto>> getExercisesWithFilter(

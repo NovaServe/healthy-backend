@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.admin.user.controller;
 
 import healthy.lifestyle.backend.admin.user.service.UserAdminService;
 import healthy.lifestyle.backend.user.dto.UserResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +20,7 @@ public class UserAdminController {
         this.adminService = adminService;
     }
 
+    @Operation(summary = "Get users (admin)")
     @GetMapping("/users")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<UserResponseDto>> getUsersWithFilter(

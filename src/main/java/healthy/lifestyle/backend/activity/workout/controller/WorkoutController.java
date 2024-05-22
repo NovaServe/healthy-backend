@@ -8,6 +8,7 @@ import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptiona
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
 import healthy.lifestyle.backend.user.service.AuthUtil;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ public class WorkoutController {
     @Autowired
     AuthUtil authUtil;
 
+    @Operation(summary = "Create custom workout")
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<WorkoutResponseDto> createCustomWorkout(
@@ -41,6 +43,7 @@ public class WorkoutController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Get default workout by id")
     @GetMapping("/default/{workout_id}")
     public ResponseEntity<WorkoutResponseDto> getDefaultWorkoutById(
             @PathVariable("workout_id") @IdValidation long workoutId) {
@@ -48,6 +51,7 @@ public class WorkoutController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @Operation(summary = "Get custom workout by id")
     @GetMapping("/{workout_id}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<WorkoutResponseDto> getCustomWorkoutById(
@@ -56,6 +60,7 @@ public class WorkoutController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @Operation(summary = "Get default workouts")
     @GetMapping("/default")
     public ResponseEntity<Page<WorkoutResponseDto>> getDefaultWorkouts(
             @RequestParam(required = false) @TitleOptionalValidation(min = 2) String title,
@@ -80,6 +85,7 @@ public class WorkoutController {
         return ResponseEntity.ok(dtoPage);
     }
 
+    @Operation(summary = "Get default and custom workouts")
     @GetMapping()
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Page<WorkoutResponseDto>> getWorkouts(
@@ -110,6 +116,7 @@ public class WorkoutController {
         return ResponseEntity.ok(dtoPage);
     }
 
+    @Operation(summary = "Update custom workout by id")
     @PatchMapping("/{workoutId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<WorkoutResponseDto> updateCustomWorkout(
@@ -121,6 +128,7 @@ public class WorkoutController {
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
+    @Operation(summary = "Delete custom workout by id")
     @DeleteMapping("/{workoutId}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<?> deleteCustomWorkout(@PathVariable("workoutId") @IdValidation long workoutId) {

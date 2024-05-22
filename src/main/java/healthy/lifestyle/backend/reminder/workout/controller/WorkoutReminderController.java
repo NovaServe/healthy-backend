@@ -4,6 +4,7 @@ import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderCreateReque
 import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderResponseDto;
 import healthy.lifestyle.backend.reminder.workout.service.WorkoutReminderService;
 import healthy.lifestyle.backend.user.service.AuthUtil;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ public class WorkoutReminderController {
     @Autowired
     WorkoutReminderService workoutReminderService;
 
+    @Operation(summary = "Create workout plan")
     @PostMapping("/reminders")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<WorkoutReminderResponseDto> createWorkoutReminder(
