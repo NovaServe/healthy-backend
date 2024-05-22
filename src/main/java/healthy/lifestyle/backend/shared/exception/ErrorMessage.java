@@ -13,7 +13,7 @@ public enum ErrorMessage {
     TIMEZONE_NOT_FOUND("Timezone with id %d not found"),
     EXERCISE_NOT_FOUND("Exercise with id %d not found"),
     WORKOUT_NOT_FOUND("Workout with id %d not found"),
-    WORKOUT_REMINDER_NOT_FOUND("Workout reminder with id %d not found"),
+    WORKOUT_PLAN_NOT_FOUND("Workout plan with id %d not found"),
     USER_NOT_FOUND("User with id %d not found"),
     NUTRITION_NOT_FOUND("Nutrition with id %d not found"),
     ROLE_NOT_FOUND("Role not found"),

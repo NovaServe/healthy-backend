@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.reminder.workout.service;
+package healthy.lifestyle.backend.plan.workout.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -7,12 +7,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import healthy.lifestyle.backend.activity.workout.api.WorkoutApi;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.calendar.shared.service.DateTimeService;
-import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderCreateRequestDto;
-import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderResponseDto;
-import healthy.lifestyle.backend.reminder.workout.model.WorkoutReminder;
-import healthy.lifestyle.backend.reminder.workout.model.WorkoutReminderDayId;
-import healthy.lifestyle.backend.reminder.workout.repository.WorkoutDayIdRepository;
-import healthy.lifestyle.backend.reminder.workout.repository.WorkoutReminderRepository;
+import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlanDayId;
+import healthy.lifestyle.backend.plan.workout.repository.WorkoutDayIdRepository;
+import healthy.lifestyle.backend.plan.workout.repository.WorkoutPlanRepository;
+import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanResponseDto;
 import healthy.lifestyle.backend.shared.exception.ApiException;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.api.UserApi;
@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class WorkoutReminderServiceImpl implements WorkoutReminderService {
+public class WorkoutPlanServiceImpl implements WorkoutPlanService {
 
     @Autowired
     WorkoutApi workoutApi;
@@ -40,7 +40,7 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
     DateTimeService dateTimeService;
 
     @Autowired
-    WorkoutReminderRepository workoutReminderRepository;
+    WorkoutPlanRepository workoutPlanRepository;
 
     @Autowired
     WorkoutDayIdRepository workoutDayIdRepository;
@@ -50,18 +50,18 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
 
     @Override
     @Transactional
-    public WorkoutReminderResponseDto createWorkoutReminder(WorkoutReminderCreateRequestDto requestDto, long userId) {
+    public WorkoutPlanResponseDto createWorkoutPlan(WorkoutPlanCreateRequestDto requestDto, long userId) {
 
-        // Only one workout-reminder association is allowed
-        workoutReminderRepository
+        // Only one workout-plan association is allowed
+        workoutPlanRepository
                 .findByUserIdAndWorkoutId(userId, requestDto.getWorkoutId())
-                .ifPresent(reminder -> {
+                .ifPresent(plan -> {
                     throw new ApiException(ErrorMessage.ALREADY_EXISTS, null, HttpStatus.BAD_REQUEST);
                 });
 
         User user = userApi.getUserById(userId);
         Workout workout = workoutApi.getWorkoutById(requestDto.getWorkoutId());
-        WorkoutReminder workoutReminder;
+        WorkoutPlan workoutPlan;
 
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -78,7 +78,7 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
             for (JsonNode day : days) {
 
                 // Generate unique id for plan day
-                WorkoutReminderDayId dayId = new WorkoutReminderDayId();
+                WorkoutPlanDayId dayId = new WorkoutPlanDayId();
                 dayId.setJson_id(1L);
                 dayId = workoutDayIdRepository.save(dayId);
                 // After that just delete this entity from database after update counter
@@ -107,10 +107,10 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
                 ((ObjectNode) day).put("minutes", targetZonedDateTime.getMinute());
             }
 
-            workoutReminder = WorkoutReminder.builder()
+            workoutPlan = WorkoutPlan.builder()
                     .startDate(startZonedDateTime.toLocalDateTime())
                     .endDate(endZonedDateTime.toLocalDateTime())
-                    .jsonDescription(days.toString())
+                    .jsonDescription(days)
                     .isActive(true)
                     .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                     .deactivatedAt(null)
@@ -122,10 +122,10 @@ public class WorkoutReminderServiceImpl implements WorkoutReminderService {
             throw new RuntimeException(e);
         }
 
-        WorkoutReminder workoutReminderSaved = workoutReminderRepository.save(workoutReminder);
+        WorkoutPlan workoutPlanSaved = workoutPlanRepository.save(workoutPlan);
 
-        WorkoutReminderResponseDto responseDto =
-                modelMapper.map(workoutReminderSaved, WorkoutReminderResponseDto.class);
+        WorkoutPlanResponseDto responseDto =
+                modelMapper.map(workoutPlanSaved, WorkoutPlanResponseDto.class);
 
         return responseDto;
     }

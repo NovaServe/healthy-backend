@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.reminder.workout.dto;
+package healthy.lifestyle.backend.plan.workout.dto;
 
 import lombok.*;
 
@@ -7,6 +7,6 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkoutReminderUpdateRequestDto {
+public class WorkoutPlanUpdateRequestDto {
     private String jsonDescription;
 }

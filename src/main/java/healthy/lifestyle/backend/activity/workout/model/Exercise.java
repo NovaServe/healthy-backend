@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.activity.workout.model;
 
-import healthy.lifestyle.backend.reminder.workout.model.WorkoutCompletionRecord;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutCompletionRecord;
 import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
 import java.util.Comparator;

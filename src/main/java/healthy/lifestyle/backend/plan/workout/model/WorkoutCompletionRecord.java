@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.reminder.workout.model;
+package healthy.lifestyle.backend.plan.workout.model;
 
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.Workout;

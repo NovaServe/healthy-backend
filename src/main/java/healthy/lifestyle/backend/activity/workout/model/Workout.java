@@ -1,7 +1,7 @@
 package healthy.lifestyle.backend.activity.workout.model;
 
-import healthy.lifestyle.backend.reminder.workout.model.WorkoutCompletionRecord;
-import healthy.lifestyle.backend.reminder.workout.model.WorkoutReminder;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutCompletionRecord;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
 import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
 import java.util.Comparator;
@@ -49,7 +49,7 @@ public class Workout {
     private Set<Exercise> exercises;
 
     @OneToMany(mappedBy = "workout")
-    private Set<WorkoutReminder> workoutReminders;
+    private Set<WorkoutPlan> workoutPlans;
 
     @OneToMany(mappedBy = "workout")
     private Set<WorkoutCompletionRecord> workoutCompletionRecords;

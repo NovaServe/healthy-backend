@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @MappedSuperclass
-public class ReminderBase {
+public class PlanBase {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

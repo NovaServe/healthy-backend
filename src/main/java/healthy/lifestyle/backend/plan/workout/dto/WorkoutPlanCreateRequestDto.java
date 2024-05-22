@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.reminder.workout.dto;
+package healthy.lifestyle.backend.plan.workout.dto;
 
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import java.time.LocalDateTime;
@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkoutReminderCreateRequestDto {
+public class WorkoutPlanCreateRequestDto {
     @IdValidation
     private Long workoutId;
 

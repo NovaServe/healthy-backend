@@ -21,7 +21,7 @@ public class TaskDto {
 
     private long activityId;
 
-    private long reminderId;
+    private long planId;
 
     private ZonedDateTime notificationStartDateTimeInServerZone;
 

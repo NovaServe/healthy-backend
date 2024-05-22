@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.reminder.workout.dto;
+package healthy.lifestyle.backend.plan.workout.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.sql.Timestamp;
@@ -10,7 +10,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkoutReminderResponseDto {
+public class WorkoutPlanResponseDto {
     private long id;
 
     private long workoutId;

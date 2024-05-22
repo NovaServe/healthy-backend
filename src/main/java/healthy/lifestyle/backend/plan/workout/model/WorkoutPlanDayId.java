@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.reminder.workout.model;
+package healthy.lifestyle.backend.plan.workout.model;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @Entity
 @Table(name = "json_ids")
-public class WorkoutReminderDayId {
+public class WorkoutPlanDayId {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

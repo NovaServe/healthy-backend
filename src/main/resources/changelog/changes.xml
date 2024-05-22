@@ -350,7 +350,7 @@
 
     <changeSet id="workout_calendar" author="Oleg Kucherenko">
 
-        <createTable tableName="workout_reminders">
+        <createTable tableName="workout_plans">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
             </column>
@@ -361,7 +361,7 @@
                 <constraints nullable="false" foreignKeyName="fk_workout_id"
                              references="workouts(id)"/>
             </column>
-            <column name="json_description" type="varchar">
+            <column name="json_description" type="jsonb">
                 <constraints nullable="false" unique="false"/>
             </column>
             <column name="start_date" type="timestamp">
@@ -400,8 +400,8 @@
             <column name="workout_id" type="bigint">
                 <constraints nullable="true" unique="false" foreignKeyName="fk_workout_id" references="workouts(id)"/>
             </column>
-            <column name="workout_reminder_id" type="bigint">
-                <constraints nullable="true" unique="false" foreignKeyName="fk_workout_reminder_id" references="workout_reminders(id)"/>
+            <column name="workout_plan_id" type="bigint">
+                <constraints nullable="true" unique="false" foreignKeyName="fk_workout_plan_id" references="workout_plans(id)"/>
             </column>
             <column name="json_id" type="bigint">
                 <constraints nullable="false" unique="true" foreignKeyName="fk_json_id" references="json_ids(id)"/>

@@ -1,8 +1,8 @@
-package healthy.lifestyle.backend.reminder.workout.controller;
+package healthy.lifestyle.backend.plan.workout.controller;
 
-import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderCreateRequestDto;
-import healthy.lifestyle.backend.reminder.workout.dto.WorkoutReminderResponseDto;
-import healthy.lifestyle.backend.reminder.workout.service.WorkoutReminderService;
+import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
+import healthy.lifestyle.backend.plan.workout.service.WorkoutPlanService;
+import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanResponseDto;
 import healthy.lifestyle.backend.user.service.AuthUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,22 +17,22 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 @Controller
 @RequestMapping("${api.basePath}/${api.version}/calendar/workouts")
-public class WorkoutReminderController {
+public class WorkoutPlanController {
 
     @Autowired
     AuthUtil authUtil;
 
     @Autowired
-    WorkoutReminderService workoutReminderService;
+    WorkoutPlanService workoutPlanService;
 
-    @PostMapping("/reminders")
+    @PostMapping("/plans")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<WorkoutReminderResponseDto> createWorkoutReminder(
-            @Valid @RequestBody WorkoutReminderCreateRequestDto requestDto) {
+    public ResponseEntity<WorkoutPlanResponseDto> createWorkoutPlan(
+            @Valid @RequestBody WorkoutPlanCreateRequestDto requestDto) {
 
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
-        WorkoutReminderResponseDto responseDto = workoutReminderService.createWorkoutReminder(requestDto, userId);
+        WorkoutPlanResponseDto responseDto = workoutPlanService.createWorkoutPlan(requestDto, userId);
 
         // call update tasks
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);

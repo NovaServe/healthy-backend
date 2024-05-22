@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.reminder.workout.service;
+package healthy.lifestyle.backend.plan.workout.service;
 
 import java.time.LocalDate;
 
