@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.shared.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,5 +13,10 @@ public class Config {
         // ModelMapper modelMapper = new ModelMapper();
         // modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         return new ModelMapper();
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }
