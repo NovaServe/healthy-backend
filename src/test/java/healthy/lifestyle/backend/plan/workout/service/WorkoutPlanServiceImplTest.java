@@ -1,10 +1,13 @@
 package healthy.lifestyle.backend.plan.workout.service;
 
-import healthy.lifestyle.backend.activity.workout.api.WorkoutApi;
+import static org.junit.jupiter.api.Assertions.*;
+
 import healthy.lifestyle.backend.activity.workout.api.WorkoutApiImpl;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutPlanRepository;
 import healthy.lifestyle.backend.testutil.TestUtil;
 import healthy.lifestyle.backend.user.api.UserApiImpl;
+import java.time.LocalDate;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,12 +18,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class WorkoutPlanServiceImplTest {
@@ -42,19 +39,15 @@ class WorkoutPlanServiceImplTest {
     TestUtil dataUtil = new TestUtil();
 
     @Test
-    void createWorkoutPlan_shouldCreateWorkoutPlanAndReturnResponseDto_whenValidRequest() {
-    }
+    void createWorkoutPlan_shouldCreateWorkoutPlanAndReturnResponseDto_whenValidRequest() {}
 
     @Test
-    void createWorkoutPlan_shouldThrowException_whenWorkoutAlreadyHasActivePlan() {
-    }
+    void createWorkoutPlan_shouldThrowException_whenWorkoutAlreadyHasActivePlan() {}
 
     @ParameterizedTest
     @MethodSource("createWorkoutPlanInvalidField")
     void createWorkoutPlan_shouldThrowException_whenInvalidRequest(
-            Long workoutId, LocalDate startDate, LocalDate endDate) {
-
-    }
+            Long workoutId, LocalDate startDate, LocalDate endDate) {}
 
     static Stream<Arguments> createWorkoutPlanInvalidField() {
         return Stream.of(
@@ -63,13 +56,9 @@ class WorkoutPlanServiceImplTest {
                 // Invalid start date
                 Arguments.of(null, "__-__-__", "__-__-__"),
                 // Invalid end date
-                Arguments.of(null, "__-__-__", "__-__-__")
-        );
+                Arguments.of(null, "__-__-__", "__-__-__"));
     }
 
     @Test
-    void createWorkoutPlan_shouldThrowException_whenInvalidJsonDescription() {
-    }
-
-
+    void createWorkoutPlan_shouldThrowException_whenInvalidJsonDescription() {}
 }
