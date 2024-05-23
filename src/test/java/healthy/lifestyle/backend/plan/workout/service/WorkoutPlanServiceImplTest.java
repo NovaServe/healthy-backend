@@ -6,7 +6,7 @@ import healthy.lifestyle.backend.activity.workout.api.WorkoutApiImpl;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutPlanRepository;
 import healthy.lifestyle.backend.testutil.TestUtil;
 import healthy.lifestyle.backend.user.api.UserApiImpl;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +47,7 @@ class WorkoutPlanServiceImplTest {
     @ParameterizedTest
     @MethodSource("createWorkoutPlanInvalidField")
     void createWorkoutPlan_shouldThrowException_whenInvalidRequest(
-            Long workoutId, LocalDate startDate, LocalDate endDate) {}
+            Long workoutId, LocalDateTime startDate, LocalDateTime endDate) {}
 
     static Stream<Arguments> createWorkoutPlanInvalidField() {
         return Stream.of(
