@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface WorkoutPlanRepository extends JpaRepository<WorkoutPlan, Long> {
     @Query("SELECT wr FROM WorkoutPlan wr WHERE wr.user.id = :userId AND wr.workout.id = :workoutId")
-    Optional<WorkoutPlan> findByUserIdAndWorkoutId(long userId, long workoutId);
+    List<WorkoutPlan> findByUserIdAndWorkoutId(long userId, long workoutId);
 
     @Query(
             "SELECT wr FROM WorkoutPlan wr WHERE wr.user.id = :userId AND (:isActive IS NULL OR wr.isActive = :isActive)")

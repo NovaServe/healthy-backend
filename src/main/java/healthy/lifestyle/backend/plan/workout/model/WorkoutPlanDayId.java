@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "json_ids")
+@Table(name = "workout_json_ids")
 public class WorkoutPlanDayId {
 
     @Id

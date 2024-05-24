@@ -1,8 +1,8 @@
 package healthy.lifestyle.backend.plan.workout.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.calendar.model.PlanBase;
+import healthy.lifestyle.backend.shared.util.JsonDescription;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,6 +11,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,5 +28,5 @@ public class WorkoutPlan extends PlanBase {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "json_description", columnDefinition = "jsonb")
-    private JsonNode jsonDescription;
+    private List<JsonDescription> jsonDescription;
 }
