@@ -381,7 +381,7 @@
             </column>
         </createTable>
 
-        <createTable tableName="json_ids">
+        <createTable tableName="workout_json_ids">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
             </column>
@@ -404,7 +404,7 @@
                 <constraints nullable="true" unique="false" foreignKeyName="fk_workout_plan_id" references="workout_plans(id)"/>
             </column>
             <column name="json_id" type="bigint">
-                <constraints nullable="false" unique="true" foreignKeyName="fk_json_id" references="json_ids(id)"/>
+                <constraints nullable="false" unique="true" foreignKeyName="fk_workout_json_id" references="workout_json_ids(id)"/>
             </column>
             <column name="completed_exercises_json" type="jsonb">
                 <constraints nullable="false" unique="false"/>
