@@ -14,7 +14,6 @@ import java.time.DayOfWeek;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@MappedSuperclass
 public class JsonDescription {
     private long json_id;
     private DayOfWeek dayOfWeek;
