@@ -25,7 +25,7 @@ public interface MentalRepository extends JpaRepository<Mental, Long> {
     @Query("SELECT DISTINCT m FROM Mental m WHERE (:userId IS NULL OR m.user.id = :userId) AND m.isCustom = :isCustom "
             + "AND (:title IS NULL OR m.title ILIKE %:title%) "
             + "AND (:description IS NULL OR m.description ILIKE %:description%) "
-            + "AND (:type IS NULL OR m.type = :mental_type_id)")
+            + "AND (:type IS NULL OR m.type.id = :type)")
     Page<Mental> findDefaultOrCustomWithFilter(
             @Param("isCustom") boolean isCustom,
             @Param("userId") Long userId,
@@ -37,7 +37,7 @@ public interface MentalRepository extends JpaRepository<Mental, Long> {
     @Query("SELECT DISTINCT m FROM Mental m WHERE (m.isCustom = false OR (m.isCustom = true AND m.user.id = :userId)) "
             + "AND (:title IS NULL OR m.title ILIKE %:title%) "
             + "AND (:description IS NULL OR m.description ILIKE %:description%) "
-            + "AND (:type IS NULL OR m.type = :mental_type_id)")
+            + "AND (:type IS NULL OR m.type.id = :type)")
     Page<Mental> findDefaultAndCustomWithFilter(
             @Param("userId") Long userId,
             @Param("title") String title,
