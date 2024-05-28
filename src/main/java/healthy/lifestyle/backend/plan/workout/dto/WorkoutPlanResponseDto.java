@@ -1,7 +1,5 @@
 package healthy.lifestyle.backend.plan.workout.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import lombok.*;
 
@@ -11,11 +9,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WorkoutPlanResponseDto {
-    private long id;
 
-    private long workoutId;
+    private Long id;
 
-    private String workoutTitle;
+    private Long workoutId;
 
     private LocalDateTime startDate;
 
@@ -23,10 +20,6 @@ public class WorkoutPlanResponseDto {
 
     private String jsonDescription;
 
-    @JsonProperty(value = "isActive")
-    private boolean isActive;
+    private LocalDateTime createdAt;
 
-    private Timestamp createdAt;
-
-    private Timestamp deactivatedAt;
 }

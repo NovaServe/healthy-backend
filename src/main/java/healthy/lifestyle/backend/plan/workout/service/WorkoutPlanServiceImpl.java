@@ -35,89 +35,70 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     UserApi userApi;
 
     @Autowired
-    DateTimeService dateTimeService;
-
-    @Autowired
     WorkoutPlanRepository workoutPlanRepository;
 
     @Autowired
-    WorkoutDayIdRepository workoutDayIdRepository;
-
-    @Autowired
     ModelMapper modelMapper;
+
 
     @Override
     @Transactional
     public WorkoutPlanResponseDto createWorkoutPlan(WorkoutPlanCreateRequestDto requestDto, long userId) {
 
+        //A plan can only be created by an existing user
+        User user = userApi.getUserById(userId);
+        if(user == null){throw new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.BAD_REQUEST);}
+
+        // The plan can only be for an existing workout
+        Workout workout = workoutApi.getWorkoutById(requestDto.getWorkoutId());
+        if(workout == null){throw new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, requestDto.getWorkoutId(), HttpStatus.BAD_REQUEST);}
+
         // Only one active workout plan association is allowed
         List<WorkoutPlan> plans = workoutPlanRepository.findByUserIdAndWorkoutId(userId, requestDto.getWorkoutId());
         if(!plans.isEmpty()){
             for(WorkoutPlan plan : plans){
-                if(plan.getIsActive()){throw new ApiException(ErrorMessage.ALREADY_EXISTS, null, HttpStatus.BAD_REQUEST);}
+                if(plan.getIsActive()){throw new ApiException(ErrorMessage.ALREADY_EXISTS, null, HttpStatus.CONFLICT);}
             }
         }
 
-        User user = userApi.getUserById(userId);
-        Workout workout = workoutApi.getWorkoutById(requestDto.getWorkoutId());
-        WorkoutPlan workoutPlan;
-
-        try {
-
-            JsonUtil jsonUtil = new JsonUtil();
-            List<JsonDescription> jsonDescriptions = jsonUtil.deserializeJsonStringToJsonDescriptionList(requestDto.getJsonDescription());
-
-            ZoneId srcZoneId = ZoneId.of(user.getTimezone().getName());
-            ZoneId destZoneId = ZoneId.of("Europe/London");
-
-            ZonedDateTime startZonedDateTime =
-                    requestDto.getStartDate().atZone(srcZoneId).withZoneSameInstant(destZoneId);
-            ZonedDateTime endZonedDateTime =
-                    requestDto.getEndDate().atZone(srcZoneId).withZoneSameInstant(destZoneId);
-
-            for (JsonDescription desc : jsonDescriptions) {
-
-                // Generate unique id for plan day
-                WorkoutPlanDayId dayId = new WorkoutPlanDayId();
-                dayId.setJson_id(1L);
-                dayId = workoutDayIdRepository.save(dayId);
-                // After that just delete this entity from database after update counter
-                workoutDayIdRepository.delete(dayId);
-
-                // Convert day and time from user timezone to server timezone
-                DayOfWeek dayOfWeek = desc.getDayOfWeek();
-                LocalDateTime targetDate = requestDto.getStartDate().with(dayOfWeek);
-                LocalTime localTime = LocalTime.of(desc.getHours(), desc.getMinutes());
-                LocalDateTime localDateTime = LocalDateTime.of(targetDate.toLocalDate(), localTime);
-
-                ZonedDateTime sourceZonedDateTime = localDateTime.atZone(srcZoneId);
-                ZonedDateTime targetZonedDateTime = sourceZonedDateTime.withZoneSameInstant(destZoneId);
-
-                // Update day
-                desc.setJson_id(dayId.getId());
-                desc.setDayOfWeek((DayOfWeek) targetZonedDateTime.getDayOfWeek());
-                desc.setHours(targetZonedDateTime.getHour());
-                desc.setMinutes(targetZonedDateTime.getMinute());
-            }
-
-            workoutPlan = WorkoutPlan.builder()
-                    .startDate(startZonedDateTime.toLocalDateTime())
-                    .endDate(endZonedDateTime.toLocalDateTime())
-                    .jsonDescription(jsonDescriptions)
-                    .isActive(true)
-                    .createdAt(Timestamp.valueOf(LocalDateTime.now()))
-                    .deactivatedAt(null)
-                    .user(user)
-                    .workout(workout)
-                    .build();
-
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        // StartDate and EndDate must be specified
+        if(requestDto.getStartDate() == null || requestDto.getEndDate() == null){
+            throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
         }
 
-        WorkoutPlan workoutPlanSaved = workoutPlanRepository.save(workoutPlan);
+        // EndDate cannot be earlier than StartDate
+        if(requestDto.getEndDate().isBefore(requestDto.getStartDate())){
+            throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
+        }
 
-        WorkoutPlanResponseDto responseDto = modelMapper.map(workoutPlanSaved, WorkoutPlanResponseDto.class);
+        JsonUtil jsonUtil = new JsonUtil();
+        List<JsonDescription> days;
+
+        try {days = jsonUtil.deserializeJsonStringToJsonDescriptionList(requestDto.getJsonDescription());}
+        catch (JsonProcessingException e) {throw new RuntimeException(e);}
+
+        days = jsonUtil.processJsonDescription(days, ZoneId.of(user.getTimezone().getName()));
+
+        ZonedDateTime startZonedDateTime =
+                requestDto.getStartDate().atZone(ZoneId.of(user.getTimezone().getName())).withZoneSameInstant(ZoneId.of("Europe/London"));
+        ZonedDateTime endZonedDateTime =
+                requestDto.getEndDate().atZone(ZoneId.of(user.getTimezone().getName())).withZoneSameInstant(ZoneId.of("Europe/London"));
+
+        WorkoutPlan workoutPlan = WorkoutPlan.builder()
+                .startDate(startZonedDateTime.toLocalDateTime())
+                .endDate(endZonedDateTime.toLocalDateTime())
+                .jsonDescription(days)
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .deactivatedAt(null)
+                .user(user)
+                .workout(workout)
+                .build();
+
+        workoutPlanRepository.save(workoutPlan);
+
+        WorkoutPlanResponseDto responseDto = modelMapper.map(requestDto, WorkoutPlanResponseDto.class);
+        responseDto.setCreatedAt(LocalDateTime.now());
 
         return responseDto;
     }

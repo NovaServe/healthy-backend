@@ -1,11 +1,19 @@
 package healthy.lifestyle.backend.testutil;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.workout.dto.*;
+import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
+import healthy.lifestyle.backend.shared.util.JsonDescription;
+import healthy.lifestyle.backend.shared.util.JsonUtil;
 import healthy.lifestyle.backend.user.dto.LoginRequestDto;
 import healthy.lifestyle.backend.user.dto.SignupRequestDto;
 import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -155,6 +163,42 @@ public class DtoUtil {
                 .description("Description-" + seed)
                 .httpRefs(httpRefIds)
                 .mentalTypeId(mentalTypeId)
+                .build();
+    }
+
+    public WorkoutPlanCreateRequestDto workoutPlanCreateRequestDto(Long workoutId, LocalDateTime startDate,
+                                                               LocalDateTime endDate, String jsonDescription){
+        return  WorkoutPlanCreateRequestDto.builder()
+                .workoutId(workoutId)
+                .startDate(startDate)
+                .endDate(endDate)
+                .jsonDescription(jsonDescription)
+                .build();
+    }
+
+    public WorkoutPlanCreateRequestDto workoutPlanCreateRequestDto(int seed, Long workoutId){
+        LocalDateTime startDate = LocalDate.of(
+                LocalDateTime.now().getYear(), LocalDateTime.now().getMonth(), LocalDateTime.now().getDayOfMonth()).atStartOfDay();
+        LocalDateTime endDate = LocalDate.of(
+                LocalDateTime.now().getYear(), LocalDateTime.now().getMonth(), LocalDateTime.now().getDayOfMonth()).atStartOfDay();
+
+        JsonDescription jsonDescription = JsonDescription.builder()
+                .json_id(seed)
+                .dayOfWeek(LocalDateTime.now().getDayOfWeek())
+                .hours(seed % 24)
+                .minutes(seed % 60)
+                .build();
+
+        JsonUtil jsonUtil = new JsonUtil();
+        String jsonDescriptionStringified;
+        try{jsonDescriptionStringified = jsonUtil.serializeJsonDescriptionList(List.of(jsonDescription));}
+        catch (JsonProcessingException e) {throw new RuntimeException(e);}
+
+        return WorkoutPlanCreateRequestDto.builder()
+                .workoutId(workoutId)
+                .startDate(startDate)
+                .endDate(endDate)
+                .jsonDescription(jsonDescriptionStringified)
                 .build();
     }
 }

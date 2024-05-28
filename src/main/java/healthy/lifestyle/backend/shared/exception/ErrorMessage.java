@@ -11,6 +11,7 @@ public enum ErrorMessage {
     BODY_PART_NOT_FOUND("Body part with id %d not found"),
     COUNTRY_NOT_FOUND("Country with id %d not found"),
     TIMEZONE_NOT_FOUND("Timezone with id %d not found"),
+    INCORRECT_TIME("The specified date or time is incorrect"),
     EXERCISE_NOT_FOUND("Exercise with id %d not found"),
     WORKOUT_NOT_FOUND("Workout with id %d not found"),
     WORKOUT_PLAN_NOT_FOUND("Workout plan with id %d not found"),

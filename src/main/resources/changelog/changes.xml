@@ -364,19 +364,19 @@
             <column name="json_description" type="jsonb">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="start_date" type="timestamp">
+            <column name="start_date" type="datetime">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="end_date" type="timestamp">
+            <column name="end_date" type="datetime">
                 <constraints nullable="false" unique="false"/>
             </column>
             <column name="is_active" type="boolean">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="created_at" type="timestamp">
+            <column name="created_at" type="datetime">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="deactivated_at" type="timestamp">
+            <column name="deactivated_at" type="datetime">
                 <constraints nullable="true" unique="false"/>
             </column>
         </createTable>

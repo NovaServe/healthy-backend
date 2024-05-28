@@ -10,10 +10,16 @@ import healthy.lifestyle.backend.activity.workout.model.BodyPart;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
+import healthy.lifestyle.backend.calendar.model.PlanBase;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlanDayId;
+import healthy.lifestyle.backend.shared.util.JsonDescription;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
+
+import java.time.*;
 import java.util.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -59,6 +65,20 @@ public class TestUtil implements Util {
         return this.createExerciseBase(seed, false, needsEquipment, bodyParts, httpRefs, null);
     }
 
+    public Exercise createDefaultExercise(int seed){
+        BodyPart bodyPart = createBodyPart(seed);
+        HttpRef httpRef = createDefaultHttpRef(seed);
+
+        return Exercise.builder()
+                .id(Long.valueOf(seed))
+                .isCustom(false)
+                .needsEquipment(false)
+                .bodyParts(Set.of(bodyPart))
+                .httpRefs(Set.of(httpRef))
+                .user(null)
+                .build();
+    }
+
     @Override
     public Exercise createCustomExercise(
             int seed, boolean needsEquipment, List<BodyPart> bodyParts, List<HttpRef> httpRefs, User user) {
@@ -90,6 +110,11 @@ public class TestUtil implements Util {
     @Override
     public Workout createDefaultWorkout(int seed, List<Exercise> exercises) {
         return this.createWorkoutBase(seed, false, exercises, null);
+    }
+
+    public Workout createDefaultWorkout(int seed){
+        Exercise exercise = createDefaultExercise(seed);
+        return this.createWorkoutBase(seed, false, List.of(exercise), null);
     }
 
     @Override
@@ -185,10 +210,17 @@ public class TestUtil implements Util {
 
     @Override
     public Timezone createTimezone(int seed) {
+        String[] zones = TimeZone.getAvailableIDs();
+        int Id = seed % zones.length;
+
+        ZoneId zoneId = ZoneId.of(zones[Id]);
+        ZonedDateTime zonedDateTime = ZonedDateTime.now(zoneId);
+        ZoneOffset offset = zonedDateTime.now().getOffset();
+
         return Timezone.builder()
                 .id((long) seed)
-                .GMT("GMT+" + seed)
-                .name("TZ Name " + seed)
+                .GMT("GMT" + offset)
+                .name(zones[Id])
                 .build();
     }
 
@@ -309,5 +341,78 @@ public class TestUtil implements Util {
 
     private NutritionType createNutritionTypeBase(Long id, String nutritionType) {
         return NutritionType.builder().id(id).name(nutritionType).build();
+    }
+
+    public PlanBase createPlanBase(
+            Long id,
+            User user,
+            LocalDateTime startDate,
+            LocalDateTime endDate){
+
+        return PlanBase.builder()
+                .id(id)
+                .user(user)
+                .startDate(startDate)
+                .endDate(endDate)
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .deactivatedAt(null)
+                .build();
+    }
+
+    public WorkoutPlan createWorkoutPlan(
+            Long id, User user,
+            LocalDateTime startDate, LocalDateTime endDate,
+            Workout workout, List<JsonDescription> jsonDescription
+    ){
+        return WorkoutPlan.builder()
+                .id(id)
+                .user(user)
+                .startDate(startDate)
+                .endDate(endDate)
+                .workout(workout)
+                .jsonDescription(jsonDescription)
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .deactivatedAt(null)
+                .build();
+    }
+
+    public WorkoutPlan createWorkoutPlan(Long seed, User user, Workout workout){
+
+        LocalDateTime startDate = LocalDate.of(
+                LocalDateTime.now().getYear(), LocalDateTime.now().getMonth(), LocalDateTime.now().getDayOfMonth()).atStartOfDay();
+        LocalDateTime endDate = LocalDate.of(
+                LocalDateTime.now().getYear(), LocalDateTime.now().getMonth(), LocalDateTime.now().getDayOfMonth()).atStartOfDay();
+
+        JsonDescription jsonDescription = createJsonDescription(seed.intValue());
+
+        return WorkoutPlan.builder()
+                .id(seed)
+                .user(user)
+                .startDate(startDate)
+                .endDate(endDate)
+                .workout(workout)
+                .jsonDescription(List.of(jsonDescription))
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .deactivatedAt(null)
+                .build();
+    }
+
+    public JsonDescription createJsonDescription(int seed){
+        return JsonDescription.builder()
+                .json_id(seed)
+                .dayOfWeek(DayOfWeek.of((seed % 7) + 1))
+                .hours(seed % 24)
+                .minutes(seed % 60)
+                .build();
+    }
+
+    public WorkoutPlanDayId createWorkoutPlanDayId(int seed){
+        return WorkoutPlanDayId.builder()
+                .id(Long.valueOf(seed))
+                .json_id(Long.valueOf(seed))
+                .build();
     }
 }

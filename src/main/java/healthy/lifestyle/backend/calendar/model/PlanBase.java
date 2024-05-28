@@ -35,8 +35,8 @@ public class PlanBase {
     private Boolean isActive;
 
     @Column(name = "created_at", nullable = false, unique = false)
-    private Timestamp createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "deactivated_at", nullable = false, unique = false)
-    private Timestamp deactivatedAt;
+    private LocalDateTime deactivatedAt;
 }
