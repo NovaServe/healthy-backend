@@ -40,6 +40,8 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     @Autowired
     ModelMapper modelMapper;
 
+    @Autowired
+    JsonUtil jsonUtil;
 
     @Override
     @Transactional
@@ -71,7 +73,6 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
             throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
         }
 
-        JsonUtil jsonUtil = new JsonUtil();
         List<JsonDescription> days;
 
         try {days = jsonUtil.deserializeJsonStringToJsonDescriptionList(requestDto.getJsonDescription());}
@@ -89,7 +90,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
                 .endDate(endZonedDateTime.toLocalDateTime())
                 .jsonDescription(days)
                 .isActive(true)
-                .createdAt(LocalDateTime.now())
+                .createdAt(ZonedDateTime.now(ZoneId.of("Europe/London")).toLocalDateTime())
                 .deactivatedAt(null)
                 .user(user)
                 .workout(workout)
@@ -98,7 +99,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         workoutPlanRepository.save(workoutPlan);
 
         WorkoutPlanResponseDto responseDto = modelMapper.map(requestDto, WorkoutPlanResponseDto.class);
-        responseDto.setCreatedAt(LocalDateTime.now());
+        responseDto.setCreatedAt(ZonedDateTime.now(ZoneId.of(user.getTimezone().getName())).toLocalDateTime());
 
         return responseDto;
     }

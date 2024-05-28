@@ -21,8 +21,6 @@ public class JsonUtil {
     @Autowired
     WorkoutDayIdRepository workoutDayIdRepository;
 
-    public JsonUtil(){objectMapper = new ObjectMapper();}
-
     public List<JsonDescription> deserializeJsonStringToJsonDescriptionList(String jsonString)
             throws JsonProcessingException {
         TypeReference<List<JsonDescription>> typeReference = new TypeReference<List<JsonDescription>>() {};
@@ -33,8 +31,7 @@ public class JsonUtil {
 
         for(JsonDescription day: jsonDescriptionList){
             // Generate unique id for plan day
-            WorkoutPlanDayId dayId = new WorkoutPlanDayId();
-            dayId.setJson_id(1L);
+            WorkoutPlanDayId dayId = WorkoutPlanDayId.builder().json_id(1L).build();
             dayId = workoutDayIdRepository.save(dayId);
             // After that just delete this entity from database and update counter
             workoutDayIdRepository.delete(dayId);
@@ -48,6 +45,7 @@ public class JsonUtil {
             ZonedDateTime sourceZonedDateTime = localDateTime.atZone(scrZone);
             ZonedDateTime targetZonedDateTime = sourceZonedDateTime.withZoneSameInstant(ZoneId.of("Europe/London"));
 
+            day.setJson_id(dayId.getId());
             day.setDayOfWeek(targetZonedDateTime.getDayOfWeek());
             day.setHours(targetZonedDateTime.getHour());
             day.setMinutes(targetZonedDateTime.getMinute());

@@ -45,6 +45,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 
 
@@ -59,12 +60,12 @@ class WorkoutPlanServiceImplTest {
     @Mock
     WorkoutDayIdRepository workoutDayIdRepository;
 
-
     @Mock
     WorkoutApiImpl workoutApi;
 
     @Mock
     UserApiImpl userApi;
+
 
 
     TestUtil dataUtil = new TestUtil();

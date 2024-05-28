@@ -10,6 +10,8 @@ import healthy.lifestyle.backend.shared.util.JsonUtil;
 import healthy.lifestyle.backend.user.dto.LoginRequestDto;
 import healthy.lifestyle.backend.user.dto.SignupRequestDto;
 import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -18,6 +20,10 @@ import java.util.Collections;
 import java.util.List;
 
 public class DtoUtil {
+
+    @Autowired
+    JsonUtil jsonUtil;
+
     public HttpRefCreateRequestDto httpRefCreateRequestDto(int seed) {
         return HttpRefCreateRequestDto.builder()
                 .name("HttpRef " + seed)
@@ -189,7 +195,6 @@ public class DtoUtil {
                 .minutes(seed % 60)
                 .build();
 
-        JsonUtil jsonUtil = new JsonUtil();
         String jsonDescriptionStringified;
         try{jsonDescriptionStringified = jsonUtil.serializeJsonDescriptionList(List.of(jsonDescription));}
         catch (JsonProcessingException e) {throw new RuntimeException(e);}
