@@ -71,7 +71,9 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         }
 
         // StartDate cannot be in the past
-        if (requestDto.getStartDate().isBefore(LocalDate.now(ZoneId.of(user.getTimezone().getName())).atStartOfDay())) {
+        if (requestDto
+                .getStartDate()
+                .isBefore(LocalDate.now(ZoneId.of(user.getTimezone().getName())).atStartOfDay())) {
             throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
         }
 
