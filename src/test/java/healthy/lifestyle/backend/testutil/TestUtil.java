@@ -2,6 +2,8 @@ package healthy.lifestyle.backend.testutil;
 
 import static java.util.Objects.isNull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.activity.mental.model.Mental;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
@@ -28,6 +30,8 @@ public class TestUtil implements Util {
     private final ModelMapper modelMapper = new ModelMapper();
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public BodyPart createBodyPart(int seed) {
@@ -417,5 +421,10 @@ public class TestUtil implements Util {
                 .id(Long.valueOf(seed))
                 .json_id(Long.valueOf(seed))
                 .build();
+    }
+
+    public String serializeJsonDescriptionList(List<JsonDescription> jsonDescriptionList)
+            throws JsonProcessingException {
+        return objectMapper.writeValueAsString(jsonDescriptionList);
     }
 }

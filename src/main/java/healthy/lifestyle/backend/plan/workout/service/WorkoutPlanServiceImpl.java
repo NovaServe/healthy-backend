@@ -70,6 +70,11 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
             throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
         }
 
+        // StartDate cannot be in the past
+        if (requestDto.getStartDate().isBefore(LocalDate.now(ZoneId.of(user.getTimezone().getName())).atStartOfDay())) {
+            throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
+        }
+
         // EndDate cannot be earlier than StartDate
         if (requestDto.getEndDate().isBefore(requestDto.getStartDate())) {
             throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
@@ -108,9 +113,14 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
 
         workoutPlanRepository.save(workoutPlan);
 
-        WorkoutPlanResponseDto responseDto = modelMapper.map(requestDto, WorkoutPlanResponseDto.class);
-        responseDto.setCreatedAt(
-                ZonedDateTime.now(ZoneId.of(user.getTimezone().getName())).toLocalDateTime());
+        WorkoutPlanResponseDto responseDto = WorkoutPlanResponseDto.builder()
+                .workoutId(workout.getId())
+                .startDate(requestDto.getStartDate())
+                .endDate(requestDto.getEndDate())
+                .jsonDescription(requestDto.getJsonDescription())
+                .createdAt(ZonedDateTime.now(ZoneId.of(user.getTimezone().getName()))
+                        .toLocalDateTime())
+                .build();
 
         return responseDto;
     }

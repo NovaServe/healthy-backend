@@ -10,8 +10,6 @@ import lombok.*;
 @AllArgsConstructor
 public class WorkoutPlanResponseDto {
 
-    private Long id;
-
     private Long workoutId;
 
     private LocalDateTime startDate;

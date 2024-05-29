@@ -1,23 +1,15 @@
 package healthy.lifestyle.backend.plan.workout.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import healthy.lifestyle.backend.activity.workout.api.WorkoutApiImpl;
-import healthy.lifestyle.backend.activity.workout.model.BodyPart;
-import healthy.lifestyle.backend.activity.workout.model.Exercise;
-import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
-import healthy.lifestyle.backend.activity.workout.repository.BodyPartRepository;
-import healthy.lifestyle.backend.activity.workout.repository.HttpRefRepository;
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanResponseDto;
 import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
-import healthy.lifestyle.backend.plan.workout.model.WorkoutPlanDayId;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutDayIdRepository;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutPlanRepository;
 import healthy.lifestyle.backend.shared.exception.ApiException;
@@ -27,14 +19,10 @@ import healthy.lifestyle.backend.shared.util.JsonUtil;
 import healthy.lifestyle.backend.testutil.DtoUtil;
 import healthy.lifestyle.backend.testutil.TestUtil;
 import healthy.lifestyle.backend.user.api.UserApiImpl;
-
-import java.time.LocalDate;
+import healthy.lifestyle.backend.user.model.User;
 import java.time.LocalDateTime;
-import java.time.Month;
 import java.util.List;
 import java.util.stream.Stream;
-
-import healthy.lifestyle.backend.user.model.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,10 +32,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-
 
 @ExtendWith(MockitoExtension.class)
 class WorkoutPlanServiceImplTest {
@@ -66,7 +51,8 @@ class WorkoutPlanServiceImplTest {
     @Mock
     UserApiImpl userApi;
 
-
+    @Mock
+    JsonUtil jsonUtil;
 
     TestUtil dataUtil = new TestUtil();
 
@@ -75,7 +61,7 @@ class WorkoutPlanServiceImplTest {
 
     @Test
     void createWorkoutPlan_shouldCreateWorkoutPlanAndReturnResponseDto_whenValidRequest() {
-        //Given
+        // Given
 
         int seed = 1;
 
@@ -83,38 +69,48 @@ class WorkoutPlanServiceImplTest {
 
         Workout workout = dataUtil.createDefaultWorkout(seed);
         WorkoutPlanCreateRequestDto requestDto = dtoUtil.workoutPlanCreateRequestDto(seed, workout.getId());
-        WorkoutPlanDayId workoutPlanDayId = dataUtil.createWorkoutPlanDayId(seed);
+        List<JsonDescription> expectedJsonDescriptions = List.of(dataUtil.createJsonDescription(seed));
 
         when(userApi.getUserById(user.getId())).thenReturn(user);
         when(workoutApi.getWorkoutById(anyLong())).thenReturn(workout);
-        doReturn(workoutPlanDayId).when(workoutDayIdRepository).save(any(WorkoutPlanDayId.class));
 
-        //When
+        try {
+            doReturn(expectedJsonDescriptions)
+                    .when(jsonUtil)
+                    .deserializeJsonStringToJsonDescriptionList(requestDto.getJsonDescription());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        // When
         WorkoutPlanResponseDto responseDto = workoutPlanService.createWorkoutPlan(requestDto, user.getId());
 
-        //Then
+        // Then
         assertThat(responseDto)
                 .usingRecursiveComparison()
-                .ignoringFields("id", "createdAt")
+                .ignoringFields("createdAt")
                 .isEqualTo(requestDto);
     }
 
     @Test
     void createWorkoutPlan_shouldThrowException_whenWorkoutAlreadyHasActivePlan() {
-        //Given
+        // Given
         int seed = 1;
         User user = dataUtil.createUser(seed);
 
         Workout workout = dataUtil.createDefaultWorkout(seed);
-        WorkoutPlan savedWorkoutPlan = dataUtil.createWorkoutPlan(1L, user, workout);
+        WorkoutPlan savedWorkoutPlan = dataUtil.createWorkoutPlan(Long.valueOf(seed), user, workout);
 
-        when(workoutPlanRepository.findByUserIdAndWorkoutId(user.getId(), workout.getId())).thenReturn(List.of(savedWorkoutPlan));
+        doReturn(user).when(userApi).getUserById(anyLong());
+        doReturn(workout).when(workoutApi).getWorkoutById(anyLong());
+        when(workoutPlanRepository.findByUserIdAndWorkoutId(user.getId(), workout.getId()))
+                .thenReturn(List.of(savedWorkoutPlan));
 
         WorkoutPlanCreateRequestDto requestDto = dtoUtil.workoutPlanCreateRequestDto(seed, workout.getId());
 
         ApiException expectedException = new ApiException(ErrorMessage.ALREADY_EXISTS, 1L, HttpStatus.CONFLICT);
 
-        //When
+        // When
         ApiException actualException =
                 assertThrows(ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
 
@@ -128,19 +124,21 @@ class WorkoutPlanServiceImplTest {
     @MethodSource("createWorkoutPlanInvalidField")
     void createWorkoutPlan_shouldThrowException_whenInvalidRequest(
             Long workoutId, LocalDateTime startDate, LocalDateTime endDate) {
-        //Given
+
+        // Given
         int seed = 1;
         User user = dataUtil.createUser(seed);
 
-        Workout saveWorkout = dataUtil.createDefaultWorkout(seed);
-        WorkoutPlanDayId workoutPlanDayId = dataUtil.createWorkoutPlanDayId(seed);
+        Workout savedWorkout = dataUtil.createDefaultWorkout(seed);
 
         JsonDescription jsonDescription = dataUtil.createJsonDescription(seed);
         String jsonDescriptionStringified;
 
-        JsonUtil jsonUtil = new JsonUtil();
-        try{jsonDescriptionStringified = jsonUtil.serializeJsonDescriptionList(List.of(jsonDescription));}
-        catch (JsonProcessingException e) {throw new RuntimeException(e);}
+        try {
+            jsonDescriptionStringified = dataUtil.serializeJsonDescriptionList(List.of(jsonDescription));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
 
         WorkoutPlanCreateRequestDto requestDto = WorkoutPlanCreateRequestDto.builder()
                 .workoutId(workoutId)
@@ -150,29 +148,32 @@ class WorkoutPlanServiceImplTest {
                 .build();
 
         when(userApi.getUserById(user.getId())).thenReturn(user);
-        when(workoutApi.getWorkoutById(workoutId)).thenReturn(saveWorkout);
-        doReturn(workoutPlanDayId).when(workoutDayIdRepository).save(any(WorkoutPlanDayId.class));
-
-        // When
-        WorkoutPlanResponseDto responseDto = workoutPlanService.createWorkoutPlan(requestDto, user.getId());
+        doAnswer(invocation -> {
+                    Long id = invocation.getArgument(0);
+                    return savedWorkout.getId().equals(id) ? savedWorkout : null;
+                })
+                .when(workoutApi)
+                .getWorkoutById(anyLong());
 
         // Then
-        verify(userApi, times(1)).getUserById(user.getId());
-        if(workoutId != null){
-            if(workoutId == saveWorkout.getId()) assertEquals(requestDto.getWorkoutId(), responseDto.getWorkoutId());
-            else {
-                ApiException expectedException = new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, 1L, HttpStatus.BAD_REQUEST);
-                ApiException actualException =
-                        assertThrows(ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
+        WorkoutPlanResponseDto responseDto;
+        if (workoutId != null) {
+            if (workoutId == savedWorkout.getId()) {
+                responseDto = workoutPlanService.createWorkoutPlan(requestDto, user.getId());
+                assertEquals(requestDto.getWorkoutId(), responseDto.getWorkoutId());
+            } else {
+                ApiException expectedException =
+                        new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, workoutId, HttpStatus.BAD_REQUEST);
+                ApiException actualException = assertThrows(
+                        ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
                 assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
                 assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
             }
-        }
-        else{
-            requestDto.setWorkoutId(saveWorkout.getId());
+        } else {
+            requestDto.setWorkoutId(savedWorkout.getId());
             ApiException expectedException = new ApiException(ErrorMessage.INCORRECT_TIME, 1L, HttpStatus.BAD_REQUEST);
-            ApiException actualException =
-                    assertThrows(ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
+            ApiException actualException = assertThrows(
+                    ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
             assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
             assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
         }
@@ -182,13 +183,42 @@ class WorkoutPlanServiceImplTest {
 
         return Stream.of(
                 // Invalid workoutId
-                Arguments.of(1000L, LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(7)),
+                Arguments.of(
+                        1000L,
+                        LocalDateTime.now().plusDays(1),
+                        LocalDateTime.now().plusDays(7)),
                 // Invalid start date
-                 Arguments.of(null, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(7)),
+                Arguments.of(
+                        null,
+                        LocalDateTime.now().minusDays(1),
+                        LocalDateTime.now().plusDays(7)),
                 // Invalid end date
                 Arguments.of(null, LocalDateTime.now().plusDays(1), LocalDateTime.now()));
     }
 
     @Test
-    void createWorkoutPlan_shouldThrowException_whenInvalidJsonDescription() {}
+    void createWorkoutPlan_shouldThrowException_whenInvalidJsonDescription() {
+
+        int seed = 1;
+
+        User user = dataUtil.createUser(seed);
+        Workout workout = dataUtil.createDefaultWorkout(seed);
+        WorkoutPlanCreateRequestDto requestDto = dtoUtil.workoutPlanCreateRequestDto(seed, workout.getId());
+
+        doReturn(user).when(userApi).getUserById(anyLong());
+        doReturn(workout).when(workoutApi).getWorkoutById(anyLong());
+
+        try {
+            doThrow(JsonProcessingException.class)
+                    .when(jsonUtil)
+                    .deserializeJsonStringToJsonDescriptionList(anyString());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        Throwable exception = assertThrows(
+                RuntimeException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
+
+        assertTrue(exception.getCause() instanceof JsonProcessingException);
+    }
 }
