@@ -1,41 +1,39 @@
-package healthy.lifestyle.backend.calendar.shared.service;
+package healthy.lifestyle.backend.shared.util;
 
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import healthy.lifestyle.backend.shared.util.JsonDescription;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DateTimeService {
-    public TimeZone getServerTimezone() {
+    public TimeZone getDatabaseTimezone() {
         // GMT 0:00
         return TimeZone.getTimeZone("Europe/London");
     }
 
-    public LocalDate getCurrentDate() {
-        return LocalDate.now(getServerTimezone().toZoneId());
+    public LocalDate getCurrentDatabaseDate() {
+        return LocalDate.now(getDatabaseTimezone().toZoneId());
     }
 
-    public int getCurrentDayOfMonth() {
-        return LocalDate.now(getServerTimezone().toZoneId()).getDayOfMonth();
+    public int getCurrentDatabaseDayOfMonth() {
+        return LocalDate.now(getDatabaseTimezone().toZoneId()).getDayOfMonth();
     }
 
-    public DayOfWeek getCurrentDayOfWeek() {
-        return LocalDate.now(getServerTimezone().toZoneId()).getDayOfWeek();
+    public DayOfWeek getCurrentDatabaseDayOfWeek() {
+        return LocalDate.now(getDatabaseTimezone().toZoneId()).getDayOfWeek();
     }
 
-    public int getCurrentMonth() {
-        return LocalDate.now(getServerTimezone().toZoneId()).getMonthValue();
+    public int getCurrentDatabaseMonth() {
+        return LocalDate.now(getDatabaseTimezone().toZoneId()).getMonthValue();
     }
 
-    public int getCurrentYear() {
-        return LocalDate.now(getServerTimezone().toZoneId()).getYear();
+    public int getCurrentDatabaseYear() {
+        return LocalDate.now(getDatabaseTimezone().toZoneId()).getYear();
     }
 
-    public ZonedDateTime getCurrentServerZonedDateTime() {
-        TimeZone timeZone = getServerTimezone();
+    public ZonedDateTime getCurrentDatabaseZonedDateTime() {
+        TimeZone timeZone = getDatabaseTimezone();
         Calendar calendar = new GregorianCalendar();
         calendar.setTimeZone(timeZone);
         long currentTimeMillis = calendar.getTimeInMillis();
@@ -104,12 +102,12 @@ public class DateTimeService {
 
     public boolean isTimeInBetweenSchedulers(DayOfWeek dayOfWeek, int hour, int minutes, TimeZone userTimeZone) {
 
-        DayOfWeek currentDayOfWeek = getCurrentDayOfWeek();
+        DayOfWeek currentDayOfWeek = getCurrentDatabaseDayOfWeek();
         if (!(dayOfWeek == null || (dayOfWeek.equals(currentDayOfWeek)))) {
             return false;
         }
 
-        ZonedDateTime serverZonedDateTime = getCurrentServerZonedDateTime();
+        ZonedDateTime serverZonedDateTime = getCurrentDatabaseZonedDateTime();
 
         LocalDateTime userLocalDateTime = LocalDateTime.of(
                 serverZonedDateTime.getYear(),
@@ -118,7 +116,7 @@ public class DateTimeService {
                 hour,
                 minutes);
         ZonedDateTime userZonedDateTime = ZonedDateTime.of(userLocalDateTime, userTimeZone.toZoneId());
-        ZonedDateTime userZonedDateTimeInServerZone = convertToNewZone(userZonedDateTime, getServerTimezone());
+        ZonedDateTime userZonedDateTimeInServerZone = convertToNewZone(userZonedDateTime, getDatabaseTimezone());
 
         if (serverZonedDateTime.getHour() == userZonedDateTimeInServerZone.getHour()) {
             return true;
@@ -126,5 +124,4 @@ public class DateTimeService {
 
         return false;
     }
-
 }

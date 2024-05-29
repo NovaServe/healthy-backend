@@ -3,14 +3,15 @@ package healthy.lifestyle.backend.shared.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.time.*;
-import java.util.List;
-
-import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
 import healthy.lifestyle.backend.plan.workout.model.WorkoutPlanDayId;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutDayIdRepository;
+import healthy.lifestyle.backend.shared.exception.ApiException;
+import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import java.time.*;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,35 +22,39 @@ public class JsonUtil {
     @Autowired
     WorkoutDayIdRepository workoutDayIdRepository;
 
+    @Autowired
+    DateTimeService dateTimeService;
+
     public List<JsonDescription> deserializeJsonStringToJsonDescriptionList(String jsonString)
             throws JsonProcessingException {
         TypeReference<List<JsonDescription>> typeReference = new TypeReference<List<JsonDescription>>() {};
         return objectMapper.readValue(jsonString, typeReference);
     }
 
-    public List<JsonDescription> processJsonDescription(List<JsonDescription> jsonDescriptionList, ZoneId scrZone) {
+    public List<JsonDescription> processJsonDescription(
+            List<JsonDescription> jsonDescriptionList, ZoneId userTimeZone) {
 
-        for(JsonDescription day: jsonDescriptionList){
-            // Generate unique id for plan day
-            WorkoutPlanDayId dayId = WorkoutPlanDayId.builder().json_id(1L).build();
-            dayId = workoutDayIdRepository.save(dayId);
-            // After that just delete this entity from database and update counter
-            workoutDayIdRepository.delete(dayId);
+        for (JsonDescription jsonDescription : jsonDescriptionList) {
 
-            // Convert day and time from user timezone to server timezone
-            DayOfWeek dayOfWeek = day.getDayOfWeek();
-            LocalDateTime targetDate = LocalDateTime.now(scrZone).with(dayOfWeek);
-            LocalTime localTime = LocalTime.of(day.getHours(), day.getMinutes());
-            LocalDateTime localDateTime = LocalDateTime.of(targetDate.toLocalDate(), localTime);
+            Optional<WorkoutPlanDayId> currentDayIdOptional =
+                    workoutDayIdRepository.findAll().stream().findFirst();
+            WorkoutPlanDayId currentDayId = currentDayIdOptional.orElseThrow(
+                    () -> new ApiException(ErrorMessage.INTERNAL_SERVER_ERROR, null, HttpStatus.INTERNAL_SERVER_ERROR));
+            currentDayId.setJson_id(currentDayId.getJson_id() + 1);
+            WorkoutPlanDayId newWorkoutPlanDayId = workoutDayIdRepository.save(currentDayId);
 
-            ZonedDateTime sourceZonedDateTime = localDateTime.atZone(scrZone);
-            ZonedDateTime targetZonedDateTime = sourceZonedDateTime.withZoneSameInstant(ZoneId.of("Europe/London"));
+            // Convert day and time from user timezone to database timezone
+            LocalDateTime userBaseDateTime = LocalDateTime.now(userTimeZone).with(jsonDescription.getDayOfWeek());
+            LocalTime userTime = LocalTime.of(jsonDescription.getHours(), jsonDescription.getMinutes());
+            LocalDateTime userDateTime = LocalDateTime.of(userBaseDateTime.toLocalDate(), userTime);
+            ZonedDateTime userZonedDateTime = userDateTime.atZone(userTimeZone);
+            ZonedDateTime databaseZonedDateTime =
+                    dateTimeService.convertToNewZone(userZonedDateTime, dateTimeService.getDatabaseTimezone());
 
-            day.setJson_id(dayId.getId());
-            day.setDayOfWeek(targetZonedDateTime.getDayOfWeek());
-            day.setHours(targetZonedDateTime.getHour());
-            day.setMinutes(targetZonedDateTime.getMinute());
-
+            jsonDescription.setJson_id(newWorkoutPlanDayId.getJson_id());
+            jsonDescription.setDayOfWeek(databaseZonedDateTime.getDayOfWeek());
+            jsonDescription.setHours(databaseZonedDateTime.getHour());
+            jsonDescription.setMinutes(databaseZonedDateTime.getMinute());
         }
 
         return jsonDescriptionList;

@@ -1,9 +1,9 @@
 package healthy.lifestyle.backend.notification.firebase;
 
 import com.google.firebase.messaging.*;
-import healthy.lifestyle.backend.calendar.shared.service.DateTimeService;
 import healthy.lifestyle.backend.notification.model.FirebaseUserToken;
 import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
+import healthy.lifestyle.backend.shared.util.DateTimeService;
 import healthy.lifestyle.backend.user.api.UserApi;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.List;
@@ -41,7 +41,7 @@ public class FirebaseService {
                         .token(requestDto.getFirebaseUserTokenNowReceived())
                         .userAgent(userAgent)
                         .user(user)
-                        .createdAt(dateTimeService.getCurrentDate())
+                        .createdAt(dateTimeService.getCurrentDatabaseDate())
                         .build();
                 firebaseUserTokenRepository.save(newFirebaseUserToken);
             }
@@ -63,7 +63,7 @@ public class FirebaseService {
                             .token(requestDto.getFirebaseUserTokenNowReceived())
                             .userAgent(userAgent)
                             .user(user)
-                            .createdAt(dateTimeService.getCurrentDate())
+                            .createdAt(dateTimeService.getCurrentDatabaseDate())
                             .build();
                     firebaseUserTokenRepository.save(newFirebaseUserToken);
                 }

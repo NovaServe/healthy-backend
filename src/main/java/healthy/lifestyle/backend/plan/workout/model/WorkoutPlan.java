@@ -4,6 +4,7 @@ import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.calendar.model.PlanBase;
 import healthy.lifestyle.backend.shared.util.JsonDescription;
 import jakarta.persistence.*;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,6 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import java.util.List;
 
 @Getter
 @Setter

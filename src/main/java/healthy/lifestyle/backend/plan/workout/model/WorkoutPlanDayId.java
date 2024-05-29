@@ -2,7 +2,6 @@ package healthy.lifestyle.backend.plan.workout.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter

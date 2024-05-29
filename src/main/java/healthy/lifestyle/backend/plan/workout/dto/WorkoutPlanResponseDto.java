@@ -21,5 +21,4 @@ public class WorkoutPlanResponseDto {
     private String jsonDescription;
 
     private LocalDateTime createdAt;
-
 }

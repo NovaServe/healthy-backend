@@ -390,6 +390,8 @@
             </column>
         </createTable>
 
+        <sqlFile path="sql/json_ids_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+
         <createTable tableName="workout_completion_records">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>

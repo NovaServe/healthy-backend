@@ -18,7 +18,6 @@ import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
-
 import java.time.*;
 import java.util.*;
 import org.modelmapper.ModelMapper;
@@ -65,7 +64,7 @@ public class TestUtil implements Util {
         return this.createExerciseBase(seed, false, needsEquipment, bodyParts, httpRefs, null);
     }
 
-    public Exercise createDefaultExercise(int seed){
+    public Exercise createDefaultExercise(int seed) {
         BodyPart bodyPart = createBodyPart(seed);
         HttpRef httpRef = createDefaultHttpRef(seed);
 
@@ -112,7 +111,7 @@ public class TestUtil implements Util {
         return this.createWorkoutBase(seed, false, exercises, null);
     }
 
-    public Workout createDefaultWorkout(int seed){
+    public Workout createDefaultWorkout(int seed) {
         Exercise exercise = createDefaultExercise(seed);
         return this.createWorkoutBase(seed, false, List.of(exercise), null);
     }
@@ -343,11 +342,7 @@ public class TestUtil implements Util {
         return NutritionType.builder().id(id).name(nutritionType).build();
     }
 
-    public PlanBase createPlanBase(
-            Long id,
-            User user,
-            LocalDateTime startDate,
-            LocalDateTime endDate){
+    public PlanBase createPlanBase(Long id, User user, LocalDateTime startDate, LocalDateTime endDate) {
 
         return PlanBase.builder()
                 .id(id)
@@ -361,10 +356,12 @@ public class TestUtil implements Util {
     }
 
     public WorkoutPlan createWorkoutPlan(
-            Long id, User user,
-            LocalDateTime startDate, LocalDateTime endDate,
-            Workout workout, List<JsonDescription> jsonDescription
-    ){
+            Long id,
+            User user,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            Workout workout,
+            List<JsonDescription> jsonDescription) {
         return WorkoutPlan.builder()
                 .id(id)
                 .user(user)
@@ -378,12 +375,18 @@ public class TestUtil implements Util {
                 .build();
     }
 
-    public WorkoutPlan createWorkoutPlan(Long seed, User user, Workout workout){
+    public WorkoutPlan createWorkoutPlan(Long seed, User user, Workout workout) {
 
         LocalDateTime startDate = LocalDate.of(
-                LocalDateTime.now().getYear(), LocalDateTime.now().getMonth(), LocalDateTime.now().getDayOfMonth()).atStartOfDay();
+                        LocalDateTime.now().getYear(),
+                        LocalDateTime.now().getMonth(),
+                        LocalDateTime.now().getDayOfMonth())
+                .atStartOfDay();
         LocalDateTime endDate = LocalDate.of(
-                LocalDateTime.now().getYear(), LocalDateTime.now().getMonth(), LocalDateTime.now().getDayOfMonth()).atStartOfDay();
+                        LocalDateTime.now().getYear(),
+                        LocalDateTime.now().getMonth(),
+                        LocalDateTime.now().getDayOfMonth())
+                .atStartOfDay();
 
         JsonDescription jsonDescription = createJsonDescription(seed.intValue());
 
@@ -400,7 +403,7 @@ public class TestUtil implements Util {
                 .build();
     }
 
-    public JsonDescription createJsonDescription(int seed){
+    public JsonDescription createJsonDescription(int seed) {
         return JsonDescription.builder()
                 .json_id(seed)
                 .dayOfWeek(DayOfWeek.of((seed % 7) + 1))
@@ -409,7 +412,7 @@ public class TestUtil implements Util {
                 .build();
     }
 
-    public WorkoutPlanDayId createWorkoutPlanDayId(int seed){
+    public WorkoutPlanDayId createWorkoutPlanDayId(int seed) {
         return WorkoutPlanDayId.builder()
                 .id(Long.valueOf(seed))
                 .json_id(Long.valueOf(seed))
