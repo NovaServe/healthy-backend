@@ -17,4 +17,15 @@ public interface MentalService {
     void deleteCustomMental(long mentalId, long userId);
 
     MentalResponseDto createCustomMental(long userId, MentalCreateRequestDto requestDto);
+
+    Page<MentalResponseDto> getMentalsWithFilter(
+            Boolean isCustom,
+            Long userId,
+            String title,
+            String description,
+            Long mentalTypeId,
+            String sortField,
+            String sortDirection,
+            int currentPageNumber,
+            int pageSize);
 }
