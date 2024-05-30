@@ -266,4 +266,44 @@ public class MentalServiceImpl implements MentalService {
         mentalResponseDto.setHttpRefs(httpRefsSorted);
         return mentalResponseDto;
     }
+
+    @Override
+    @Transactional
+    public Page<MentalResponseDto> getMentalsWithFilter(
+            Boolean isCustom,
+            Long userId,
+            String title,
+            String description,
+            Long mentalTypeId,
+            String sortField,
+            String sortDirection,
+            int currentPageNumber,
+            int pageSize) {
+
+        Pageable pageable = PageRequest.of(
+                currentPageNumber, pageSize, Sort.by(Sort.Direction.fromString(sortDirection), sortField));
+
+        Page<Mental> entitiesPage = null;
+
+        // Default and custom
+        if (isCustom == null && userId != null) {
+            entitiesPage =
+                    mentalRepository.findDefaultAndCustomWithFilter(userId, title, description, mentalTypeId, pageable);
+        }
+        // Default only
+        else if (isCustom != null && !isCustom && userId == null) {
+            entitiesPage = mentalRepository.findDefaultOrCustomWithFilter(
+                    false, null, title, description, mentalTypeId, pageable);
+        }
+        // Custom only
+        else if (isCustom != null && isCustom && userId != null) {
+            entitiesPage = mentalRepository.findDefaultOrCustomWithFilter(
+                    true, userId, title, description, mentalTypeId, pageable);
+        } else {
+            throw new ApiExceptionCustomMessage("Invalid args combination", HttpStatus.BAD_REQUEST);
+        }
+
+        Page<MentalResponseDto> dtoPage = entitiesPage.map(entity -> modelMapper.map(entity, MentalResponseDto.class));
+        return dtoPage;
+    }
 }
