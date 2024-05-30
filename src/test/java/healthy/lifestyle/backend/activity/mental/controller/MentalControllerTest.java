@@ -971,8 +971,9 @@ public class MentalControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         Mental customMental1User1 = dbUtil.createCustomMental(5, List.of(defaultHttpRef1), mentalType1, user1);
         Mental customMental2User1 = dbUtil.createCustomMental(6, List.of(defaultHttpRef1), mentalType2, user1);
@@ -1062,8 +1063,9 @@ public class MentalControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         Mental customMental1User1 = dbUtil.createCustomMental(5, List.of(defaultHttpRef1), mentalType1, user1);
         Mental customMental2User1 = dbUtil.createCustomMental(6, List.of(defaultHttpRef1), mentalType2, user1);
@@ -1110,8 +1112,9 @@ public class MentalControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         Mental customMental1User1 = dbUtil.createCustomMental(5, List.of(defaultHttpRef1), mentalType1, user1);
         Mental customMental2User1 = dbUtil.createCustomMental(6, List.of(defaultHttpRef1), mentalType2, user1);
