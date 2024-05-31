@@ -9,6 +9,7 @@ import healthy.lifestyle.backend.activity.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.activity.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.repository.HttpRefRepository;
+import healthy.lifestyle.backend.activity.workout.repository.HttpRefTypeRepository;
 import healthy.lifestyle.backend.shared.exception.ApiException;
 import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
@@ -47,6 +48,9 @@ class HttpRefServiceTest {
     @Mock
     UserService userService;
 
+    @Mock
+    HttpRefTypeRepository httpRefTypeRepository;
+
     @Spy
     ModelMapper modelMapper;
 
@@ -62,8 +66,11 @@ class HttpRefServiceTest {
         // Given
         User user = testUtil.createUser(1);
         HttpRefCreateRequestDto requestDto = dtoUtil.httpRefCreateRequestDto(1);
+        HttpRef httpRef = testUtil.createDefaultHttpRef(1);
 
         when(userService.getUserById(user.getId())).thenReturn(user);
+        when(httpRefTypeRepository.findByName(any(String.class)))
+                .thenReturn(Optional.ofNullable(httpRef.getHttpRefType()));
         when(httpRefRepository.findDefaultAndCustomByNameAndUserId(requestDto.getName(), user.getId()))
                 .thenReturn(Collections.emptyList());
         when(httpRefRepository.save(org.mockito.ArgumentMatchers.any(HttpRef.class)))
@@ -84,7 +91,7 @@ class HttpRefServiceTest {
 
         assertThat(responseDto)
                 .usingRecursiveComparison()
-                .ignoringFields("id", "isCustom")
+                .ignoringFields("id", "isCustom", "httpRefTypeName")
                 .isEqualTo(requestDto);
         assertTrue(responseDto.isCustom());
         assertEquals(1L, responseDto.getId());
@@ -153,7 +160,7 @@ class HttpRefServiceTest {
 
         assertThat(responseDto)
                 .usingRecursiveComparison()
-                .ignoringFields("exercises", "user")
+                .ignoringFields("exercises", "user", "httpRefTypeName")
                 .isEqualTo(httpRef);
     }
 
@@ -288,6 +295,8 @@ class HttpRefServiceTest {
 
         when(httpRefRepository.findById(httpRef.getId())).thenReturn(Optional.of(httpRef));
         when(httpRefRepository.save(httpRef)).thenReturn(httpRef);
+        when(httpRefTypeRepository.findByName(any(String.class)))
+                .thenReturn(Optional.ofNullable(httpRef.getHttpRefType()));
 
         // When
         HttpRefResponseDto responseDto = httpRefService.updateCustomHttpRef(user.getId(), httpRef.getId(), requestDto);

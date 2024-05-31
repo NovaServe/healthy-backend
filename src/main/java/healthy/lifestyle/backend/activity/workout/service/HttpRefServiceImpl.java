@@ -4,7 +4,9 @@ import healthy.lifestyle.backend.activity.workout.dto.HttpRefCreateRequestDto;
 import healthy.lifestyle.backend.activity.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.activity.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
+import healthy.lifestyle.backend.activity.workout.model.HttpRefType;
 import healthy.lifestyle.backend.activity.workout.repository.HttpRefRepository;
+import healthy.lifestyle.backend.activity.workout.repository.HttpRefTypeRepository;
 import healthy.lifestyle.backend.shared.exception.ApiException;
 import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.shared.exception.ErrorMessage;
@@ -29,6 +31,9 @@ public class HttpRefServiceImpl implements HttpRefService {
     HttpRefRepository httpRefRepository;
 
     @Autowired
+    HttpRefTypeRepository httpRefTypeRepository;
+
+    @Autowired
     ModelMapper modelMapper;
 
     @Autowired
@@ -49,10 +54,16 @@ public class HttpRefServiceImpl implements HttpRefService {
             throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
         }
 
+        HttpRefType httpRefType = httpRefTypeRepository
+                .findByName(requestDto.getHttpRefType())
+                .orElseThrow(
+                        () -> new ApiException(ErrorMessage.HTTP_REF_TYPE_NOT_FOUND, null, HttpStatus.BAD_REQUEST));
+
         HttpRef httpRefSaved = httpRefRepository.save(HttpRef.builder()
                 .name(requestDto.getName())
                 .description(requestDto.getDescription())
                 .ref(requestDto.getRef())
+                .httpRefType(httpRefType)
                 .isCustom(true)
                 .user(user)
                 .build());
@@ -117,13 +128,13 @@ public class HttpRefServiceImpl implements HttpRefService {
         if (httpRef.getUser().getId() != userId)
             throw new ApiException(ErrorMessage.USER_HTTP_REF_MISMATCH, httpRefId, HttpStatus.BAD_REQUEST);
 
-        boolean fieldsAreNull = verificationUtil.areFieldsNull(requestDto, "name", "description", "ref");
+        boolean fieldsAreNull = verificationUtil.areFieldsNull(requestDto, "name", "description", "ref", "httpRefType");
         if (fieldsAreNull) {
             throw new ApiExceptionCustomMessage(ErrorMessage.NO_UPDATES_REQUEST.getName(), HttpStatus.BAD_REQUEST);
         }
 
-        List<String> fieldsWithSameValues =
-                verificationUtil.getFieldsWithSameValues(httpRef, requestDto, "name", "description", "ref");
+        List<String> fieldsWithSameValues = verificationUtil.getFieldsWithSameValues(
+                httpRef, requestDto, "name", "description", "ref", "httpRefType");
         if (!fieldsWithSameValues.isEmpty()) {
             String errorMessage =
                     ErrorMessage.FIELDS_VALUES_ARE_NOT_DIFFERENT.getName() + String.join(", ", fieldsWithSameValues);
@@ -145,6 +156,14 @@ public class HttpRefServiceImpl implements HttpRefService {
 
         if (requestDto.getRef() != null) {
             httpRef.setRef(requestDto.getRef());
+        }
+
+        if (requestDto.getHttpRefType() != null) {
+            HttpRefType httpRefType = httpRefTypeRepository
+                    .findByName(requestDto.getHttpRefType())
+                    .orElseThrow(
+                            () -> new ApiException(ErrorMessage.HTTP_REF_TYPE_NOT_FOUND, null, HttpStatus.BAD_REQUEST));
+            httpRef.setHttpRefType(httpRefType);
         }
 
         HttpRefResponseDto responseDto = modelMapper.map(httpRefRepository.save(httpRef), HttpRefResponseDto.class);

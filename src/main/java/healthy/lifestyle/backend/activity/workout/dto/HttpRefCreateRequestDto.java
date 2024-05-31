@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.activity.workout.dto;
 import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.TitleValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.WebLinkValidation;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Getter
@@ -19,4 +20,7 @@ public class HttpRefCreateRequestDto {
 
     @WebLinkValidation
     private String ref;
+
+    @NotBlank
+    private String httpRefType;
 }

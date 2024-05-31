@@ -19,4 +19,6 @@ public class HttpRefUpdateRequestDto {
 
     @WebLinkOptionalValidation
     private String ref;
+
+    String httpRefType;
 }
