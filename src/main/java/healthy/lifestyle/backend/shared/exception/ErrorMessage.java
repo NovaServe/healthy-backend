@@ -8,6 +8,7 @@ public enum ErrorMessage {
     EMAIL_ALREADY_EXISTS("Email already exists"),
     TITLE_DUPLICATE("Entity with this title/name already exists"),
     HTTP_REF_NOT_FOUND("Http ref with id %d not found"),
+    HTTP_REF_TYPE_NOT_FOUND("Http ref type not found"),
     BODY_PART_NOT_FOUND("Body part with id %d not found"),
     COUNTRY_NOT_FOUND("Country with id %d not found"),
     EXERCISE_NOT_FOUND("Exercise with id %d not found"),

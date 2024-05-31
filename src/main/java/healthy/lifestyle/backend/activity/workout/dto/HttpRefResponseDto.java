@@ -17,6 +17,8 @@ public class HttpRefResponseDto {
 
     private String ref;
 
+    private String httpRefTypeName;
+
     @JsonProperty(value = "isCustom")
     private boolean isCustom;
 }

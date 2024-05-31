@@ -157,68 +157,68 @@ class HttpRefRepositoryTest {
         if (orderBy.equals("ASC") && !isCustom) {
             assertThat(httpRefPage.getContent().get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef1);
 
             assertThat(httpRefPage.getContent().get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefPage.getContent().get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef3);
         }
 
         if (orderBy.equals("DESC") && !isCustom) {
             assertThat(httpRefPage.getContent().get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef3);
 
             assertThat(httpRefPage.getContent().get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefPage.getContent().get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef1);
         }
 
         if (orderBy.equals("ASC") && isCustom) {
             assertThat(httpRefPage.getContent().get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef1);
 
             assertThat(httpRefPage.getContent().get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef2);
 
             assertThat(httpRefPage.getContent().get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef3);
         }
 
         if (orderBy.equals("DESC") && isCustom) {
             assertThat(httpRefPage.getContent().get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef3);
 
             assertThat(httpRefPage.getContent().get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef2);
 
             assertThat(httpRefPage.getContent().get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef1);
         }
     }
@@ -336,44 +336,44 @@ class HttpRefRepositoryTest {
         if (orderBy.equals("ASC")) {
             assertThat(httpRefPage.getContent().get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef1);
 
             assertThat(httpRefPage.getContent().get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefPage.getContent().get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef1);
 
             assertThat(httpRefPage.getContent().get(3))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef2);
         }
 
         if (orderBy.equals("DESC")) {
             assertThat(httpRefPage.getContent().get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef2);
 
             assertThat(httpRefPage.getContent().get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(customHttpRef1);
 
             assertThat(httpRefPage.getContent().get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefPage.getContent().get(3))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user", "nutritions", "mentals")
+                    .ignoringFields("exercises", "user", "nutritions", "mentals", "httpRefType")
                     .isEqualTo(defaultHttpRef1);
         }
     }

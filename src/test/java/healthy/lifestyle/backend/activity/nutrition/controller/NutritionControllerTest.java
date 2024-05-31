@@ -112,7 +112,7 @@ public class NutritionControllerTest {
                 .isEqualTo(defaultNutrition1);
 
         assertThat(responseDto.getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("nutritions")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("nutritions", "httpRefTypeName")
                 .isEqualTo(defaultNutrition1.getHttpRefsSortedById());
     }
 
