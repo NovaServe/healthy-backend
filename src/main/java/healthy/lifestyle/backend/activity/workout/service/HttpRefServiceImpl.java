@@ -90,6 +90,7 @@ public class HttpRefServiceImpl implements HttpRefService {
     }
 
     @Override
+    @Transactional
     public Page<HttpRefResponseDto> getHttpRefsWithFilter(
             Boolean isCustom,
             Long userId,
