@@ -8,6 +8,7 @@ import healthy.lifestyle.backend.activity.workout.model.BodyPart;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.Timezone;
@@ -29,6 +30,8 @@ public interface Util {
     Workout createDefaultWorkout(int seed, List<Exercise> exercises);
 
     Workout createCustomWorkout(int seed, List<Exercise> exercises, User user);
+
+    WorkoutPlan createWorkoutPlan(Long seed, User user, Workout workout);
 
     User createUser(int seed);
 

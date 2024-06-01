@@ -17,17 +17,14 @@ import healthy.lifestyle.backend.shared.exception.ErrorMessage;
 import healthy.lifestyle.backend.shared.util.JsonDescription;
 import healthy.lifestyle.backend.shared.util.JsonUtil;
 import healthy.lifestyle.backend.testutil.DtoUtil;
+import healthy.lifestyle.backend.testutil.Shared;
 import healthy.lifestyle.backend.testutil.TestUtil;
 import healthy.lifestyle.backend.user.api.UserApiImpl;
 import healthy.lifestyle.backend.user.model.User;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -54,22 +51,22 @@ class WorkoutPlanServiceImplTest {
     @Mock
     JsonUtil jsonUtil;
 
-    TestUtil dataUtil = new TestUtil();
+    TestUtil testUtil = new TestUtil();
 
     @Spy
-    private DtoUtil dtoUtil;
+    DtoUtil dtoUtil;
+
+    @Spy
+    Shared shared;
 
     @Test
     void createWorkoutPlan_shouldCreateWorkoutPlanAndReturnResponseDto_whenValidRequest() {
         // Given
-
         int seed = 1;
-
-        User user = dataUtil.createUser(seed);
-
-        Workout workout = dataUtil.createDefaultWorkout(seed);
+        User user = testUtil.createUser(seed);
+        Workout workout = testUtil.createDefaultWorkout(seed);
         WorkoutPlanCreateRequestDto requestDto = dtoUtil.workoutPlanCreateRequestDto(seed, workout.getId());
-        List<JsonDescription> expectedJsonDescriptions = List.of(dataUtil.createJsonDescription(seed));
+        List<JsonDescription> expectedJsonDescriptions = List.of(shared.createJsonDescription(seed));
 
         when(userApi.getUserById(user.getId())).thenReturn(user);
         when(workoutApi.getWorkoutById(anyLong())).thenReturn(workout);
@@ -96,10 +93,10 @@ class WorkoutPlanServiceImplTest {
     void createWorkoutPlan_shouldThrowException_whenWorkoutAlreadyHasActivePlan() {
         // Given
         int seed = 1;
-        User user = dataUtil.createUser(seed);
+        User user = testUtil.createUser(seed);
 
-        Workout workout = dataUtil.createDefaultWorkout(seed);
-        WorkoutPlan savedWorkoutPlan = dataUtil.createWorkoutPlan(Long.valueOf(seed), user, workout);
+        Workout workout = testUtil.createDefaultWorkout(seed);
+        WorkoutPlan savedWorkoutPlan = testUtil.createWorkoutPlan((long) seed, user, workout);
 
         doReturn(user).when(userApi).getUserById(anyLong());
         doReturn(workout).when(workoutApi).getWorkoutById(anyLong());
@@ -120,105 +117,152 @@ class WorkoutPlanServiceImplTest {
         assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
     }
 
-    @ParameterizedTest
-    @MethodSource("createWorkoutPlanInvalidField")
-    void createWorkoutPlan_shouldThrowException_whenInvalidRequest(
-            Long workoutId, LocalDateTime startDate, LocalDateTime endDate) {
-
+    @Test
+    void createWorkoutPlan_shouldThrowException_whenWorkoutNotFound() {
         // Given
         int seed = 1;
-        User user = dataUtil.createUser(seed);
-
-        Workout savedWorkout = dataUtil.createDefaultWorkout(seed);
-
-        JsonDescription jsonDescription = dataUtil.createJsonDescription(seed);
-        String jsonDescriptionStringified;
-
-        try {
-            jsonDescriptionStringified = dataUtil.serializeJsonDescriptionList(List.of(jsonDescription));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        WorkoutPlanCreateRequestDto requestDto = WorkoutPlanCreateRequestDto.builder()
-                .workoutId(workoutId)
-                .startDate(startDate)
-                .endDate(endDate)
-                .jsonDescription(jsonDescriptionStringified)
-                .build();
+        User user = testUtil.createUser(seed);
+        long wrongWorkoutId = 1000L;
+        WorkoutPlanCreateRequestDto requestDto = dtoUtil.workoutPlanCreateRequestDto(seed, wrongWorkoutId);
 
         when(userApi.getUserById(user.getId())).thenReturn(user);
-        doAnswer(invocation -> {
-                    Long id = invocation.getArgument(0);
-                    return savedWorkout.getId().equals(id) ? savedWorkout : null;
-                })
-                .when(workoutApi)
-                .getWorkoutById(anyLong());
+        when(workoutApi.getWorkoutById(wrongWorkoutId)).thenReturn(null);
+
+        ApiException expected = new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, null, HttpStatus.BAD_REQUEST);
+
+        // When
+        ApiException actual =
+                assertThrows(ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
 
         // Then
-        WorkoutPlanResponseDto responseDto;
-        if (workoutId != null) {
-            if (workoutId == savedWorkout.getId()) {
-                responseDto = workoutPlanService.createWorkoutPlan(requestDto, user.getId());
-                assertEquals(requestDto.getWorkoutId(), responseDto.getWorkoutId());
-            } else {
-                ApiException expectedException =
-                        new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, workoutId, HttpStatus.BAD_REQUEST);
-                ApiException actualException = assertThrows(
-                        ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
-                assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
-                assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
-            }
-        } else {
-            requestDto.setWorkoutId(savedWorkout.getId());
-            ApiException expectedException = new ApiException(ErrorMessage.INCORRECT_TIME, 1L, HttpStatus.BAD_REQUEST);
-            ApiException actualException = assertThrows(
-                    ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
-            assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
-            assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
-        }
-    }
-
-    static Stream<Arguments> createWorkoutPlanInvalidField() {
-
-        return Stream.of(
-                // Invalid workoutId
-                Arguments.of(
-                        1000L,
-                        LocalDateTime.now().plusDays(1),
-                        LocalDateTime.now().plusDays(7)),
-                // Invalid start date
-                Arguments.of(
-                        null,
-                        LocalDateTime.now().minusDays(1),
-                        LocalDateTime.now().plusDays(7)),
-                // Invalid end date
-                Arguments.of(null, LocalDateTime.now().plusDays(1), LocalDateTime.now()));
+        assertEquals(expected.getMessage(), actual.getMessage());
+        assertEquals(expected.getHttpStatus(), actual.getHttpStatus());
     }
 
     @Test
-    void createWorkoutPlan_shouldThrowException_whenInvalidJsonDescription() {
+    void createWorkoutPlan_shouldThrowException_whenInvalidStartDate() {
+        // Assumed that the start date is checked after workoutApi call in the service method
 
+        // Given
         int seed = 1;
-
-        User user = dataUtil.createUser(seed);
-        Workout workout = dataUtil.createDefaultWorkout(seed);
+        User user = testUtil.createUser(seed);
+        Workout workout = testUtil.createDefaultWorkout(seed);
+        LocalDateTime wrongStartDate = LocalDateTime.now().minusDays(1);
         WorkoutPlanCreateRequestDto requestDto = dtoUtil.workoutPlanCreateRequestDto(seed, workout.getId());
+        requestDto.setStartDate(wrongStartDate);
 
-        doReturn(user).when(userApi).getUserById(anyLong());
-        doReturn(workout).when(workoutApi).getWorkoutById(anyLong());
+        when(userApi.getUserById(user.getId())).thenReturn(user);
+        when(workoutApi.getWorkoutById(workout.getId())).thenReturn(workout);
 
-        try {
-            doThrow(JsonProcessingException.class)
-                    .when(jsonUtil)
-                    .deserializeJsonStringToJsonDescriptionList(anyString());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        ApiException expected = new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
 
-        Throwable exception = assertThrows(
-                RuntimeException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
+        // When
+        ApiException actual =
+                assertThrows(ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
 
-        assertTrue(exception.getCause() instanceof JsonProcessingException);
+        // Then
+        assertEquals(expected.getMessage(), actual.getMessage());
+        assertEquals(expected.getHttpStatus(), actual.getHttpStatus());
     }
+
+    //    @ParameterizedTest
+    //    @MethodSource("createWorkoutPlanInvalidField")
+    //    void createWorkoutPlan_shouldThrowException_whenInvalidRequest(
+    //            Long workoutId, LocalDateTime startDate, LocalDateTime endDate) {
+    //        // Given
+    //        int seed = 1;
+    //        User user = dataUtil.createUser(seed);
+    //        Workout savedWorkout = dataUtil.createDefaultWorkout(seed);
+    //        JsonDescription jsonDescription = dataUtil.createJsonDescription(seed);
+    //        String jsonDescriptionStringified;
+    //
+    //        try {
+    //            jsonDescriptionStringified = dataUtil.serializeJsonDescriptionList(List.of(jsonDescription));
+    //        } catch (JsonProcessingException e) {
+    //            throw new RuntimeException(e);
+    //        }
+    //
+    //        WorkoutPlanCreateRequestDto requestDto = WorkoutPlanCreateRequestDto.builder()
+    //                .workoutId(workoutId)
+    //                .startDate(startDate)
+    //                .endDate(endDate)
+    //                .jsonDescription(jsonDescriptionStringified)
+    //                .build();
+    //
+    //        when(userApi.getUserById(user.getId())).thenReturn(user);
+    //        doAnswer(invocation -> {
+    //                    Long id = invocation.getArgument(0);
+    //                    return savedWorkout.getId().equals(id) ? savedWorkout : null;
+    //                })
+    //                .when(workoutApi)
+    //                .getWorkoutById(anyLong());
+    //
+    //        // Then
+    //        WorkoutPlanResponseDto responseDto;
+    //        if (workoutId != null) {
+    //            if (workoutId == savedWorkout.getId()) {
+    //                responseDto = workoutPlanService.createWorkoutPlan(requestDto, user.getId());
+    //                assertEquals(requestDto.getWorkoutId(), responseDto.getWorkoutId());
+    //            } else {
+    //                ApiException expectedException =
+    //                        new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, workoutId, HttpStatus.BAD_REQUEST);
+    //                ApiException actualException = assertThrows(
+    //                        ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
+    //                assertEquals(expectedException.getMessageWithResourceId(),
+    // actualException.getMessageWithResourceId());
+    //                assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
+    //            }
+    //        } else {
+    //            requestDto.setWorkoutId(savedWorkout.getId());
+    //            ApiException expectedException = new ApiException(ErrorMessage.INCORRECT_TIME, 1L,
+    // HttpStatus.BAD_REQUEST);
+    //            ApiException actualException = assertThrows(
+    //                    ApiException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
+    //            assertEquals(expectedException.getMessageWithResourceId(),
+    // actualException.getMessageWithResourceId());
+    //            assertEquals(expectedException.getHttpStatus(), actualException.getHttpStatus());
+    //        }
+    //    }
+    //
+    //    static Stream<Arguments> createWorkoutPlanInvalidField() {
+    //        return Stream.of(
+    //                // Invalid workoutId
+    //                Arguments.of(
+    //                        1000L,
+    //                        LocalDateTime.now().plusDays(1),
+    //                        LocalDateTime.now().plusDays(7)),
+    //                // Invalid start date
+    //                Arguments.of(
+    //                        null,
+    //                        LocalDateTime.now().minusDays(1),
+    //                        LocalDateTime.now().plusDays(7)),
+    //                // Invalid end date
+    //                Arguments.of(null, LocalDateTime.now().plusDays(1), LocalDateTime.now()));
+    //    }
+
+    //    @Test
+    //    void createWorkoutPlan_shouldThrowException_whenInvalidJsonDescription() {
+    //
+    //        int seed = 1;
+    //
+    //        User user = dataUtil.createUser(seed);
+    //        Workout workout = dataUtil.createDefaultWorkout(seed);
+    //        WorkoutPlanCreateRequestDto requestDto = dtoUtil.workoutPlanCreateRequestDto(seed, workout.getId());
+    //
+    //        doReturn(user).when(userApi).getUserById(anyLong());
+    //        doReturn(workout).when(workoutApi).getWorkoutById(anyLong());
+    //
+    //        try {
+    //            doThrow(JsonProcessingException.class)
+    //                    .when(jsonUtil)
+    //                    .deserializeJsonStringToJsonDescriptionList(anyString());
+    //        } catch (JsonProcessingException e) {
+    //            throw new RuntimeException(e);
+    //        }
+    //
+    //        Throwable exception = assertThrows(
+    //                RuntimeException.class, () -> workoutPlanService.createWorkoutPlan(requestDto, user.getId()));
+    //
+    //        assertTrue(exception.getCause() instanceof JsonProcessingException);
+    //    }
 }

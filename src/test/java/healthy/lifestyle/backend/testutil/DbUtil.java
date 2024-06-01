@@ -18,6 +18,9 @@ import healthy.lifestyle.backend.activity.workout.repository.BodyPartRepository;
 import healthy.lifestyle.backend.activity.workout.repository.ExerciseRepository;
 import healthy.lifestyle.backend.activity.workout.repository.HttpRefRepository;
 import healthy.lifestyle.backend.activity.workout.repository.WorkoutRepository;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
+import healthy.lifestyle.backend.plan.workout.repository.WorkoutPlanRepository;
+import healthy.lifestyle.backend.shared.util.JsonDescription;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.Timezone;
@@ -26,6 +29,8 @@ import healthy.lifestyle.backend.user.repository.CountryRepository;
 import healthy.lifestyle.backend.user.repository.RoleRepository;
 import healthy.lifestyle.backend.user.repository.TimezoneRepository;
 import healthy.lifestyle.backend.user.repository.UserRepository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
@@ -60,6 +65,9 @@ public class DbUtil implements Util {
     WorkoutRepository workoutRepository;
 
     @Autowired
+    WorkoutPlanRepository workoutPlanRepository;
+
+    @Autowired
     MentalRepository mentalRepository;
 
     @Autowired
@@ -78,6 +86,7 @@ public class DbUtil implements Util {
 
     @Transactional
     public void deleteAll() {
+        workoutPlanRepository.deleteAll();
         workoutRepository.deleteAll();
         exerciseRepository.deleteAll();
         bodyPartRepository.deleteAll();
@@ -179,6 +188,36 @@ public class DbUtil implements Util {
                 .exercises(new HashSet<>(exercises))
                 .build();
         return workoutRepository.save(workout);
+    }
+
+    @Override
+    public WorkoutPlan createWorkoutPlan(Long seed, User user, Workout workout) {
+        LocalDateTime startDate = LocalDate.of(
+                        LocalDateTime.now().getYear(),
+                        LocalDateTime.now().getMonth(),
+                        LocalDateTime.now().getDayOfMonth())
+                .atStartOfDay();
+        LocalDateTime endDate = LocalDate.of(
+                        LocalDateTime.now().getYear(),
+                        LocalDateTime.now().getMonth(),
+                        LocalDateTime.now().getDayOfMonth())
+                .atStartOfDay();
+
+        Shared shared = new Shared();
+        JsonDescription jsonDescription = shared.createJsonDescription(seed.intValue());
+
+        WorkoutPlan workoutPlan = WorkoutPlan.builder()
+                .user(user)
+                .startDate(startDate)
+                .endDate(endDate)
+                .workout(workout)
+                .jsonDescription(List.of(jsonDescription))
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .deactivatedAt(null)
+                .build();
+
+        return workoutPlanRepository.save(workoutPlan);
     }
 
     @Override
