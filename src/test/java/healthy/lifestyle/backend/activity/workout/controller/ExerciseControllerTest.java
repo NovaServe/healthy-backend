@@ -140,7 +140,8 @@ class ExerciseControllerTest {
                 .isEqualTo(List.of(bodyPart1, bodyPart2));
 
         assertThat(responseDto.getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "exercises", "user", "mentalActivities", "nutritions")
                 .isEqualTo(List.of(defaultHttpRef, customHttpRef));
 
         // Db
@@ -162,7 +163,8 @@ class ExerciseControllerTest {
                 .isEqualTo(List.of(bodyPart1, bodyPart2));
 
         assertThat(createdExercise.getHttpRefsSortedById())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "exercises", "user", "mentalActivities", "nutritions")
                 .isEqualTo(List.of(defaultHttpRef, customHttpRef));
     }
 
