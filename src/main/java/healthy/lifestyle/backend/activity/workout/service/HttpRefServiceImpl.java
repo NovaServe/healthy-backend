@@ -73,6 +73,7 @@ public class HttpRefServiceImpl implements HttpRefService {
     }
 
     @Override
+    @Transactional
     public HttpRefResponseDto getCustomHttpRefById(long userId, long httpRefId) {
         HttpRef httpRef = httpRefRepository
                 .findById(httpRefId)
@@ -115,6 +116,7 @@ public class HttpRefServiceImpl implements HttpRefService {
     }
 
     @Override
+    @Transactional
     public HttpRefResponseDto updateCustomHttpRef(long userId, long httpRefId, HttpRefUpdateRequestDto requestDto)
             throws NoSuchFieldException, IllegalAccessException {
 
