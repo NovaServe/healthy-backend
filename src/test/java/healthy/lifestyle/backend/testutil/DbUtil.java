@@ -10,14 +10,9 @@ import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.activity.nutrition.repository.NutritionRepository;
 import healthy.lifestyle.backend.activity.nutrition.repository.NutritionTypeRepository;
-import healthy.lifestyle.backend.activity.workout.model.BodyPart;
-import healthy.lifestyle.backend.activity.workout.model.Exercise;
-import healthy.lifestyle.backend.activity.workout.model.HttpRef;
-import healthy.lifestyle.backend.activity.workout.model.Workout;
-import healthy.lifestyle.backend.activity.workout.repository.BodyPartRepository;
-import healthy.lifestyle.backend.activity.workout.repository.ExerciseRepository;
-import healthy.lifestyle.backend.activity.workout.repository.HttpRefRepository;
-import healthy.lifestyle.backend.activity.workout.repository.WorkoutRepository;
+import healthy.lifestyle.backend.activity.workout.dto.HttpRefTypeEnum;
+import healthy.lifestyle.backend.activity.workout.model.*;
+import healthy.lifestyle.backend.activity.workout.repository.*;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
@@ -38,6 +33,9 @@ public class DbUtil implements Util {
 
     @Autowired
     HttpRefRepository httpRefRepository;
+
+    @Autowired
+    HttpRefTypeRepository httpRefTypeRepository;
 
     @Autowired
     ExerciseRepository exerciseRepository;
@@ -81,6 +79,7 @@ public class DbUtil implements Util {
         nutritionRepository.deleteAll();
         nutritionTypeRepository.deleteAll();
         httpRefRepository.deleteAll();
+        httpRefTypeRepository.deleteAll();
         userRepository.deleteAll();
         countryRepository.deleteAll();
         roleRepository.deleteAll();
@@ -93,22 +92,32 @@ public class DbUtil implements Util {
 
     @Override
     public HttpRef createDefaultHttpRef(int seed) {
-        return this.createHttpRefBase(seed, false, null);
+        return this.createHttpRefBase(seed, false, HttpRefTypeEnum.YOUTUBE, null);
     }
 
     @Override
     public HttpRef createCustomHttpRef(int seed, User user) {
-        HttpRef httpRef = this.createHttpRefBase(seed, true, user);
+        HttpRef httpRef = this.createHttpRefBase(seed, true, HttpRefTypeEnum.YOUTUBE, user);
         if (user.getHttpRefs() == null) user.setHttpRefs(new HashSet<>());
         user.getHttpRefs().add(httpRef);
         userRepository.save(user);
         return httpRef;
     }
 
-    private HttpRef createHttpRefBase(int seed, boolean isCustom, User user) {
+    private HttpRef createHttpRefBase(int seed, boolean isCustom, HttpRefTypeEnum httpRefTypeEnum, User user) {
+        Optional<HttpRefType> httpRefTypeOptional = httpRefTypeRepository.findByName(httpRefTypeEnum.name());
+        HttpRefType httpRefType;
+        if (httpRefTypeOptional.isPresent()) {
+            httpRefType = httpRefTypeOptional.get();
+        } else {
+            HttpRefType httpRefTypeNew =
+                    HttpRefType.builder().name(httpRefTypeEnum.name()).build();
+            httpRefType = httpRefTypeRepository.save(httpRefTypeNew);
+        }
         return httpRefRepository.save(HttpRef.builder()
                 .name("Media Name " + seed)
                 .ref("https://ref " + seed + ".com")
+                .httpRefType(httpRefType)
                 .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)

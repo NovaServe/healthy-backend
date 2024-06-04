@@ -35,6 +35,10 @@ public class HttpRef {
     @Column(name = "is_custom", unique = false, nullable = false)
     private boolean isCustom;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "http_ref_type_id") // FOREIGN KEY(http_ref_type_id) REFERENCES http_ref_types(id)
+    private HttpRefType httpRefType;
+
     @ManyToMany(mappedBy = "httpRefs")
     @OrderBy("id")
     private Set<Exercise> exercises;

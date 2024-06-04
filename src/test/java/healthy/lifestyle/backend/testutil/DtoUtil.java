@@ -15,6 +15,7 @@ public class DtoUtil {
                 .name("HttpRef " + seed)
                 .description("Description " + seed)
                 .ref("https://ref-" + seed + ".com")
+                .httpRefType(HttpRefTypeEnum.YOUTUBE.name())
                 .build();
     }
 
@@ -26,6 +27,7 @@ public class DtoUtil {
         return HttpRefUpdateRequestDto.builder()
                 .name("Update Name " + seed)
                 .ref("https://update-ref-" + seed + ".com")
+                .httpRefType(HttpRefTypeEnum.YOUTUBE.name())
                 .description("Update Description " + seed)
                 .build();
     }

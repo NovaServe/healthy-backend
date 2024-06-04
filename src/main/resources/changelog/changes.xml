@@ -528,4 +528,27 @@
             </column>
         </createTable>
     </changeSet>
+
+    <changeSet id="add_http_ref_types" author="Oleg Kucherenko">
+
+    <createTable tableName="http_ref_types">
+        <column name="id" type="bigint" autoIncrement="true">
+            <constraints primaryKey="true"/>
+        </column>
+        <column name="name" type="varchar">
+            <constraints nullable="false" unique="true"/>
+        </column>
+    </createTable>
+
+        <sqlFile path="sql/http_ref_types.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+
+        <addColumn tableName="http_refs">
+            <column name="http_ref_type_id"
+                    type="bigint">
+                <constraints nullable="true" foreignKeyName="fk_http_ref_type_id" references="http_ref_types(id)"/>
+            </column>
+        </addColumn>
+
+        <sqlFile path="sql/update_default_http_refs.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
+    </changeSet>
 </databaseChangeLog>

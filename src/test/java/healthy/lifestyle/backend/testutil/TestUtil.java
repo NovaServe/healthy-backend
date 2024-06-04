@@ -6,10 +6,8 @@ import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
-import healthy.lifestyle.backend.activity.workout.model.BodyPart;
-import healthy.lifestyle.backend.activity.workout.model.Exercise;
-import healthy.lifestyle.backend.activity.workout.model.HttpRef;
-import healthy.lifestyle.backend.activity.workout.model.Workout;
+import healthy.lifestyle.backend.activity.workout.dto.HttpRefTypeEnum;
+import healthy.lifestyle.backend.activity.workout.model.*;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
@@ -30,22 +28,27 @@ public class TestUtil implements Util {
 
     @Override
     public HttpRef createDefaultHttpRef(int seed) {
-        return this.createHttpRefBase(seed, false, null);
+        return this.createHttpRefBase(seed, false, HttpRefTypeEnum.YOUTUBE, null);
     }
 
     @Override
     public HttpRef createCustomHttpRef(int seed, User user) {
-        HttpRef httpRef = this.createHttpRefBase(seed, true, user);
+        HttpRef httpRef = this.createHttpRefBase(seed, true, HttpRefTypeEnum.YOUTUBE, user);
         if (user.getHttpRefs() == null) user.setHttpRefs(new HashSet<>());
         user.getHttpRefs().add(httpRef);
         return httpRef;
     }
 
-    private HttpRef createHttpRefBase(int seed, boolean isCustom, User user) {
+    private HttpRef createHttpRefBase(int seed, boolean isCustom, HttpRefTypeEnum httpRefTypeEnum, User user) {
+        HttpRefType httpRefType = HttpRefType.builder()
+                .id((long) seed)
+                .name(httpRefTypeEnum.name())
+                .build();
         return HttpRef.builder()
                 .id((long) seed)
                 .name("Name " + seed)
                 .ref("Ref " + seed)
+                .httpRefType(httpRefType)
                 .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)

@@ -86,7 +86,7 @@ class MentalActivityServiceTest {
                 .toList();
         assertThat(httpRefs_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                        "exercises", "user", "mentalActivities", "nutritions")
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefType")
                 .isEqualTo(mentalDtoActual.getHttpRefs());
     }
 
@@ -200,7 +200,7 @@ class MentalActivityServiceTest {
                 .toList();
         assertThat(httpRefs_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                        "exercises", "user", "mentalActivities", "nutritions")
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefType")
                 .isEqualTo(mentalDtoActual.getHttpRefs());
     }
 

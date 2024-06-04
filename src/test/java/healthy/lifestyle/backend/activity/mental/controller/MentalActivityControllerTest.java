@@ -134,7 +134,7 @@ public class MentalActivityControllerTest {
                 .isEqualTo(defaultMental1);
 
         assertThat(responseDto.getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("mental_activity")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("mental_activity", "httpRefTypeName")
                 .isEqualTo(defaultMental1.getHttpRefsSortedById());
     }
 
@@ -195,7 +195,7 @@ public class MentalActivityControllerTest {
                 .isEqualTo(customMental1);
 
         assertThat(responseDto.getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("users", "mental_activity")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("users", "mental_activity", "httpRefTypeName")
                 .isEqualTo(customMental1.getHttpRefsSortedById());
     }
 
@@ -438,7 +438,10 @@ public class MentalActivityControllerTest {
 
         if (mentalType.isPresent()) assertEquals(requestDto.getMentalTypeId(), responseDto.getMentalTypeId());
         else assertEquals(initialNeedsMental, responseDto.getMentalTypeId());
-        assertThat(responseDto.getHttpRefs()).usingRecursiveComparison().isEqualTo(expectedHttpRefs);
+        assertThat(responseDto.getHttpRefs())
+                .usingRecursiveComparison()
+                .ignoringFields("httpRefTypeName")
+                .isEqualTo(expectedHttpRefs);
     }
 
     static Stream<Arguments> updateCustomMentalActivityValidFilters() {
@@ -781,7 +784,7 @@ public class MentalActivityControllerTest {
                 responseDto.getHttpRefs().size());
         assertThat(responseDto.getHttpRefs())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                        "exercises", "user", "mental_activity", "nutritions")
+                        "exercises", "user", "mental_activity", "nutritions", "httpRefTypeName")
                 .isEqualTo(List.of(customHttpRef1, defaultHttpRef1));
 
         // Db
@@ -801,7 +804,7 @@ public class MentalActivityControllerTest {
 
         assertThat(createdMental.getHttpRefsSortedById())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                        "exercises", "user", "mentalActivities", "nutritions")
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefType")
                 .isEqualTo(List.of(customHttpRef1, defaultHttpRef1));
     }
 
