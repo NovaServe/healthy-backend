@@ -1,11 +1,11 @@
 package healthy.lifestyle.backend.activity.mental.service;
 
-import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
-import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
-import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
-import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.mental.dto.MentalActivityCreateRequestDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalActivityResponseDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalActivityUpdateRequestDto;
+import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
-import healthy.lifestyle.backend.activity.mental.repository.MentalRepository;
+import healthy.lifestyle.backend.activity.mental.repository.MentalActivityRepository;
 import healthy.lifestyle.backend.activity.mental.repository.MentalTypeRepository;
 import healthy.lifestyle.backend.activity.workout.dto.*;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
@@ -28,9 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class MentalServiceImpl implements MentalService {
+public class MentalActivityServiceImpl implements MentalActivityService {
     @Autowired
-    MentalRepository mentalRepository;
+    MentalActivityRepository mentalRepository;
 
     @Autowired
     HttpRefRepository httpRefRepository;
@@ -49,8 +49,8 @@ public class MentalServiceImpl implements MentalService {
 
     @Override
     @Transactional
-    public MentalResponseDto getMentalById(long mentalId, boolean requiredDefault, Long userId) {
-        Mental mental = mentalRepository
+    public MentalActivityResponseDto getMentalActivityById(long mentalId, boolean requiredDefault, Long userId) {
+        MentalActivity mental = mentalRepository
                 .findById(mentalId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.MENTAL_NOT_FOUND, mentalId, HttpStatus.NOT_FOUND));
 
@@ -65,11 +65,12 @@ public class MentalServiceImpl implements MentalService {
         if (userId != null) {
             User user = userService.getUserById(userId);
             if (mental.isCustom()
-                    && (user.getMentals() == null || !user.getMentals().contains(mental)))
+                    && (user.getMentalActivities() == null
+                            || !user.getMentalActivities().contains(mental)))
                 throw new ApiException(ErrorMessage.USER_MENTAL_MISMATCH, mentalId, HttpStatus.BAD_REQUEST);
         }
 
-        MentalResponseDto mentalResponseDto = modelMapper.map(mental, MentalResponseDto.class);
+        MentalActivityResponseDto mentalResponseDto = modelMapper.map(mental, MentalActivityResponseDto.class);
 
         List<HttpRefResponseDto> httpRefsSorted = mentalResponseDto.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
@@ -80,16 +81,16 @@ public class MentalServiceImpl implements MentalService {
 
     @Override
     @Transactional
-    public Page<MentalResponseDto> getMentals(
+    public Page<MentalActivityResponseDto> getMentalActivities(
             Long userId, String sortField, String sortDirection, int currentPageNumber, int pageSize) {
 
         Pageable pageable = PageRequest.of(
                 currentPageNumber, pageSize, Sort.by(Sort.Direction.fromString(sortDirection), sortField));
 
-        Page<Mental> entityPage = mentalRepository.findDefaultAndCustomMentals(userId, pageable);
+        Page<MentalActivity> entityPage = mentalRepository.findDefaultAndCustomMentalActivity(userId, pageable);
 
-        Page<MentalResponseDto> dtoPage = entityPage.map(entity -> {
-            MentalResponseDto mentalResponseDto = modelMapper.map(entity, MentalResponseDto.class);
+        Page<MentalActivityResponseDto> dtoPage = entityPage.map(entity -> {
+            MentalActivityResponseDto mentalResponseDto = modelMapper.map(entity, MentalActivityResponseDto.class);
             return mentalResponseDto;
         });
 
@@ -98,9 +99,10 @@ public class MentalServiceImpl implements MentalService {
 
     @Override
     @Transactional
-    public MentalResponseDto updateCustomMental(long userId, long mentalId, MentalUpdateRequestDto requestDto)
+    public MentalActivityResponseDto updateCustomMentalActivity(
+            long userId, long mentalId, MentalActivityUpdateRequestDto requestDto)
             throws NoSuchFieldException, IllegalAccessException {
-        Mental mental = mentalRepository
+        MentalActivity mental = mentalRepository
                 .findById(mentalId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.MENTAL_NOT_FOUND, mentalId, HttpStatus.NOT_FOUND));
 
@@ -133,8 +135,8 @@ public class MentalServiceImpl implements MentalService {
         }
 
         if (requestDto.getTitle() != null) {
-            List<Mental> mentalWithSameTitle =
-                    mentalRepository.getDefaultAndCustomMentalByTitleAndUserId(requestDto.getTitle(), userId);
+            List<MentalActivity> mentalWithSameTitle =
+                    mentalRepository.getDefaultAndCustomMentalActivityByTitleAndUserId(requestDto.getTitle(), userId);
             if (!mentalWithSameTitle.isEmpty()) {
                 throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
             }
@@ -153,12 +155,12 @@ public class MentalServiceImpl implements MentalService {
         }
         if (httpRefsAreDifferent) updateHttpRefs(requestDto, mental, userId);
 
-        Mental savedMental = mentalRepository.save(mental);
-        MentalResponseDto responseDto = mapMentalToMentalResponseDto(savedMental);
+        MentalActivity savedMental = mentalRepository.save(mental);
+        MentalActivityResponseDto responseDto = mapMentalToMentalResponseDto(savedMental);
         return responseDto;
     }
 
-    private void updateHttpRefs(MentalUpdateRequestDto requestDto, Mental mental, Long userId) {
+    private void updateHttpRefs(MentalActivityUpdateRequestDto requestDto, MentalActivity mental, Long userId) {
         User user = userService.getUserById(userId);
 
         if (requestDto.getHttpRefIds().isEmpty()) {
@@ -197,8 +199,8 @@ public class MentalServiceImpl implements MentalService {
         }
     }
 
-    private MentalResponseDto mapMentalToMentalResponseDto(Mental mental) {
-        MentalResponseDto mentalResponseDto = modelMapper.map(mental, MentalResponseDto.class);
+    private MentalActivityResponseDto mapMentalToMentalResponseDto(MentalActivity mental) {
+        MentalActivityResponseDto mentalResponseDto = modelMapper.map(mental, MentalActivityResponseDto.class);
         List<HttpRefResponseDto> mentalHttpRefsSorted = mental.getHttpRefsSortedById().stream()
                 .map(httpRef -> modelMapper.map(httpRef, HttpRefResponseDto.class))
                 .toList();
@@ -209,26 +211,26 @@ public class MentalServiceImpl implements MentalService {
 
     @Override
     @Transactional
-    public void deleteCustomMental(long mentalId, long userId) {
-        Mental mental = mentalRepository
+    public void deleteCustomMentalActivity(long mentalId, long userId) {
+        MentalActivity mental = mentalRepository
                 .findCustomByMentalIdAndUserId(mentalId, userId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.MENTAL_NOT_FOUND, mentalId, HttpStatus.NOT_FOUND));
-        userService.deleteMentalFromUser(userId, mental);
+        userService.deleteMentalActivitiesFromUser(userId, mental);
         mentalRepository.delete(mental);
     }
 
     @Override
     @Transactional
-    public MentalResponseDto createCustomMental(long userId, MentalCreateRequestDto requestDto) {
-        List<Mental> mentalWithSameTitle =
-                mentalRepository.getDefaultAndCustomMentalByTitleAndUserId(requestDto.getTitle(), userId);
+    public MentalActivityResponseDto createCustomMental(long userId, MentalActivityCreateRequestDto requestDto) {
+        List<MentalActivity> mentalWithSameTitle =
+                mentalRepository.getDefaultAndCustomMentalActivityByTitleAndUserId(requestDto.getTitle(), userId);
 
         if (!mentalWithSameTitle.isEmpty()) {
             throw new ApiException(ErrorMessage.TITLE_DUPLICATE, null, HttpStatus.BAD_REQUEST);
         }
 
         User user = userService.getUserById(userId);
-        Mental mental = Mental.builder()
+        MentalActivity mental = MentalActivity.builder()
                 .isCustom(true)
                 .user(user)
                 .title(requestDto.getTitle())
@@ -256,9 +258,9 @@ public class MentalServiceImpl implements MentalService {
                         ErrorMessage.MENTAL_TYPE_NOT_FOUND, requestDto.getMentalTypeId(), HttpStatus.NOT_FOUND));
         mental.setType(mentalType);
 
-        Mental mentalSaved = mentalRepository.save(mental);
-        userService.addMentalToUser(userId, mentalSaved);
-        MentalResponseDto mentalResponseDto = modelMapper.map(mentalSaved, MentalResponseDto.class);
+        MentalActivity mentalSaved = mentalRepository.save(mental);
+        userService.addMentalActivitiesToUser(userId, mentalSaved);
+        MentalActivityResponseDto mentalResponseDto = modelMapper.map(mentalSaved, MentalActivityResponseDto.class);
         List<HttpRefResponseDto> httpRefsSorted = mentalResponseDto.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRefResponseDto::getId))
                 .toList();
@@ -269,7 +271,7 @@ public class MentalServiceImpl implements MentalService {
 
     @Override
     @Transactional
-    public Page<MentalResponseDto> getMentalsWithFilter(
+    public Page<MentalActivityResponseDto> getMentalActivitiesWithFilter(
             Boolean isCustom,
             Long userId,
             String title,
@@ -283,7 +285,7 @@ public class MentalServiceImpl implements MentalService {
         Pageable pageable = PageRequest.of(
                 currentPageNumber, pageSize, Sort.by(Sort.Direction.fromString(sortDirection), sortField));
 
-        Page<Mental> entitiesPage = null;
+        Page<MentalActivity> entitiesPage = null;
 
         // Default and custom
         if (isCustom == null && userId != null) {
@@ -303,7 +305,8 @@ public class MentalServiceImpl implements MentalService {
             throw new ApiExceptionCustomMessage("Invalid args combination", HttpStatus.BAD_REQUEST);
         }
 
-        Page<MentalResponseDto> dtoPage = entitiesPage.map(entity -> modelMapper.map(entity, MentalResponseDto.class));
+        Page<MentalActivityResponseDto> dtoPage =
+                entitiesPage.map(entity -> modelMapper.map(entity, MentalActivityResponseDto.class));
         return dtoPage;
     }
 }

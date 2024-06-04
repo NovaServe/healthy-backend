@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.activity.workout.model;
 
-import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
@@ -49,5 +49,5 @@ public class HttpRef {
 
     @ManyToMany(mappedBy = "httpRefs")
     @OrderBy("id")
-    private Set<Mental> mentals;
+    private Set<MentalActivity> mentalActivities;
 }

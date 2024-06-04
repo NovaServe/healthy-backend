@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.testutil;
 
-import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
@@ -45,9 +45,9 @@ public interface Util {
 
     Country createCountry(int seed);
 
-    Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType);
+    MentalActivity createDefaultMentalActivity(int seed, List<HttpRef> httpRefs, MentalType mentalType);
 
-    Mental createCustomMental(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user);
+    MentalActivity createCustomMentalActivity(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user);
 
     MentalType createMeditationType();
 

@@ -2,7 +2,7 @@ package healthy.lifestyle.backend.activity.mental.dto;
 
 import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
-import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
+import healthy.lifestyle.backend.shared.validation.annotation.TitleValidation;
 import java.util.List;
 import lombok.*;
 
@@ -11,14 +11,14 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MentalUpdateRequestDto {
-    @TitleOptionalValidation
+public class MentalActivityCreateRequestDto {
+    @TitleValidation
     private String title;
 
     @DescriptionOptionalValidation
     private String description;
 
-    private List<Long> httpRefIds;
+    private List<Long> httpRefs;
 
     @IdValidation
     private Long mentalTypeId;

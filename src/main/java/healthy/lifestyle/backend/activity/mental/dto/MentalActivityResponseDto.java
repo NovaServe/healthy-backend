@@ -10,7 +10,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MentalResponseDto {
+public class MentalActivityResponseDto {
     private Long id;
 
     private String title;

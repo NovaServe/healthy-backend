@@ -20,5 +20,5 @@ public class MentalType {
     private String name;
 
     @OneToMany(mappedBy = "type")
-    private Set<Mental> mentals;
+    private Set<MentalActivity> mentalActivities;
 }
