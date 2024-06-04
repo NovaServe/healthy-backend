@@ -195,7 +195,8 @@ public class MentalActivityControllerTest {
                 .isEqualTo(customMental1);
 
         assertThat(responseDto.getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("users", "mental_activity", "httpRefTypeName")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "users", "mentalActivities", "httpRefTypeName")
                 .isEqualTo(customMental1.getHttpRefsSortedById());
     }
 

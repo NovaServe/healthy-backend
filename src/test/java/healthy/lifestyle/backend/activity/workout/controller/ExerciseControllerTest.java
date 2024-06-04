@@ -329,7 +329,7 @@ class ExerciseControllerTest {
                 .isEqualTo(defaultExercise1.getBodyPartsSortedById());
 
         assertThat(responseDto.getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "httpRefTypeName")
                 .isEqualTo(defaultExercise1.getHttpRefsSortedById());
     }
 
