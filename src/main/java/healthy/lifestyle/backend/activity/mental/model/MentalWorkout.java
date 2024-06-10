@@ -3,6 +3,8 @@ package healthy.lifestyle.backend.activity.mental.model;
 import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import lombok.*;
 
@@ -47,4 +49,16 @@ public class MentalWorkout {
 
     @Column(name = "created_at", nullable = false, unique = false)
     private LocalDate createdAt;
+
+    public List<MentalActivity> getMentalActivitiesSortedById() {
+        return this.getMentalActivities().stream()
+                .sorted(Comparator.comparingLong(MentalActivity::getId))
+                .toList();
+    }
+
+    public List<Long> getSortedMentalActivitiesIds() {
+        return this.getMentalActivitiesSortedById().stream()
+                .map(MentalActivity::getId)
+                .toList();
+    }
 }

@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.user.service;
 
 import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
+import healthy.lifestyle.backend.activity.mental.model.MentalWorkout;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.user.dto.*;
@@ -29,4 +30,6 @@ public interface UserService {
     void deleteMentalActivitiesFromUser(long userId, MentalActivity mental);
 
     void addMentalActivitiesToUser(long userId, MentalActivity mental);
+
+    void addMentalWorkoutToUser(User user, MentalWorkout mentalWorkout);
 }
