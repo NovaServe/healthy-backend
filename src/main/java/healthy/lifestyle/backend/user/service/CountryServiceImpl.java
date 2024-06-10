@@ -1,7 +1,7 @@
 package healthy.lifestyle.backend.user.service;
 
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.dto.CountryResponseDto;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.repository.CountryRepository;

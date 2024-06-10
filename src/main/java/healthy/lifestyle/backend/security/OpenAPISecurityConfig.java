@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.shared.security;
+package healthy.lifestyle.backend.security;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

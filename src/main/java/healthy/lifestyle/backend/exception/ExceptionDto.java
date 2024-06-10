@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.shared.exception;
+package healthy.lifestyle.backend.exception;
 
 public class ExceptionDto {
     private String message;

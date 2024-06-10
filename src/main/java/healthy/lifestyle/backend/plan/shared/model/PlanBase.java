@@ -1,7 +1,8 @@
-package healthy.lifestyle.backend.calendar.model;
+package healthy.lifestyle.backend.plan.shared.model;
 
 import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,10 +26,10 @@ public class PlanBase {
     private User user;
 
     @Column(name = "start_date", nullable = false, unique = false)
-    private LocalDateTime startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date", nullable = false, unique = false)
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     @Column(name = "is_active", nullable = false, unique = false)
     private Boolean isActive;

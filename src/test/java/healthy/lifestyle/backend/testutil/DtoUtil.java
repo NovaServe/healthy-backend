@@ -109,7 +109,7 @@ public class DtoUtil {
                 .email("email-" + seed + "@email.com")
                 .password("Password-" + seed)
                 .confirmPassword("Password-" + seed)
-                .fullName("Full Name " + Shared.numberToText(seed))
+                .fullName("Full Name " + SharedUtil.numberToText(seed))
                 .countryId(countryId)
                 .age(age == null ? AGE_CONST + seed : age)
                 .timezoneId(timezoneId)
@@ -166,7 +166,7 @@ public class DtoUtil {
     }
 
     public WorkoutPlanCreateRequestDto workoutPlanCreateRequestDto(
-            Long workoutId, LocalDateTime startDate, LocalDateTime endDate, String jsonDescription) {
+            Long workoutId, LocalDate startDate, LocalDate endDate, String jsonDescription) {
         return WorkoutPlanCreateRequestDto.builder()
                 .workoutId(workoutId)
                 .startDate(startDate)
@@ -176,11 +176,10 @@ public class DtoUtil {
     }
 
     public WorkoutPlanCreateRequestDto workoutPlanCreateRequestDto(int seed, Long workoutId) {
-        LocalDateTime startDate = LocalDate.now().plusDays(1).atStartOfDay();
-        LocalDateTime endDate = LocalDate.now().plusDays(7).atStartOfDay();
+        LocalDate startDate = LocalDate.now().plusDays(1);
+        LocalDate endDate = LocalDate.now().plusDays(7);
 
         JsonDescription jsonDescription = JsonDescription.builder()
-                .json_id(seed)
                 .dayOfWeek(LocalDateTime.now().getDayOfWeek())
                 .hours(seed % 24)
                 .minutes(seed % 60)

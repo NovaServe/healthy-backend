@@ -1,7 +1,7 @@
-package healthy.lifestyle.backend.shared.security;
+package healthy.lifestyle.backend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.shared.exception.ExceptionDto;
+import healthy.lifestyle.backend.exception.ExceptionDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;

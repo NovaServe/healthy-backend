@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.shared.security;
+package healthy.lifestyle.backend.security;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -143,7 +143,7 @@ public class UserAdminControllerTest {
                     "email-" + resultSeeds.get(i) + "@email.com",
                     userResponseDtoList.get(i).getEmail());
             assertEquals(
-                    "Full Name " + Shared.numberToText(resultSeeds.get(i)),
+                    "Full Name " + SharedUtil.numberToText(resultSeeds.get(i)),
                     userResponseDtoList.get(i).getFullName());
         }
     }

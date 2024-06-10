@@ -364,10 +364,10 @@
             <column name="json_description" type="jsonb">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="start_date" type="datetime">
+            <column name="start_date" type="date">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="end_date" type="datetime">
+            <column name="end_date" type="date">
                 <constraints nullable="false" unique="false"/>
             </column>
             <column name="is_active" type="boolean">

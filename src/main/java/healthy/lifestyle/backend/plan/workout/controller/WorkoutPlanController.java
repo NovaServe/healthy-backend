@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.plan.workout.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanResponseDto;
 import healthy.lifestyle.backend.plan.workout.service.WorkoutPlanService;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequestMapping("${api.basePath}/${api.version}/calendar/workouts")
 public class WorkoutPlanController {
-
     @Autowired
     AuthUtil authUtil;
 
@@ -28,13 +28,10 @@ public class WorkoutPlanController {
     @PostMapping("/plans")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<WorkoutPlanResponseDto> createWorkoutPlan(
-            @Valid @RequestBody WorkoutPlanCreateRequestDto requestDto) {
-
+            @Valid @RequestBody WorkoutPlanCreateRequestDto requestDto) throws JsonProcessingException {
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         WorkoutPlanResponseDto responseDto = workoutPlanService.createWorkoutPlan(requestDto, userId);
-
-        // call update tasks
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 }

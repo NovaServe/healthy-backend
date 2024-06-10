@@ -1,5 +1,6 @@
 package healthy.lifestyle.backend.plan.workout.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.*;
 
@@ -9,14 +10,15 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WorkoutPlanResponseDto {
+    private Long id;
 
     private Long workoutId;
 
-    private LocalDateTime startDate;
+    private LocalDate startDate; // in user's zone
 
-    private LocalDateTime endDate;
+    private LocalDate endDate; // in user's zone
 
     private String jsonDescription;
 
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt; // in user's zone
 }

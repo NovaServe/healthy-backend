@@ -1,7 +1,9 @@
 package healthy.lifestyle.backend.plan.workout.dto;
 
 import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
-import java.time.LocalDateTime;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import lombok.*;
 
 @Getter
@@ -13,9 +15,10 @@ public class WorkoutPlanCreateRequestDto {
     @IdValidation
     private Long workoutId;
 
-    private LocalDateTime startDate;
+    @NotNull private LocalDate startDate; // in user's zone
 
-    private LocalDateTime endDate;
+    @NotNull private LocalDate endDate; // in user's zone
 
-    private String jsonDescription;
+    @NotBlank
+    private String jsonDescription; // {"week_day": string enum, "hours": [0..23], "minutes": [0..59]}
 }

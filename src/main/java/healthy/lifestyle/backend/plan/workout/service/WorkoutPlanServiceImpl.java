@@ -3,19 +3,21 @@ package healthy.lifestyle.backend.plan.workout.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import healthy.lifestyle.backend.activity.workout.api.WorkoutApi;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanResponseDto;
 import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutPlanRepository;
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.shared.util.DateTimeService;
 import healthy.lifestyle.backend.shared.util.JsonDescription;
 import healthy.lifestyle.backend.shared.util.JsonUtil;
 import healthy.lifestyle.backend.user.api.UserApi;
 import healthy.lifestyle.backend.user.model.User;
 import java.time.*;
+import java.util.HashMap;
 import java.util.List;
-import org.modelmapper.ModelMapper;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class WorkoutPlanServiceImpl implements WorkoutPlanService {
-
     @Autowired
     WorkoutApi workoutApi;
 
@@ -34,22 +35,62 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     WorkoutPlanRepository workoutPlanRepository;
 
     @Autowired
-    ModelMapper modelMapper;
+    JsonUtil jsonUtil;
 
     @Autowired
-    JsonUtil jsonUtil;
+    DateTimeService dateTimeService;
 
     @Override
     @Transactional
-    public WorkoutPlanResponseDto createWorkoutPlan(WorkoutPlanCreateRequestDto requestDto, long userId) {
+    public WorkoutPlanResponseDto createWorkoutPlan(WorkoutPlanCreateRequestDto requestDto, long userId)
+            throws JsonProcessingException {
+        Map<String, Object> validated = validateCreateWorkoutPlan(requestDto, userId);
+        User user = (User) validated.get("user");
+        Workout workout = (Workout) validated.get("workout");
 
-        // A plan can only be created by an existing user
+        List<JsonDescription> days =
+                jsonUtil.deserializeJsonStringToJsonDescriptionList(requestDto.getJsonDescription());
+
+        List<JsonDescription> daysProcessed = jsonUtil.processJsonDescription(
+                days, ZoneId.of(user.getTimezone().getName()));
+
+        WorkoutPlan workoutPlan = WorkoutPlan.builder()
+                .startDate(dateTimeService.convertToDBDate(
+                        requestDto.getStartDate(), user.getTimezone().getName()))
+                .endDate(dateTimeService.convertToDBDate(
+                        requestDto.getEndDate(), user.getTimezone().getName()))
+                .jsonDescription(daysProcessed)
+                .isActive(true)
+                .createdAt(dateTimeService.getCurrentDatabaseZonedDateTime().toLocalDateTime())
+                .deactivatedAt(null)
+                .user(user)
+                .workout(workout)
+                .build();
+
+        WorkoutPlan workoutPlanSaved = workoutPlanRepository.save(workoutPlan);
+        WorkoutPlanResponseDto responseDto = WorkoutPlanResponseDto.builder()
+                .id(workoutPlanSaved.getId())
+                .workoutId(workout.getId())
+                .startDate(dateTimeService.convertToUserDate(
+                        workoutPlanSaved.getStartDate(), user.getTimezone().getName()))
+                .endDate(dateTimeService.convertToUserDate(
+                        workoutPlanSaved.getEndDate(), user.getTimezone().getName()))
+                .jsonDescription(jsonUtil.serializeJsonDescriptionList(
+                        workoutPlanSaved.getJsonDescription(),
+                        user.getTimezone().getName()))
+                .createdAt(dateTimeService.convertToUserDateTime(
+                        workoutPlanSaved.getCreatedAt(), user.getTimezone().getName()))
+                .build();
+
+        return responseDto;
+    }
+
+    private Map<String, Object> validateCreateWorkoutPlan(WorkoutPlanCreateRequestDto requestDto, long userId) {
         User user = userApi.getUserById(userId);
         if (user == null) {
             throw new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.BAD_REQUEST);
         }
 
-        // The plan can only be for an existing workout
         Workout workout = workoutApi.getWorkoutById(requestDto.getWorkoutId());
         if (workout == null) {
             throw new ApiException(ErrorMessage.WORKOUT_NOT_FOUND, requestDto.getWorkoutId(), HttpStatus.BAD_REQUEST);
@@ -65,15 +106,11 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
             }
         }
 
-        // StartDate and EndDate must be specified
-        if (requestDto.getStartDate() == null || requestDto.getEndDate() == null) {
-            throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
-        }
-
         // StartDate cannot be in the past
-        if (requestDto
-                .getStartDate()
-                .isBefore(LocalDate.now(ZoneId.of(user.getTimezone().getName())).atStartOfDay())) {
+        LocalDate startDateDBZone = dateTimeService.convertToDBDate(
+                requestDto.getStartDate(), user.getTimezone().getName());
+        LocalDate currentDBDate = dateTimeService.getCurrentDBDate();
+        if (startDateDBZone.isBefore(currentDBDate)) {
             throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
         }
 
@@ -82,48 +119,11 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
             throw new ApiException(ErrorMessage.INCORRECT_TIME, null, HttpStatus.BAD_REQUEST);
         }
 
-        List<JsonDescription> days;
-
-        try {
-            days = jsonUtil.deserializeJsonStringToJsonDescriptionList(requestDto.getJsonDescription());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        days = jsonUtil.processJsonDescription(
-                days, ZoneId.of(user.getTimezone().getName()));
-
-        ZonedDateTime startZonedDateTime = requestDto
-                .getStartDate()
-                .atZone(ZoneId.of(user.getTimezone().getName()))
-                .withZoneSameInstant(ZoneId.of("Europe/London"));
-        ZonedDateTime endZonedDateTime = requestDto
-                .getEndDate()
-                .atZone(ZoneId.of(user.getTimezone().getName()))
-                .withZoneSameInstant(ZoneId.of("Europe/London"));
-
-        WorkoutPlan workoutPlan = WorkoutPlan.builder()
-                .startDate(startZonedDateTime.toLocalDateTime())
-                .endDate(endZonedDateTime.toLocalDateTime())
-                .jsonDescription(days)
-                .isActive(true)
-                .createdAt(ZonedDateTime.now(ZoneId.of("Europe/London")).toLocalDateTime())
-                .deactivatedAt(null)
-                .user(user)
-                .workout(workout)
-                .build();
-
-        workoutPlanRepository.save(workoutPlan);
-
-        WorkoutPlanResponseDto responseDto = WorkoutPlanResponseDto.builder()
-                .workoutId(workout.getId())
-                .startDate(requestDto.getStartDate())
-                .endDate(requestDto.getEndDate())
-                .jsonDescription(requestDto.getJsonDescription())
-                .createdAt(ZonedDateTime.now(ZoneId.of(user.getTimezone().getName()))
-                        .toLocalDateTime())
-                .build();
-
-        return responseDto;
+        return new HashMap<>() {
+            {
+                put("user", user);
+                put("workout", workout);
+            }
+        };
     }
 }

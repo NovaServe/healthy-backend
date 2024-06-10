@@ -1,8 +1,8 @@
 package healthy.lifestyle.backend.notification.firebase;
 
 import com.google.firebase.messaging.*;
+import healthy.lifestyle.backend.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.notification.model.FirebaseUserToken;
-import healthy.lifestyle.backend.shared.exception.ApiExceptionCustomMessage;
 import healthy.lifestyle.backend.shared.util.DateTimeService;
 import healthy.lifestyle.backend.user.api.UserApi;
 import healthy.lifestyle.backend.user.model.User;

@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.shared.security;
+package healthy.lifestyle.backend.security;
 
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;

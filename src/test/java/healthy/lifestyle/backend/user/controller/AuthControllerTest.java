@@ -10,8 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.messaging.FirebaseMessaging;
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;

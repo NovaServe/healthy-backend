@@ -6,7 +6,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
-import healthy.lifestyle.backend.testutil.Shared;
+import healthy.lifestyle.backend.testutil.SharedUtil;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.Timezone;
@@ -105,7 +105,7 @@ public class UserAdminRepositoryTest {
                     "email-" + resultSeeds.get(i) + "@email.com",
                     resultList.get(i).getEmail());
             assertEquals(
-                    "Full Name " + Shared.numberToText(resultSeeds.get(i)),
+                    "Full Name " + SharedUtil.numberToText(resultSeeds.get(i)),
                     resultList.get(i).getFullName());
         }
     }

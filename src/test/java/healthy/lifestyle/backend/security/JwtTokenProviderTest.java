@@ -1,10 +1,10 @@
-package healthy.lifestyle.backend.shared.security;
+package healthy.lifestyle.backend.security;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserUtilImpl;

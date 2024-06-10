@@ -84,6 +84,8 @@ public class DbUtil implements Util {
         return new BCryptPasswordEncoder();
     }
 
+    SharedUtil sharedUtil = new SharedUtil();
+
     @Transactional
     public void deleteAll() {
         workoutPlanRepository.deleteAll();
@@ -192,19 +194,16 @@ public class DbUtil implements Util {
 
     @Override
     public WorkoutPlan createWorkoutPlan(Long seed, User user, Workout workout) {
-        LocalDateTime startDate = LocalDate.of(
-                        LocalDateTime.now().getYear(),
-                        LocalDateTime.now().getMonth(),
-                        LocalDateTime.now().getDayOfMonth())
-                .atStartOfDay();
-        LocalDateTime endDate = LocalDate.of(
-                        LocalDateTime.now().getYear(),
-                        LocalDateTime.now().getMonth(),
-                        LocalDateTime.now().getDayOfMonth())
-                .atStartOfDay();
+        LocalDate startDate = LocalDate.of(
+                LocalDate.now().getYear(),
+                LocalDate.now().getMonth(),
+                LocalDate.now().getDayOfMonth());
+        LocalDate endDate = LocalDate.of(
+                LocalDate.now().getYear(),
+                LocalDate.now().getMonth(),
+                LocalDate.now().getDayOfMonth());
 
-        Shared shared = new Shared();
-        JsonDescription jsonDescription = shared.createJsonDescription(seed.intValue());
+        JsonDescription jsonDescription = SharedUtil.createJsonDescription(seed.intValue());
 
         WorkoutPlan workoutPlan = WorkoutPlan.builder()
                 .user(user)
@@ -270,7 +269,7 @@ public class DbUtil implements Util {
         User user = User.builder()
                 .username("Username-" + seed)
                 .email("email-" + seed + "@email.com")
-                .fullName("Full Name " + Shared.numberToText(seed))
+                .fullName("Full Name " + SharedUtil.numberToText(seed))
                 .role(role)
                 .country(country)
                 .age(isNull(age) ? AGE_CONST + seed : age)
@@ -309,8 +308,11 @@ public class DbUtil implements Util {
 
     @Override
     public Timezone createTimezone(int seed) {
-        return timezoneRepository.save(
-                Timezone.builder().GMT("GMT+" + seed).name("TZ Name " + seed).build());
+        Map<String, String> timezoneData = SharedUtil.seedToTimezone(seed);
+        return timezoneRepository.save(Timezone.builder()
+                .GMT(timezoneData.get("GMT"))
+                .name(timezoneData.get("name"))
+                .build());
     }
 
     public boolean httpRefsExistByIds(List<Long> ids) {

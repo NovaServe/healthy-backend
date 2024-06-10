@@ -1,9 +1,9 @@
-package healthy.lifestyle.backend.shared.security;
+package healthy.lifestyle.backend.security;
 
 import static java.util.Objects.isNull;
 
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.user.service.UserUtil;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

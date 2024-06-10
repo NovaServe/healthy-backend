@@ -30,8 +30,6 @@ public class TestUtil implements Util {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final Shared shared = new Shared();
-
     @Override
     public BodyPart createBodyPart(int seed) {
         return BodyPart.builder().id((long) seed).name("Body part " + seed).build();
@@ -188,7 +186,7 @@ public class TestUtil implements Util {
                 .id((long) seed)
                 .username("Username-" + seed)
                 .email("email-" + seed + "@email.com")
-                .fullName("Full Name " + Shared.numberToText(seed))
+                .fullName("Full Name " + SharedUtil.numberToText(seed))
                 .role(role)
                 .country(country)
                 .timezone(timezone)
@@ -345,53 +343,18 @@ public class TestUtil implements Util {
         return NutritionType.builder().id(id).name(nutritionType).build();
     }
 
-    //    public PlanBase createPlanBase(Long id, User user, LocalDateTime startDate, LocalDateTime endDate) {
-    //
-    //        return PlanBase.builder()
-    //                .id(id)
-    //                .user(user)
-    //                .startDate(startDate)
-    //                .endDate(endDate)
-    //                .isActive(true)
-    //                .createdAt(LocalDateTime.now())
-    //                .deactivatedAt(null)
-    //                .build();
-    //    }
-
-    //    public WorkoutPlan createWorkoutPlan(
-    //            Long id,
-    //            User user,
-    //            LocalDateTime startDate,
-    //            LocalDateTime endDate,
-    //            Workout workout,
-    //            List<JsonDescription> jsonDescription) {
-    //        return WorkoutPlan.builder()
-    //                .id(id)
-    //                .user(user)
-    //                .startDate(startDate)
-    //                .endDate(endDate)
-    //                .workout(workout)
-    //                .jsonDescription(jsonDescription)
-    //                .isActive(true)
-    //                .createdAt(LocalDateTime.now())
-    //                .deactivatedAt(null)
-    //                .build();
-    //    }
-
     @Override
     public WorkoutPlan createWorkoutPlan(Long seed, User user, Workout workout) {
-        LocalDateTime startDate = LocalDate.of(
-                        LocalDateTime.now().getYear(),
-                        LocalDateTime.now().getMonth(),
-                        LocalDateTime.now().getDayOfMonth())
-                .atStartOfDay();
-        LocalDateTime endDate = LocalDate.of(
-                        LocalDateTime.now().getYear(),
-                        LocalDateTime.now().getMonth(),
-                        LocalDateTime.now().getDayOfMonth())
-                .atStartOfDay();
+        LocalDate startDate = LocalDate.of(
+                LocalDate.now().getYear(),
+                LocalDate.now().getMonth(),
+                LocalDate.now().getDayOfMonth());
+        LocalDate endDate = LocalDate.of(
+                LocalDate.now().getYear(),
+                LocalDate.now().getMonth(),
+                LocalDate.now().getDayOfMonth());
 
-        JsonDescription jsonDescription = shared.createJsonDescription(seed.intValue());
+        JsonDescription jsonDescription = SharedUtil.createJsonDescription(seed.intValue());
 
         return WorkoutPlan.builder()
                 .id(seed)
@@ -405,16 +368,4 @@ public class TestUtil implements Util {
                 .deactivatedAt(null)
                 .build();
     }
-
-    //    public WorkoutPlanDayId createWorkoutPlanDayId(int seed) {
-    //        return WorkoutPlanDayId.builder()
-    //                .id(Long.valueOf(seed))
-    //                .json_id(Long.valueOf(seed))
-    //                .build();
-    //    }
-    //
-    //    public String serializeJsonDescriptionList(List<JsonDescription> jsonDescriptionList)
-    //            throws JsonProcessingException {
-    //        return objectMapper.writeValueAsString(jsonDescriptionList);
-    //    }
 }

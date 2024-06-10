@@ -1,7 +1,7 @@
 package healthy.lifestyle.backend.plan.workout.model;
 
 import healthy.lifestyle.backend.activity.workout.model.Workout;
-import healthy.lifestyle.backend.calendar.model.PlanBase;
+import healthy.lifestyle.backend.plan.shared.model.PlanBase;
 import healthy.lifestyle.backend.shared.util.JsonDescription;
 import jakarta.persistence.*;
 import java.util.List;
@@ -21,7 +21,6 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Table(name = "workout_plans")
 public class WorkoutPlan extends PlanBase {
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workout_id", nullable = false)
     private Workout workout;

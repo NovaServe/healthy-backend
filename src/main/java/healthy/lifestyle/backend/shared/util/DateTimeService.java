@@ -34,19 +34,45 @@ public class DateTimeService {
 
     public ZonedDateTime getCurrentDatabaseZonedDateTime() {
         TimeZone timeZone = getDatabaseTimezone();
+        ZoneId zoneId = timeZone.toZoneId();
         Calendar calendar = new GregorianCalendar();
         calendar.setTimeZone(timeZone);
         long currentTimeMillis = calendar.getTimeInMillis();
-        ZoneId zoneId = timeZone.toZoneId();
         return ZonedDateTime.ofInstant(java.time.Instant.ofEpochMilli(currentTimeMillis), zoneId);
     }
 
-    public ZonedDateTime convertToNewZone(ZonedDateTime sourceDateTime, ZoneId targetZone) {
-        return sourceDateTime.withZoneSameInstant(targetZone);
+    public LocalDate getCurrentDBDate() {
+        return getCurrentDatabaseZonedDateTime().toLocalDate();
     }
 
     public ZonedDateTime convertToNewZone(ZonedDateTime sourceDateTime, TimeZone targetZone) {
         return sourceDateTime.withZoneSameInstant(targetZone.toZoneId());
+    }
+
+    public LocalDate convertToDBDate(LocalDate sourceDate, String userTimezoneName) {
+        ZoneId userZone = TimeZone.getTimeZone(userTimezoneName).toZoneId();
+        return sourceDate
+                .atTime(LocalTime.NOON)
+                .atZone(userZone)
+                .withZoneSameInstant(this.getDatabaseTimezone().toZoneId())
+                .toLocalDate();
+    }
+
+    public LocalDate convertToUserDate(LocalDate dbSourceDate, String userTimezoneName) {
+        ZoneId userZone = TimeZone.getTimeZone(userTimezoneName).toZoneId();
+        return dbSourceDate
+                .atTime(LocalTime.NOON)
+                .atZone(this.getDatabaseTimezone().toZoneId())
+                .withZoneSameInstant(userZone)
+                .toLocalDate();
+    }
+
+    public LocalDateTime convertToUserDateTime(LocalDateTime dbSourceDateTime, String userTimezoneName) {
+        ZoneId userZone = TimeZone.getTimeZone(userTimezoneName).toZoneId();
+        return dbSourceDateTime
+                .atZone(this.getDatabaseTimezone().toZoneId())
+                .withZoneSameInstant(userZone)
+                .toLocalDateTime();
     }
 
     public void displayTimeZone() {

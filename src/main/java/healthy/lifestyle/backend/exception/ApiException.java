@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.shared.exception;
+package healthy.lifestyle.backend.exception;
 
 import org.springframework.http.HttpStatus;
 

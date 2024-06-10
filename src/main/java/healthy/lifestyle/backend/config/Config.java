@@ -1,4 +1,4 @@
-package healthy.lifestyle.backend.shared.config;
+package healthy.lifestyle.backend.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.modelmapper.ModelMapper;
