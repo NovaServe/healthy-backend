@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
+import healthy.lifestyle.backend.activity.mental.model.MentalWorkout;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.activity.workout.dto.HttpRefTypeEnum;
@@ -244,6 +245,26 @@ public class TestUtil implements Util {
 
     private MentalType createMentalTypeBase(String mentalType, Long id) {
         return MentalType.builder().id(id).name(mentalType).build();
+    }
+
+    @Override
+    public MentalWorkout createCustomMentalWorkout(int seed, List<MentalActivity> mentalActivities, User user) {
+        MentalWorkout mentalWorkout = this.createMentalWorkoutBase(seed, true, mentalActivities, user);
+        if (user.getMentalWorkouts() == null) user.setMentalWorkouts(new HashSet<>());
+        user.getMentalWorkouts().add(mentalWorkout);
+        return mentalWorkout;
+    }
+
+    private MentalWorkout createMentalWorkoutBase(
+            int seed, boolean isCustom, List<MentalActivity> mentalActivities, User user) {
+        return MentalWorkout.builder()
+                .id((long) seed)
+                .title("MentalWorkout " + seed)
+                .description("Description " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .mentalActivities(new HashSet<>(mentalActivities))
+                .build();
     }
 
     @Override

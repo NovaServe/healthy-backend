@@ -2,7 +2,6 @@ package healthy.lifestyle.backend.activity.mental.model;
 
 import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
-import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -39,16 +38,13 @@ public class MentalWorkout {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "mental_workouts_activities",
+            name = "mental_workout_activities",
             joinColumns = @JoinColumn(name = "mental_workout_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "mental_activity_id", referencedColumnName = "id"))
     private Set<MentalActivity> mentalActivities;
 
     @OneToMany(mappedBy = "mentalWorkout")
     private Set<MentalWorkoutActivity> mentalWorkoutActivities;
-
-    @Column(name = "created_at", nullable = false, unique = false)
-    private LocalDate createdAt;
 
     public List<MentalActivity> getMentalActivitiesSortedById() {
         return this.getMentalActivities().stream()

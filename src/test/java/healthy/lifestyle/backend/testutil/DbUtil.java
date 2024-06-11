@@ -4,8 +4,10 @@ import static java.util.Objects.isNull;
 
 import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
+import healthy.lifestyle.backend.activity.mental.model.MentalWorkout;
 import healthy.lifestyle.backend.activity.mental.repository.MentalActivityRepository;
 import healthy.lifestyle.backend.activity.mental.repository.MentalTypeRepository;
+import healthy.lifestyle.backend.activity.mental.repository.MentalWorkoutRepository;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.activity.nutrition.repository.NutritionRepository;
@@ -65,6 +67,9 @@ public class DbUtil implements Util {
     NutritionTypeRepository nutritionTypeRepository;
 
     @Autowired
+    MentalWorkoutRepository mentalWorkoutRepository;
+
+    @Autowired
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -76,6 +81,7 @@ public class DbUtil implements Util {
         bodyPartRepository.deleteAll();
         mentalRepository.deleteAll();
         mentalTypeRepository.deleteAll();
+        mentalWorkoutRepository.deleteAll();
         nutritionRepository.deleteAll();
         nutritionTypeRepository.deleteAll();
         httpRefRepository.deleteAll();
@@ -345,6 +351,31 @@ public class DbUtil implements Util {
 
     public MentalActivity getMentalActivityById(long id) {
         return mentalRepository.findById(id).orElse(null);
+    }
+
+    public MentalWorkout getMentalWorkoutById(long id) {
+        return mentalWorkoutRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public MentalWorkout createCustomMentalWorkout(int seed, List<MentalActivity> mentalActivities, User user) {
+        MentalWorkout mentalWorkout = this.createMentalWorkoutBase(seed, true, mentalActivities, user);
+        if (user.getMentalWorkouts() == null) user.setMentalWorkouts(new HashSet<>());
+        user.getMentalWorkouts().add(mentalWorkout);
+        userRepository.save(user);
+        return mentalWorkout;
+    }
+
+    private MentalWorkout createMentalWorkoutBase(
+            int seed, boolean isCustom, List<MentalActivity> mentalActivities, User user) {
+        MentalWorkout mentalWorkout = MentalWorkout.builder()
+                .title("MentalWorkout " + seed)
+                .description("Description " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .mentalActivities(new HashSet<>(mentalActivities))
+                .build();
+        return mentalWorkoutRepository.save(mentalWorkout);
     }
 
     @Override

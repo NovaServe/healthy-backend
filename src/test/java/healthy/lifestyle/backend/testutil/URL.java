@@ -46,6 +46,10 @@ public class URL {
     public static final String DEFAULT_NUTRITION_ID = "/api/v1/nutritions/default/{nutrition_id}";
 
     public static final String CUSTOM_MENTAL_ID = "/api/v1/mental_activities/{mental_activity_id}";
+
     public static final String ALL_MENTALS = "/api/v1/mental_activities/all_mental_activities";
+
     public static final String CUSTOM_MENTALS = "/api/v1/mental_activities";
+
+    public static final String CUSTOM_MENTAL_WORKOUTS = "/api/v1/mental_workouts";
 }

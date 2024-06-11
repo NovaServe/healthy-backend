@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.testutil;
 
 import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
+import healthy.lifestyle.backend.activity.mental.model.MentalWorkout;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.activity.workout.model.BodyPart;
@@ -52,6 +53,8 @@ public interface Util {
     MentalType createMeditationType();
 
     MentalType createAffirmationType();
+
+    MentalWorkout createCustomMentalWorkout(int seed, List<MentalActivity> mentalActivities, User user);
 
     Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType);
 
