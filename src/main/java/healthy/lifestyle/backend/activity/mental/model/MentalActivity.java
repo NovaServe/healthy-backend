@@ -44,9 +44,6 @@ public class MentalActivity {
     @JoinColumn(name = "mental_type_id") // FOREIGN KEY(mental_type_id) REFERENCES mental_types(id)
     private MentalType type;
 
-    @OneToMany(mappedBy = "mentalActivity")
-    private Set<MentalWorkoutActivity> mentalWorkoutActivities;
-
     public List<HttpRef> getHttpRefsSortedById() {
         return this.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRef::getId))

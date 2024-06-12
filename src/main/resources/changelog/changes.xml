@@ -289,9 +289,6 @@
 
         <comment>Create mental workout activity table</comment>
         <createTable tableName="mental_workout_activities">
-            <column name="id" type="bigint" autoIncrement="true">
-                <constraints primaryKey="true"/>
-            </column>
             <column name="mental_workout_id" type="bigint">
                 <constraints nullable="false" unique="false" foreignKeyName="fk_mental_workout_id"
                              references="mental_workouts(id)"/>

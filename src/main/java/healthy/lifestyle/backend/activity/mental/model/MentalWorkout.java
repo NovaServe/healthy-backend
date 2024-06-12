@@ -43,9 +43,6 @@ public class MentalWorkout {
             inverseJoinColumns = @JoinColumn(name = "mental_activity_id", referencedColumnName = "id"))
     private Set<MentalActivity> mentalActivities;
 
-    @OneToMany(mappedBy = "mentalWorkout")
-    private Set<MentalWorkoutActivity> mentalWorkoutActivities;
-
     public List<MentalActivity> getMentalActivitiesSortedById() {
         return this.getMentalActivities().stream()
                 .sorted(Comparator.comparingLong(MentalActivity::getId))
