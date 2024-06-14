@@ -1,7 +1,8 @@
 package healthy.lifestyle.backend.testutil;
 
-import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
-import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalActivityCreateRequestDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalActivityUpdateRequestDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutCreateRequestDto;
 import healthy.lifestyle.backend.activity.workout.dto.*;
 import healthy.lifestyle.backend.user.dto.LoginRequestDto;
 import healthy.lifestyle.backend.user.dto.SignupRequestDto;
@@ -137,8 +138,9 @@ public class DtoUtil {
         return UserUpdateRequestDto.builder().build();
     }
 
-    public MentalUpdateRequestDto mentalUpdateRequestDto(int seed, List<Long> httpRefIds, Long mentalTypeId) {
-        return MentalUpdateRequestDto.builder()
+    public MentalActivityUpdateRequestDto mentalActivityUpdateRequestDto(
+            int seed, List<Long> httpRefIds, Long mentalTypeId) {
+        return MentalActivityUpdateRequestDto.builder()
                 .title("Updated Title-" + seed)
                 .description("Updated Description-" + seed)
                 .httpRefIds(httpRefIds)
@@ -146,16 +148,25 @@ public class DtoUtil {
                 .build();
     }
 
-    public MentalUpdateRequestDto mentalUpdateRequestDtoEmpty() {
-        return MentalUpdateRequestDto.builder().build();
+    public MentalActivityUpdateRequestDto mentalActivityUpdateRequestDtoEmpty() {
+        return MentalActivityUpdateRequestDto.builder().build();
     }
 
-    public MentalCreateRequestDto mentalCreateRequestDto(int seed, List<Long> httpRefIds, Long mentalTypeId) {
-        return MentalCreateRequestDto.builder()
+    public MentalActivityCreateRequestDto mentalActivityCreateRequestDto(
+            int seed, List<Long> httpRefIds, Long mentalTypeId) {
+        return MentalActivityCreateRequestDto.builder()
                 .title("Title-" + seed)
                 .description("Description-" + seed)
                 .httpRefs(httpRefIds)
                 .mentalTypeId(mentalTypeId)
+                .build();
+    }
+
+    public MentalWorkoutCreateRequestDto mentalWorkoutCreateRequestDto(int seed, List<Long> mentalActivityIds) {
+        return MentalWorkoutCreateRequestDto.builder()
+                .title("MentalWorkout " + seed)
+                .description("Description " + seed)
+                .mentalActivityIds(mentalActivityIds)
                 .build();
     }
 }

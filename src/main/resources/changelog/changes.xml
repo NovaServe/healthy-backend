@@ -214,8 +214,8 @@
         </addColumn>
     </changeSet>
 
-    <changeSet id="mental_init" author="Anastasiia Shevchuk" context="structure">
-        <comment>Create mental table</comment>
+    <changeSet id="mental_activity_init" author="Anastasiia Shevchuk" context="structure">
+        <comment>Create mental type table</comment>
         <createTable tableName="mental_types">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -225,7 +225,8 @@
             </column>
         </createTable>
 
-        <createTable tableName="mentals">
+        <comment>Create mental activity table</comment>
+        <createTable tableName="mental_activity">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
             </column>
@@ -247,23 +248,58 @@
             </column>
         </createTable>
 
-        <createTable tableName="mentals_http_refs">
+        <comment>Create mental activity httpref table</comment>
+        <createTable tableName="mental_activity_http_refs">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="mental_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_mental_id"
-                             references="mentals(id)"/>
+            <column name="mental_activity_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_mental_activity_id"
+                             references="mental_activity(id)"/>
             </column>
             <column name="http_ref_id" type="bigint">
                 <constraints nullable="false" unique="false" foreignKeyName="fk_http_ref_id"
                              references="http_refs(id)"/>
             </column>
         </createTable>
-
-        <sqlFile path="sql/default_mentals.sql" relativeToChangelogFile="true" endDelimiter=";"
+        <sqlFile path="sql/default_mental_activities.sql" relativeToChangelogFile="true" endDelimiter=";"
                  splitStatements="true"/>
     </changeSet>
+
+    <changeSet id="mental_workout_init" author="Anastasiia Shevchuk" context="structure">
+        <comment>Create mental workout table</comment>
+        <createTable tableName="mental_workouts">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="title" type="varchar">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="description" type="varchar">
+                <constraints nullable="true" unique="false"/>
+            </column>
+            <column name="is_custom" type="boolean">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="true" unique="false" foreignKeyName="fk_user_id"
+                             references="users(id)"/>
+            </column>
+        </createTable>
+
+        <comment>Create mental workout activity table</comment>
+        <createTable tableName="mental_workout_activities">
+            <column name="mental_workout_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_mental_workout_id"
+                             references="mental_workouts(id)"/>
+            </column>
+            <column name="mental_activity_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_mental_activity_id"
+                             references="mental_activity(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
 
     <changeSet id="nutritions" author="Volodymyr Bardakov" context="structure">
 

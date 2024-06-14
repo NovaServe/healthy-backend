@@ -11,7 +11,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MentalCreateRequestDto {
+public class MentalActivityCreateRequestDto {
     @TitleValidation
     private String title;
 

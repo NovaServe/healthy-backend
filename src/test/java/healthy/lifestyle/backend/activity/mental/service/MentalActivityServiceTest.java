@@ -6,10 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-import healthy.lifestyle.backend.activity.mental.dto.MentalResponseDto;
-import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.mental.dto.MentalActivityResponseDto;
+import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
-import healthy.lifestyle.backend.activity.mental.repository.MentalRepository;
+import healthy.lifestyle.backend.activity.mental.repository.MentalActivityRepository;
 import healthy.lifestyle.backend.activity.mental.repository.MentalTypeRepository;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.repository.HttpRefRepository;
@@ -35,12 +35,12 @@ import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
-class MentalServiceTest {
+class MentalActivityServiceTest {
     @InjectMocks
-    MentalServiceImpl mentalService;
+    MentalActivityServiceImpl mentalService;
 
     @Mock
-    private MentalRepository mentalRepository;
+    private MentalActivityRepository mentalRepository;
 
     @Mock
     private MentalTypeRepository mentalTypeRepository;
@@ -59,37 +59,39 @@ class MentalServiceTest {
     DtoUtil dtoUtil = new DtoUtil();
 
     @Test
-    void getMentalById_shouldReturnDefaultMentalDto_whenValidId() {
+    void getMentalActivityById_shouldReturnDefaultMentalDto_whenValidId() {
         // Given
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
         MentalType mentalType = testUtil.createAffirmationType();
-        Mental defaultMental = testUtil.createDefaultMental(1, List.of(defaultHttpRef), mentalType);
+        MentalActivity defaultMentalActivity =
+                testUtil.createDefaultMentalActivity(1, List.of(defaultHttpRef), mentalType);
 
-        when(mentalRepository.findById(defaultMental.getId())).thenReturn(Optional.of(defaultMental));
+        when(mentalRepository.findById(defaultMentalActivity.getId())).thenReturn(Optional.of(defaultMentalActivity));
 
         // When
-        MentalResponseDto mentalDtoActual = mentalService.getMentalById(defaultMental.getId(), true, null);
+        MentalActivityResponseDto mentalDtoActual =
+                mentalService.getMentalActivityById(defaultMentalActivity.getId(), true, null);
 
         // Then
-        verify((mentalRepository), times(1)).findById(defaultMental.getId());
+        verify((mentalRepository), times(1)).findById(defaultMentalActivity.getId());
         verify(userService, times(0)).getUserById(anyLong());
 
-        assertThat(defaultMental)
+        assertThat(defaultMentalActivity)
                 .usingRecursiveComparison()
-                .ignoringFields("user", "httpRefs", "type")
+                .ignoringFields("user", "httpRefs", "type", "mentalWorkoutActivities")
                 .isEqualTo(mentalDtoActual);
 
-        List<HttpRef> httpRefs_ = defaultMental.getHttpRefs().stream()
+        List<HttpRef> httpRefs_ = defaultMentalActivity.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
         assertThat(httpRefs_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                        "exercises", "user", "mentals", "nutritions", "httpRefType")
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefType")
                 .isEqualTo(mentalDtoActual.getHttpRefs());
     }
 
     @Test
-    void getMentalById_shouldThrowErrorWith404_whenNotFound() {
+    void getMentalActivityById_shouldThrowErrorWith404_whenNotFound() {
         // Given
         long nonExistingMentalId = 1000L;
         ApiException expectedException =
@@ -97,8 +99,8 @@ class MentalServiceTest {
         when(mentalRepository.findById(nonExistingMentalId)).thenReturn(Optional.empty());
 
         // When
-        ApiException actualException =
-                assertThrows(ApiException.class, () -> mentalService.getMentalById(nonExistingMentalId, true, null));
+        ApiException actualException = assertThrows(
+                ApiException.class, () -> mentalService.getMentalActivityById(nonExistingMentalId, true, null));
 
         // Then
         verify((mentalRepository), times(1)).findById(nonExistingMentalId);
@@ -109,25 +111,27 @@ class MentalServiceTest {
     }
 
     @Test
-    void getMentalByIdTest_shouldThrowErrorWith400_whenDefaultMentalRequestedInsteadOfCustom() {
+    void getMentalActivityByIdTest_shouldThrowErrorWith400_whenDefaultMentalRequestedInsteadOfCustom() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
         HttpRef customHttpRef = testUtil.createCustomHttpRef(2, user);
         MentalType mentalType = testUtil.createAffirmationType(1);
 
-        Mental customMental = testUtil.createCustomMental(1, List.of(defaultHttpRef, customHttpRef), mentalType, user);
+        MentalActivity customMentalActivity =
+                testUtil.createCustomMentalActivity(1, List.of(defaultHttpRef, customHttpRef), mentalType, user);
         ApiException expectedException = new ApiException(
                 ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT, null, HttpStatus.BAD_REQUEST);
 
-        when(mentalRepository.findById(customMental.getId())).thenReturn(Optional.of(customMental));
+        when(mentalRepository.findById(customMentalActivity.getId())).thenReturn(Optional.of(customMentalActivity));
 
         // When
-        ApiException actualException =
-                assertThrows(ApiException.class, () -> mentalService.getMentalById(customMental.getId(), true, null));
+        ApiException actualException = assertThrows(
+                ApiException.class,
+                () -> mentalService.getMentalActivityById(customMentalActivity.getId(), true, null));
 
         // Then
-        verify((mentalRepository), times(1)).findById(customMental.getId());
+        verify((mentalRepository), times(1)).findById(customMentalActivity.getId());
         verify(userService, times(0)).getUserById(anyLong());
 
         assertEquals(expectedException.getMessage(), actualException.getMessage());
@@ -135,28 +139,30 @@ class MentalServiceTest {
     }
 
     @Test
-    void getMentalById_shouldThrowErrorWith400_whenMentalUserMismatch() {
+    void getMentalActivityById_shouldThrowErrorWith400_whenMentalUserMismatch() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
         HttpRef customHttpRef = testUtil.createCustomHttpRef(2, user);
         MentalType mentalType = testUtil.createAffirmationType(1);
-        Mental customMental = testUtil.createCustomMental(1, List.of(defaultHttpRef, customHttpRef), mentalType, user);
+        MentalActivity customMentalActivity =
+                testUtil.createCustomMentalActivity(1, List.of(defaultHttpRef, customHttpRef), mentalType, user);
 
         User user2 = testUtil.createUser(2);
 
-        ApiException expectedException =
-                new ApiException(ErrorMessage.USER_MENTAL_MISMATCH, customMental.getId(), HttpStatus.BAD_REQUEST);
+        ApiException expectedException = new ApiException(
+                ErrorMessage.USER_MENTAL_MISMATCH, customMentalActivity.getId(), HttpStatus.BAD_REQUEST);
 
-        when(mentalRepository.findById(customMental.getId())).thenReturn(Optional.of(customMental));
+        when(mentalRepository.findById(customMentalActivity.getId())).thenReturn(Optional.of(customMentalActivity));
         when(userService.getUserById(user2.getId())).thenReturn(user2);
 
         // When
         ApiException actualException = assertThrows(
-                ApiException.class, () -> mentalService.getMentalById(customMental.getId(), false, user2.getId()));
+                ApiException.class,
+                () -> mentalService.getMentalActivityById(customMentalActivity.getId(), false, user2.getId()));
 
         // Then
-        verify((mentalRepository), times(1)).findById(customMental.getId());
+        verify((mentalRepository), times(1)).findById(customMentalActivity.getId());
         verify(userService, times(1)).getUserById(user2.getId());
 
         assertEquals(expectedException.getMessageWithResourceId(), actualException.getMessageWithResourceId());
@@ -164,40 +170,42 @@ class MentalServiceTest {
     }
 
     @Test
-    void getMentalById_shouldReturnCustomMentalDto_whenValidId() {
+    void getMentalActivityById_shouldReturnCustomMentalDto_whenValidId() {
         // Given
         User user = testUtil.createUser(1);
         HttpRef defaultHttpRef = testUtil.createDefaultHttpRef(1);
         HttpRef customHttpRef = testUtil.createCustomHttpRef(2, user);
         MentalType mentalType = testUtil.createAffirmationType(1);
-        Mental customMental = testUtil.createCustomMental(1, List.of(defaultHttpRef, customHttpRef), mentalType, user);
+        MentalActivity customMentalActivity =
+                testUtil.createCustomMentalActivity(1, List.of(defaultHttpRef, customHttpRef), mentalType, user);
 
-        when(mentalRepository.findById(customMental.getId())).thenReturn(Optional.of(customMental));
+        when(mentalRepository.findById(customMentalActivity.getId())).thenReturn(Optional.of(customMentalActivity));
         when(userService.getUserById(user.getId())).thenReturn(user);
 
         // When
-        MentalResponseDto mentalDtoActual = mentalService.getMentalById(customMental.getId(), false, user.getId());
+        MentalActivityResponseDto mentalDtoActual =
+                mentalService.getMentalActivityById(customMentalActivity.getId(), false, user.getId());
 
         // Then
-        verify((mentalRepository), times(1)).findById(customMental.getId());
+        verify((mentalRepository), times(1)).findById(customMentalActivity.getId());
         verify(userService, times(1)).getUserById(user.getId());
 
-        Assertions.assertThat(customMental)
+        Assertions.assertThat(customMentalActivity)
                 .usingRecursiveComparison()
-                .ignoringFields("user", "httpRefs", "type")
+                .ignoringFields("user", "httpRefs", "type", "mentalWorkoutActivities")
                 .isEqualTo(mentalDtoActual);
 
-        List<HttpRef> httpRefs_ = customMental.getHttpRefs().stream()
+        List<HttpRef> httpRefs_ = customMentalActivity.getHttpRefs().stream()
                 .sorted(Comparator.comparingLong(HttpRef::getId))
                 .toList();
         assertThat(httpRefs_)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                        "exercises", "user", "mentals", "nutritions", "httpRefType")
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefType")
                 .isEqualTo(mentalDtoActual.getHttpRefs());
     }
 
     @Test
-    void getMentals_shouldReturnPageMentalsDto() {
+    void getMentalActivities_shouldReturnPageMentalsDto() {
         int currentPageNumber = 0;
         int itemsPerPage = 2;
         String orderBy = "ASC";
@@ -208,32 +216,33 @@ class MentalServiceTest {
         HttpRef defaultHttpRef2 = testUtil.createDefaultHttpRef(2);
         MentalType mentalType1 = testUtil.createAffirmationType();
         MentalType mentalType2 = testUtil.createMeditationType();
-        Mental defaultMental1 = testUtil.createDefaultMental(1, List.of(defaultHttpRef1), mentalType1);
-        Mental defaultMental2 = testUtil.createDefaultMental(2, List.of(defaultHttpRef2), mentalType1);
-        Mental defaultMental3 = testUtil.createDefaultMental(3, List.of(defaultHttpRef2), mentalType2);
-        Mental defaultMental4 = testUtil.createDefaultMental(4, List.of(defaultHttpRef1), mentalType2);
+        MentalActivity defaultMental1 = testUtil.createDefaultMentalActivity(1, List.of(defaultHttpRef1), mentalType1);
+        MentalActivity defaultMental2 = testUtil.createDefaultMentalActivity(2, List.of(defaultHttpRef2), mentalType1);
+        MentalActivity defaultMental3 = testUtil.createDefaultMentalActivity(3, List.of(defaultHttpRef2), mentalType2);
+        MentalActivity defaultMental4 = testUtil.createDefaultMentalActivity(4, List.of(defaultHttpRef1), mentalType2);
 
-        List<Mental> filteredMentalList = Stream.of(defaultMental1, defaultMental2, defaultMental3, defaultMental4)
-                .sorted(Comparator.comparingLong(Mental::getId))
+        List<MentalActivity> filteredMentalList = Stream.of(
+                        defaultMental1, defaultMental2, defaultMental3, defaultMental4)
+                .sorted(Comparator.comparingLong(MentalActivity::getId))
                 .toList();
         Pageable pageable =
                 PageRequest.of(currentPageNumber, itemsPerPage, Sort.by(Sort.Direction.fromString(orderBy), sortBy));
 
-        Page<Mental> mockMentalPage = new PageImpl<>(filteredMentalList, pageable, filteredMentalList.size());
+        Page<MentalActivity> mockMentalPage = new PageImpl<>(filteredMentalList, pageable, filteredMentalList.size());
 
-        when(mentalRepository.findDefaultAndCustomMentals(user.getId(), pageable))
+        when(mentalRepository.findDefaultAndCustomMentalActivity(user.getId(), pageable))
                 .thenReturn(mockMentalPage);
 
         // When
-        Page<MentalResponseDto> dtoPage =
-                mentalService.getMentals(user.getId(), sortBy, orderBy, currentPageNumber, itemsPerPage);
+        Page<MentalActivityResponseDto> dtoPage =
+                mentalService.getMentalActivities(user.getId(), sortBy, orderBy, currentPageNumber, itemsPerPage);
 
         // Then
-        verify((mentalRepository), times(1)).findDefaultAndCustomMentals(user.getId(), pageable);
+        verify((mentalRepository), times(1)).findDefaultAndCustomMentalActivity(user.getId(), pageable);
 
         assertThat(mockMentalPage)
                 .usingRecursiveComparison()
-                .ignoringFields("user", "httpRefs", "type")
+                .ignoringFields("user", "httpRefs", "type", "mentalWorkoutActivities")
                 .isEqualTo(dtoPage);
 
         assertEquals(filteredMentalList.size(), dtoPage.getTotalElements());

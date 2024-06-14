@@ -14,8 +14,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "mentals")
-public class Mental {
+@Table(name = "mental_activity")
+public class MentalActivity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,8 +35,8 @@ public class Mental {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "mentals_http_refs",
-            joinColumns = @JoinColumn(name = "mental_id", referencedColumnName = "id"),
+            name = "mental_activity_http_refs",
+            joinColumns = @JoinColumn(name = "mental_activity_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "http_ref_id", referencedColumnName = "id"))
     private Set<HttpRef> httpRefs;
 

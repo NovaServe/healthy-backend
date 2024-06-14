@@ -141,7 +141,7 @@ class ExerciseControllerTest {
 
         assertThat(responseDto.getHttpRefs())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                        "exercises", "user", "mentals", "nutritions", "httpRefTypeName")
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefTypeName")
                 .isEqualTo(List.of(defaultHttpRef, customHttpRef));
 
         // Db
@@ -164,7 +164,7 @@ class ExerciseControllerTest {
 
         assertThat(createdExercise.getHttpRefsSortedById())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
-                        "exercises", "user", "mentals", "nutritions", "httpRefType")
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefType")
                 .isEqualTo(List.of(defaultHttpRef, customHttpRef));
     }
 

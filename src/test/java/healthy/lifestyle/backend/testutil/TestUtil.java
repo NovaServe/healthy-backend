@@ -2,8 +2,9 @@ package healthy.lifestyle.backend.testutil;
 
 import static java.util.Objects.isNull;
 
-import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
+import healthy.lifestyle.backend.activity.mental.model.MentalWorkout;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.activity.workout.dto.HttpRefTypeEnum;
@@ -198,21 +199,22 @@ public class TestUtil implements Util {
     }
 
     @Override
-    public Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType) {
-        return this.createMentalBase(seed, false, httpRefs, null, mentalType);
+    public MentalActivity createDefaultMentalActivity(int seed, List<HttpRef> httpRefs, MentalType mentalType) {
+        return this.createMentalActivityBase(seed, false, httpRefs, null, mentalType);
     }
 
     @Override
-    public Mental createCustomMental(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user) {
-        Mental mental = this.createMentalBase(seed, true, httpRefs, user, mentalType);
-        if (user.getMentals() == null) user.setMentals(new HashSet<>());
-        user.getMentals().add(mental);
+    public MentalActivity createCustomMentalActivity(
+            int seed, List<HttpRef> httpRefs, MentalType mentalType, User user) {
+        MentalActivity mental = this.createMentalActivityBase(seed, true, httpRefs, user, mentalType);
+        if (user.getMentalActivities() == null) user.setMentalActivities(new HashSet<>());
+        user.getMentalActivities().add(mental);
         return mental;
     }
 
-    public Mental createMentalBase(
+    public MentalActivity createMentalActivityBase(
             int seed, boolean isCustom, List<HttpRef> httpRefs, User user, MentalType mentalType) {
-        return Mental.builder()
+        return MentalActivity.builder()
                 .id((long) seed)
                 .title("Mental " + seed)
                 .description("Description " + seed)
@@ -243,6 +245,26 @@ public class TestUtil implements Util {
 
     private MentalType createMentalTypeBase(String mentalType, Long id) {
         return MentalType.builder().id(id).name(mentalType).build();
+    }
+
+    @Override
+    public MentalWorkout createCustomMentalWorkout(int seed, List<MentalActivity> mentalActivities, User user) {
+        MentalWorkout mentalWorkout = this.createMentalWorkoutBase(seed, true, mentalActivities, user);
+        if (user.getMentalWorkouts() == null) user.setMentalWorkouts(new HashSet<>());
+        user.getMentalWorkouts().add(mentalWorkout);
+        return mentalWorkout;
+    }
+
+    private MentalWorkout createMentalWorkoutBase(
+            int seed, boolean isCustom, List<MentalActivity> mentalActivities, User user) {
+        return MentalWorkout.builder()
+                .id((long) seed)
+                .title("MentalWorkout " + seed)
+                .description("Description " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .mentalActivities(new HashSet<>(mentalActivities))
+                .build();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package healthy.lifestyle.backend.user.service;
 
-import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
+import healthy.lifestyle.backend.activity.mental.model.MentalWorkout;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.activity.workout.service.RemovalService;
@@ -210,22 +211,30 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public void deleteMentalFromUser(long userId, Mental mental) {
+    public void deleteMentalActivitiesFromUser(long userId, MentalActivity mental) {
         User user = userRepository
                 .findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
-        if (user.getMentals() != null) user.getMentals().remove(mental);
+        if (user.getMentalActivities() != null) user.getMentalActivities().remove(mental);
         userRepository.save(user);
     }
 
     @Override
     @Transactional
-    public void addMentalToUser(long userId, Mental mental) {
+    public void addMentalActivitiesToUser(long userId, MentalActivity mental) {
         User user = userRepository
                 .findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorMessage.USER_NOT_FOUND, userId, HttpStatus.NOT_FOUND));
-        if (user.getMentals() == null) user.setMentals(new HashSet<>());
-        user.getMentals().add(mental);
+        if (user.getMentalActivities() == null) user.setMentalActivities(new HashSet<>());
+        user.getMentalActivities().add(mental);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void addMentalWorkoutToUser(User user, MentalWorkout mentalWorkout) {
+        if (user.getMentalWorkouts() == null) user.setMentalWorkouts(new HashSet<>());
+        user.getMentalWorkouts().add(mentalWorkout);
         userRepository.save(user);
     }
 }
