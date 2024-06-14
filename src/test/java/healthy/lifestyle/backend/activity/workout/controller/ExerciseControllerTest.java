@@ -141,7 +141,8 @@ class ExerciseControllerTest {
                 .isEqualTo(List.of(bodyPart1, bodyPart2));
 
         assertThat(responseDto.getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefTypeName")
                 .isEqualTo(List.of(defaultHttpRef, customHttpRef));
 
         // Db
@@ -163,7 +164,8 @@ class ExerciseControllerTest {
                 .isEqualTo(List.of(bodyPart1, bodyPart2));
 
         assertThat(createdExercise.getHttpRefsSortedById())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefType")
                 .isEqualTo(List.of(defaultHttpRef, customHttpRef));
     }
 
@@ -328,7 +330,7 @@ class ExerciseControllerTest {
                 .isEqualTo(defaultExercise1.getBodyPartsSortedById());
 
         assertThat(responseDto.getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "httpRefTypeName")
                 .isEqualTo(defaultExercise1.getHttpRefsSortedById());
     }
 
@@ -403,7 +405,7 @@ class ExerciseControllerTest {
                 .isEqualTo(customExercise1.getBodyPartsSortedById());
 
         assertThat(responseDto.getHttpRefs())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "httpRefTypeName")
                 .isEqualTo(customExercise1.getHttpRefsSortedById());
     }
 
@@ -1051,7 +1053,10 @@ class ExerciseControllerTest {
         else assertEquals(initialNeedsEquipment, responseDto.isNeedsEquipment());
 
         assertThat(responseDto.getBodyParts()).usingRecursiveComparison().isEqualTo(expectedBodyParts);
-        assertThat(responseDto.getHttpRefs()).usingRecursiveComparison().isEqualTo(expectedHttpRefs);
+        assertThat(responseDto.getHttpRefs())
+                .usingRecursiveComparison()
+                .ignoringFields("httpRefTypeName")
+                .isEqualTo(expectedHttpRefs);
     }
 
     static Stream<Arguments> updateCustomExerciseValidFilters() {

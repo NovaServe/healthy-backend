@@ -4,7 +4,7 @@ INSERT INTO mental_types(id, name) VALUES
 
 ALTER sequence mental_types_id_seq restart with 3;
 
-INSERT INTO mentals(id, title, description, is_custom, mental_type_id) VALUES
+INSERT INTO mental_activity(id, title, description, is_custom, mental_type_id) VALUES
 
 (1, 'I am the architect of my destiny', 'Empower yourself with this affirmation. Take control of your life and create the future you desire.', false, 2),
 (2, 'I embrace my uniqueness and individuality.', 'Celebrate your uniqueness and authenticity with this affirmation. Embrace your quirks and differences.', false, 2),
@@ -17,4 +17,4 @@ INSERT INTO mentals(id, title, description, is_custom, mental_type_id) VALUES
 (9, 'Chakra Balancing Meditation: Energy Alignment', 'Balance your chakras and harmonize your energy centers with this transformative meditation. Enhance vitality and well-being.', false, 1),
 (10, 'Sleep Meditation: Tranquil Slumber', 'Prepare your mind and body for restful sleep with this calming meditation. Drift into a state of deep relaxation and ease.', false, 1);
 
-ALTER sequence mentals_id_seq restart with 11;
+ALTER sequence mental_activity_id_seq restart with 11;

@@ -2,10 +2,12 @@ package healthy.lifestyle.backend.testutil;
 
 import static java.util.Objects.isNull;
 
-import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
-import healthy.lifestyle.backend.activity.mental.repository.MentalRepository;
+import healthy.lifestyle.backend.activity.mental.model.MentalWorkout;
+import healthy.lifestyle.backend.activity.mental.repository.MentalActivityRepository;
 import healthy.lifestyle.backend.activity.mental.repository.MentalTypeRepository;
+import healthy.lifestyle.backend.activity.mental.repository.MentalWorkoutRepository;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.activity.nutrition.repository.NutritionRepository;
@@ -21,6 +23,9 @@ import healthy.lifestyle.backend.activity.workout.repository.WorkoutRepository;
 import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutPlanRepository;
 import healthy.lifestyle.backend.shared.util.JsonDescription;
+import healthy.lifestyle.backend.activity.workout.dto.HttpRefTypeEnum;
+import healthy.lifestyle.backend.activity.workout.model.*;
+import healthy.lifestyle.backend.activity.workout.repository.*;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
 import healthy.lifestyle.backend.user.model.Timezone;
@@ -47,6 +52,9 @@ public class DbUtil implements Util {
     HttpRefRepository httpRefRepository;
 
     @Autowired
+    HttpRefTypeRepository httpRefTypeRepository;
+
+    @Autowired
     ExerciseRepository exerciseRepository;
 
     @Autowired
@@ -68,7 +76,7 @@ public class DbUtil implements Util {
     WorkoutPlanRepository workoutPlanRepository;
 
     @Autowired
-    MentalRepository mentalRepository;
+    MentalActivityRepository mentalRepository;
 
     @Autowired
     MentalTypeRepository mentalTypeRepository;
@@ -78,6 +86,9 @@ public class DbUtil implements Util {
 
     @Autowired
     NutritionTypeRepository nutritionTypeRepository;
+
+    @Autowired
+    MentalWorkoutRepository mentalWorkoutRepository;
 
     @Autowired
     PasswordEncoder passwordEncoder() {
@@ -94,9 +105,11 @@ public class DbUtil implements Util {
         bodyPartRepository.deleteAll();
         mentalRepository.deleteAll();
         mentalTypeRepository.deleteAll();
+        mentalWorkoutRepository.deleteAll();
         nutritionRepository.deleteAll();
         nutritionTypeRepository.deleteAll();
         httpRefRepository.deleteAll();
+        httpRefTypeRepository.deleteAll();
         userRepository.deleteAll();
         countryRepository.deleteAll();
         timezoneRepository.deleteAll();
@@ -110,22 +123,32 @@ public class DbUtil implements Util {
 
     @Override
     public HttpRef createDefaultHttpRef(int seed) {
-        return this.createHttpRefBase(seed, false, null);
+        return this.createHttpRefBase(seed, false, HttpRefTypeEnum.YOUTUBE, null);
     }
 
     @Override
     public HttpRef createCustomHttpRef(int seed, User user) {
-        HttpRef httpRef = this.createHttpRefBase(seed, true, user);
+        HttpRef httpRef = this.createHttpRefBase(seed, true, HttpRefTypeEnum.YOUTUBE, user);
         if (user.getHttpRefs() == null) user.setHttpRefs(new HashSet<>());
         user.getHttpRefs().add(httpRef);
         userRepository.save(user);
         return httpRef;
     }
 
-    private HttpRef createHttpRefBase(int seed, boolean isCustom, User user) {
+    private HttpRef createHttpRefBase(int seed, boolean isCustom, HttpRefTypeEnum httpRefTypeEnum, User user) {
+        Optional<HttpRefType> httpRefTypeOptional = httpRefTypeRepository.findByName(httpRefTypeEnum.name());
+        HttpRefType httpRefType;
+        if (httpRefTypeOptional.isPresent()) {
+            httpRefType = httpRefTypeOptional.get();
+        } else {
+            HttpRefType httpRefTypeNew =
+                    HttpRefType.builder().name(httpRefTypeEnum.name()).build();
+            httpRefType = httpRefTypeRepository.save(httpRefTypeNew);
+        }
         return httpRefRepository.save(HttpRef.builder()
                 .name("Media Name " + seed)
                 .ref("https://ref " + seed + ".com")
+                .httpRefType(httpRefType)
                 .description("Description " + seed)
                 .isCustom(isCustom)
                 .user(user)
@@ -356,22 +379,23 @@ public class DbUtil implements Util {
     }
 
     @Override
-    public Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType) {
-        return this.createMentalBase(seed, false, httpRefs, null, mentalType);
+    public MentalActivity createDefaultMentalActivity(int seed, List<HttpRef> httpRefs, MentalType mentalType) {
+        return this.createMentalActivityBase(seed, false, httpRefs, null, mentalType);
     }
 
     @Override
-    public Mental createCustomMental(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user) {
-        Mental mental = this.createMentalBase(seed, true, httpRefs, user, mentalType);
-        if (user.getMentals() == null) user.setMentals(new HashSet<>());
-        user.getMentals().add(mental);
+    public MentalActivity createCustomMentalActivity(
+            int seed, List<HttpRef> httpRefs, MentalType mentalType, User user) {
+        MentalActivity mental = this.createMentalActivityBase(seed, true, httpRefs, user, mentalType);
+        if (user.getMentalActivities() == null) user.setMentalActivities(new HashSet<>());
+        user.getMentalActivities().add(mental);
         userRepository.save(user);
         return mental;
     }
 
-    private Mental createMentalBase(
+    private MentalActivity createMentalActivityBase(
             int seed, boolean isCustom, List<HttpRef> httpRefs, User user, MentalType mentalType) {
-        Mental mental = Mental.builder()
+        MentalActivity mental = MentalActivity.builder()
                 .title("Mental " + seed)
                 .description("Desc " + seed)
                 .isCustom(isCustom)
@@ -396,8 +420,33 @@ public class DbUtil implements Util {
         return mentalTypeRepository.save(MentalType.builder().name(mentalType).build());
     }
 
-    public Mental getMentalById(long id) {
+    public MentalActivity getMentalActivityById(long id) {
         return mentalRepository.findById(id).orElse(null);
+    }
+
+    public MentalWorkout getMentalWorkoutById(long id) {
+        return mentalWorkoutRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public MentalWorkout createCustomMentalWorkout(int seed, List<MentalActivity> mentalActivities, User user) {
+        MentalWorkout mentalWorkout = this.createMentalWorkoutBase(seed, true, mentalActivities, user);
+        if (user.getMentalWorkouts() == null) user.setMentalWorkouts(new HashSet<>());
+        user.getMentalWorkouts().add(mentalWorkout);
+        userRepository.save(user);
+        return mentalWorkout;
+    }
+
+    private MentalWorkout createMentalWorkoutBase(
+            int seed, boolean isCustom, List<MentalActivity> mentalActivities, User user) {
+        MentalWorkout mentalWorkout = MentalWorkout.builder()
+                .title("MentalWorkout " + seed)
+                .description("Description " + seed)
+                .isCustom(isCustom)
+                .user(user)
+                .mentalActivities(new HashSet<>(mentalActivities))
+                .build();
+        return mentalWorkoutRepository.save(mentalWorkout);
     }
 
     @Override

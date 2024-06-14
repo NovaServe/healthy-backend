@@ -49,9 +49,9 @@ public class ApiUrl {
     @Value("${api.basePath}/${api.version}/nutritions/default/{nutrition_id}")
     private String defaultNutritionDetailsUrl;
 
-    @Value("${api.basePath}/${api.version}/mentals/default/{mental_id}")
-    private String defaultMentalDetailsUrl;
+    @Value("${api.basePath}/${api.version}/mental_activities/default/{mental_activity_id}")
+    private String defaultMentalActivityDetailsUrl;
 
-    @Value("${api.basePath}/${api.version}/mentals/all_mentals")
-    private String allMentalsUrl;
+    @Value("${api.basePath}/${api.version}/mental_activities/all_mental_activities")
+    private String allMentalActivitiesUrl;
 }

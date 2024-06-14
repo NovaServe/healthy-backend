@@ -96,7 +96,8 @@ class HttpRefControllerTest {
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
     void createCustomHttpRef_shouldReturnCreatedDtoWith201_whenValidFields() throws Exception {
         // Given
-        User user = dbUtil.createUser(1);
+        dbUtil.createUser(1);
+        dbUtil.createDefaultHttpRef(1);
 
         HttpRefCreateRequestDto createHttpRequestDto = dtoUtil.httpRefCreateRequestDto(1);
 
@@ -111,6 +112,7 @@ class HttpRefControllerTest {
                 .andExpect(jsonPath("$.name", is(createHttpRequestDto.getName())))
                 .andExpect(jsonPath("$.description", is(createHttpRequestDto.getDescription())))
                 .andExpect(jsonPath("$.ref", is(createHttpRequestDto.getRef())))
+                .andExpect(jsonPath("$.httpRefTypeName", is(createHttpRequestDto.getHttpRefType())))
                 .andExpect(jsonPath("$.isCustom", is(true)))
                 .andDo(print());
     }
@@ -121,7 +123,8 @@ class HttpRefControllerTest {
     void createCustomHttpRef_shouldReturnValidationMessageWith400_whenInvalidFields(
             String name, String description, String ref, String fieldName, String validationMessage) throws Exception {
         // Given
-        User user = dbUtil.createUser(1);
+        dbUtil.createUser(1);
+        dbUtil.createDefaultHttpRef(1);
         HttpRefCreateRequestDto requestDto = dtoUtil.httpRefCreateRequestDtoEmpty();
         if (name != null) requestDto.setName(name);
         if (description != null) requestDto.setDescription(description);
@@ -210,7 +213,7 @@ class HttpRefControllerTest {
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
     void getCustomHttpRefById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
         // Given
-        User user = dbUtil.createUser(1);
+        dbUtil.createUser(1);
         long nonExistentHttpRefId = 1000L;
         ApiException expectedException =
                 new ApiException(ErrorMessage.HTTP_REF_NOT_FOUND, nonExistentHttpRefId, HttpStatus.NOT_FOUND);
@@ -228,7 +231,7 @@ class HttpRefControllerTest {
     @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
     void getCustomHttpRefById_shouldReturnErrorMessageWith400_whenDefaultHttpRefRequested() throws Exception {
         // Given
-        User user = dbUtil.createUser(1);
+        dbUtil.createUser(1);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
         ApiException expectedException = new ApiException(
                 ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
@@ -374,34 +377,34 @@ class HttpRefControllerTest {
         if (sortDirection.equals("ASC")) {
             assertThat(httpRefResponseDtoList.get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef1);
 
             assertThat(httpRefResponseDtoList.get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefResponseDtoList.get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef3);
         }
 
         if (sortDirection.equals("DESC")) {
             assertThat(httpRefResponseDtoList.get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef3);
 
             assertThat(httpRefResponseDtoList.get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefResponseDtoList.get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef1);
         }
     }
@@ -569,68 +572,68 @@ class HttpRefControllerTest {
         if (sortDirection.equals("ASC") && !isCustom) {
             assertThat(httpRefResponseDtoList.get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef1);
 
             assertThat(httpRefResponseDtoList.get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefResponseDtoList.get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef3);
         }
 
         if (sortDirection.equals("DESC") && !isCustom) {
             assertThat(httpRefResponseDtoList.get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef3);
 
             assertThat(httpRefResponseDtoList.get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefResponseDtoList.get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef1);
         }
 
         if (sortDirection.equals("ASC") && isCustom) {
             assertThat(httpRefResponseDtoList.get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef1);
 
             assertThat(httpRefResponseDtoList.get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef2);
 
             assertThat(httpRefResponseDtoList.get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef3);
         }
 
         if (sortDirection.equals("DESC") && isCustom) {
             assertThat(httpRefResponseDtoList.get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef3);
 
             assertThat(httpRefResponseDtoList.get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef2);
 
             assertThat(httpRefResponseDtoList.get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef1);
         }
     }
@@ -798,44 +801,44 @@ class HttpRefControllerTest {
         if (sortDirection.equals("ASC")) {
             assertThat(httpRefResponseDtoList.get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef1);
 
             assertThat(httpRefResponseDtoList.get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefResponseDtoList.get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef1);
 
             assertThat(httpRefResponseDtoList.get(3))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef2);
         }
 
         if (sortDirection.equals("DESC")) {
             assertThat(httpRefResponseDtoList.get(0))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef2);
 
             assertThat(httpRefResponseDtoList.get(1))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(customHttpRef1);
 
             assertThat(httpRefResponseDtoList.get(2))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef2);
 
             assertThat(httpRefResponseDtoList.get(3))
                     .usingRecursiveComparison()
-                    .ignoringFields("exercises", "user")
+                    .ignoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(defaultHttpRef1);
         }
     }

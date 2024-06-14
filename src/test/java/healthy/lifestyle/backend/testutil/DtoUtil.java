@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalActivityCreateRequestDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalActivityUpdateRequestDto;
+import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutCreateRequestDto;
 import healthy.lifestyle.backend.activity.workout.dto.*;
 import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
 import healthy.lifestyle.backend.shared.util.JsonDescription;
@@ -22,6 +25,7 @@ public class DtoUtil {
                 .name("HttpRef " + seed)
                 .description("Description " + seed)
                 .ref("https://ref-" + seed + ".com")
+                .httpRefType(HttpRefTypeEnum.YOUTUBE.name())
                 .build();
     }
 
@@ -33,6 +37,7 @@ public class DtoUtil {
         return HttpRefUpdateRequestDto.builder()
                 .name("Update Name " + seed)
                 .ref("https://update-ref-" + seed + ".com")
+                .httpRefType(HttpRefTypeEnum.YOUTUBE.name())
                 .description("Update Description " + seed)
                 .build();
     }
@@ -143,8 +148,9 @@ public class DtoUtil {
         return UserUpdateRequestDto.builder().build();
     }
 
-    public MentalUpdateRequestDto mentalUpdateRequestDto(int seed, List<Long> httpRefIds, Long mentalTypeId) {
-        return MentalUpdateRequestDto.builder()
+    public MentalActivityUpdateRequestDto mentalActivityUpdateRequestDto(
+            int seed, List<Long> httpRefIds, Long mentalTypeId) {
+        return MentalActivityUpdateRequestDto.builder()
                 .title("Updated Title-" + seed)
                 .description("Updated Description-" + seed)
                 .httpRefIds(httpRefIds)
@@ -152,16 +158,25 @@ public class DtoUtil {
                 .build();
     }
 
-    public MentalUpdateRequestDto mentalUpdateRequestDtoEmpty() {
-        return MentalUpdateRequestDto.builder().build();
+    public MentalActivityUpdateRequestDto mentalActivityUpdateRequestDtoEmpty() {
+        return MentalActivityUpdateRequestDto.builder().build();
     }
 
-    public MentalCreateRequestDto mentalCreateRequestDto(int seed, List<Long> httpRefIds, Long mentalTypeId) {
-        return MentalCreateRequestDto.builder()
+    public MentalActivityCreateRequestDto mentalActivityCreateRequestDto(
+            int seed, List<Long> httpRefIds, Long mentalTypeId) {
+        return MentalActivityCreateRequestDto.builder()
                 .title("Title-" + seed)
                 .description("Description-" + seed)
                 .httpRefs(httpRefIds)
                 .mentalTypeId(mentalTypeId)
+                .build();
+    }
+
+    public MentalWorkoutCreateRequestDto mentalWorkoutCreateRequestDto(int seed, List<Long> mentalActivityIds) {
+        return MentalWorkoutCreateRequestDto.builder()
+                .title("MentalWorkout " + seed)
+                .description("Description " + seed)
+                .mentalActivityIds(mentalActivityIds)
                 .build();
     }
 

@@ -1,8 +1,9 @@
-package healthy.lifestyle.backend.activity.workout.dto;
+package healthy.lifestyle.backend.activity.mental.dto;
 
 import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
+import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
-import healthy.lifestyle.backend.shared.validation.annotation.WebLinkOptionalValidation;
+import java.util.List;
 import lombok.*;
 
 @Getter
@@ -10,15 +11,15 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class HttpRefUpdateRequestDto {
+public class MentalActivityUpdateRequestDto {
     @TitleOptionalValidation
-    private String name;
+    private String title;
 
     @DescriptionOptionalValidation
     private String description;
 
-    @WebLinkOptionalValidation
-    private String ref;
+    private List<Long> httpRefIds;
 
-    String httpRefType;
+    @IdValidation
+    private Long mentalTypeId;
 }

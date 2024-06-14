@@ -81,7 +81,8 @@ public class NutritionServiceTest {
                 .toList();
 
         assertThat(httpRefs)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "mentals", "nutritions")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "exercises", "user", "mentalActivities", "nutritions", "httpRefType")
                 .isEqualTo(nutritionDtoActual.getHttpRefs());
     }
 

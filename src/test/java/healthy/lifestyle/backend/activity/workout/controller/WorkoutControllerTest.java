@@ -788,7 +788,7 @@ class WorkoutControllerTest {
                     .isEqualTo(workout.getExercisesSortedById().get(i).getBodyPartsSortedById());
 
             assertThat(exerciseResponseDto.getHttpRefs())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(workout.getExercisesSortedById().get(i).getHttpRefsSortedById());
         }
     }
@@ -815,7 +815,7 @@ class WorkoutControllerTest {
                     .isEqualTo(workoutExercises.get(i).getBodyPartsSortedById());
 
             assertThat(exerciseResponseDto.getHttpRefs())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exercises", "user", "httpRefTypeName")
                     .isEqualTo(workoutExercises.get(i).getHttpRefsSortedById());
         }
     }

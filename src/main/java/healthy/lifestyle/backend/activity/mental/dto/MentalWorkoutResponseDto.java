@@ -1,7 +1,6 @@
 package healthy.lifestyle.backend.activity.mental.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import healthy.lifestyle.backend.activity.workout.dto.HttpRefResponseDto;
 import java.util.List;
 import lombok.*;
 
@@ -10,7 +9,8 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MentalResponseDto {
+public class MentalWorkoutResponseDto {
+
     private Long id;
 
     private String title;
@@ -20,7 +20,5 @@ public class MentalResponseDto {
     @JsonProperty(value = "isCustom")
     private boolean isCustom;
 
-    private List<HttpRefResponseDto> httpRefs;
-
-    private Long mentalTypeId;
+    private List<MentalActivityResponseDto> mentalActivities;
 }

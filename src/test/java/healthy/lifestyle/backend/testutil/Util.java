@@ -1,7 +1,8 @@
 package healthy.lifestyle.backend.testutil;
 
-import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
+import healthy.lifestyle.backend.activity.mental.model.MentalWorkout;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.activity.workout.model.BodyPart;
@@ -54,12 +55,15 @@ public interface Util {
     Timezone createTimezone(int seed);
 
     Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType);
+    MentalActivity createDefaultMentalActivity(int seed, List<HttpRef> httpRefs, MentalType mentalType);
 
-    Mental createCustomMental(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user);
+    MentalActivity createCustomMentalActivity(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user);
 
     MentalType createMeditationType();
 
     MentalType createAffirmationType();
+
+    MentalWorkout createCustomMentalWorkout(int seed, List<MentalActivity> mentalActivities, User user);
 
     Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType);
 

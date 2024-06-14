@@ -1,6 +1,6 @@
 package healthy.lifestyle.backend.activity.workout.model;
 
-import healthy.lifestyle.backend.activity.mental.model.Mental;
+import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.user.model.User;
 import jakarta.persistence.*;
@@ -35,6 +35,10 @@ public class HttpRef {
     @Column(name = "is_custom", unique = false, nullable = false)
     private boolean isCustom;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "http_ref_type_id") // FOREIGN KEY(http_ref_type_id) REFERENCES http_ref_types(id)
+    private HttpRefType httpRefType;
+
     @ManyToMany(mappedBy = "httpRefs")
     @OrderBy("id")
     private Set<Exercise> exercises;
@@ -49,5 +53,5 @@ public class HttpRef {
 
     @ManyToMany(mappedBy = "httpRefs")
     @OrderBy("id")
-    private Set<Mental> mentals;
+    private Set<MentalActivity> mentalActivities;
 }
