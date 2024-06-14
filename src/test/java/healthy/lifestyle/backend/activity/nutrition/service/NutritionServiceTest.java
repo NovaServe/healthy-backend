@@ -13,8 +13,8 @@ import healthy.lifestyle.backend.activity.nutrition.repository.NutritionReposito
 import healthy.lifestyle.backend.activity.nutrition.repository.NutritionTypeRepository;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.repository.HttpRefRepository;
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.testutil.TestUtil;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.service.UserServiceImpl;

@@ -23,5 +23,5 @@ public class Timezone {
     private String GMT;
 
     @OneToMany(mappedBy = "timezone")
-    private Set<Profile> profiles;
+    private Set<User> users;
 }

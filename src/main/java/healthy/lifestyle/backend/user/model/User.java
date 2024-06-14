@@ -8,7 +8,7 @@ import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
 import healthy.lifestyle.backend.notification.model.FirebaseUserToken;
-import healthy.lifestyle.backend.reminder.workout.model.WorkoutReminder;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
 import jakarta.persistence.*;
 import java.util.*;
 import lombok.*;
@@ -37,6 +37,9 @@ public class User {
     @Column(name = "password", nullable = false, unique = false)
     private String password;
 
+    @Column(name = "age", nullable = true, unique = false)
+    private Integer age;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id") // FOREIGN KEY(role_id) REFERENCES roles(id)
     private Role role;
@@ -45,8 +48,9 @@ public class User {
     @JoinColumn(name = "country_id") // FOREIGN KEY(country_id) REFERENCES countries(id)
     private Country country;
 
-    @Column(name = "age", nullable = true, unique = false)
-    private Integer age;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "timezone_id") // FOREIGN KEY(timezone_id) REFERENCES timezones(id)
+    private Timezone timezone;
 
     @OneToMany(mappedBy = "user")
     private Set<Exercise> exercises;
@@ -67,11 +71,7 @@ public class User {
     private Set<Nutrition> nutritions;
 
     @OneToMany(mappedBy = "user")
-    private Set<WorkoutReminder> workoutReminders;
-
-    // In fact, one-to-one
-    @OneToMany(mappedBy = "user")
-    private Set<Profile> profile;
+    private Set<WorkoutPlan> workoutPlans;
 
     @OneToMany(mappedBy = "user")
     private Set<FirebaseUserToken> firebaseUserTokens;

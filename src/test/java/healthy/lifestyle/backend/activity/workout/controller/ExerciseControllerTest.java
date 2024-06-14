@@ -20,8 +20,8 @@ import healthy.lifestyle.backend.activity.workout.dto.ExerciseUpdateRequestDto;
 import healthy.lifestyle.backend.activity.workout.model.BodyPart;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
@@ -29,6 +29,7 @@ import healthy.lifestyle.backend.testutil.DtoUtil;
 import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.*;
 import java.util.stream.Stream;
@@ -432,10 +433,11 @@ class ExerciseControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         boolean needsEquipment = true;
         Exercise customExercise =
                 dbUtil.createCustomExercise(3, needsEquipment, List.of(bodyPart), List.of(defaultHttpRef), user2);
@@ -638,8 +640,9 @@ class ExerciseControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         Exercise customExercise1User1 =
                 dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user1);
@@ -744,8 +747,9 @@ class ExerciseControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         Exercise customExercise1User1 =
                 dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user1);
@@ -813,8 +817,9 @@ class ExerciseControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         Exercise customExercise1User1 =
                 dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user1);
@@ -886,8 +891,9 @@ class ExerciseControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         Exercise customExercise1User1 =
                 dbUtil.createCustomExercise(4, true, List.of(bodyPart1), List.of(defaultHttpRef1), user1);
@@ -1232,7 +1238,8 @@ class ExerciseControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user = dbUtil.createUser(1, role, country, timezone);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
         HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(2);
@@ -1240,7 +1247,7 @@ class ExerciseControllerTest {
         Exercise customExercise = dbUtil.createCustomExercise(
                 1, needsEquipment, List.of(bodyPart), List.of(customHttpRef, defaultHttpRef), user);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         Exercise customExercise2 =
                 dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart), List.of(defaultHttpRef), user2);
 
@@ -1331,7 +1338,8 @@ class ExerciseControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user = dbUtil.createUser(1, role, country, timezone);
         BodyPart bodyPart = dbUtil.createBodyPart(1);
         HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(2);
@@ -1339,7 +1347,7 @@ class ExerciseControllerTest {
         Exercise customExercise = dbUtil.createCustomExercise(
                 1, needsEquipment, List.of(bodyPart), List.of(customHttpRef, defaultHttpRef), user);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user2);
 
         ExerciseUpdateRequestDto requestDto = dtoUtil.exerciseUpdateRequestDtoEmpty();

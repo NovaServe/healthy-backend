@@ -386,123 +386,68 @@
 
     <changeSet id="workout_calendar" author="Oleg Kucherenko">
 
-        <createTable tableName="workout_exercises">
+        <createTable tableName="workout_plans">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
-            </column>
-            <column name="workout_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_workout_id" references="workouts(id)"/>
-            </column>
-            <column name="exercise_id" type="bigint">
-                <constraints nullable="true" unique="false" foreignKeyName="fk_exercise_id" references="exercises(id)"/>
-            </column>
-            <column name="is_active" type="boolean">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="created_at" type="date">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="deactivated_at" type="date">
-                <constraints nullable="true" unique="false"/>
-            </column>
-        </createTable>
-
-        <createTable tableName="workout_reminders">
-            <column name="id" type="bigint" autoIncrement="true">
-                <constraints primaryKey="true"/>
-            </column>
-            <column name="reminder_type" type="varchar">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="start_date" type="date">
-                <constraints nullable="true" unique="false"/>
-            </column>
-            <column name="end_date" type="date">
-                <constraints nullable="true" unique="false"/>
-            </column>
-            <column name="apply_days" type="int">
-                <constraints nullable="true" unique="false"/>
-            </column>
-            <column name="is_active" type="boolean">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="is_paused" type="boolean">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="pause_start_date" type="date">
-                <constraints nullable="true" unique="false"/>
-            </column>
-            <column name="pause_end_date" type="date">
-                <constraints nullable="true" unique="false"/>
-            </column>
-            <column name="is_paused_billing" type="boolean">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="notify_before_in_minutes" type="int">
-                <constraints nullable="true" unique="false"/>
-            </column>
-            <column name="created_at" type="date">
-                <constraints nullable="false" unique="false"/>
             </column>
             <column name="user_id" type="bigint">
                 <constraints nullable="false" unique="false" foreignKeyName="fk_user_id" references="users(id)"/>
             </column>
             <column name="workout_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_workout_id" references="workouts(id)"/>
+                <constraints nullable="false" foreignKeyName="fk_workout_id"
+                             references="workouts(id)"/>
             </column>
-        </createTable>
-
-        <createTable tableName="workout_reminder_days">
-            <column name="id" type="bigint" autoIncrement="true">
-                <constraints primaryKey="true"/>
-            </column>
-            <column name="day" type="varchar">
-                <constraints nullable="true" unique="false"/>
-            </column>
-            <column name="hours" type="int">
+            <column name="json_description" type="jsonb">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="minutes" type="int">
+            <column name="start_date" type="date">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="hours_notify_before" type="int">
-                <constraints nullable="true" unique="false"/>
-            </column>
-            <column name="minutes_notify_before" type="int">
-                <constraints nullable="true" unique="false"/>
-            </column>
-            <column name="hours_notify_before_default" type="int">
+            <column name="end_date" type="date">
                 <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="minutes_notify_before_default" type="int">
-                <constraints nullable="false" unique="false"/>
-            </column>
-            <column name="workout_reminder_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_workout_reminder_id"
-                             references="workout_reminders(id)"/>
             </column>
             <column name="is_active" type="boolean">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="created_at" type="date">
+            <column name="created_at" type="datetime">
                 <constraints nullable="false" unique="false"/>
             </column>
-            <column name="deactivated_at" type="date">
+            <column name="deactivated_at" type="datetime">
                 <constraints nullable="true" unique="false"/>
             </column>
         </createTable>
+
+        <createTable tableName="workout_json_ids">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="json_id" type="bigint">
+                <constraints nullable="false" unique="false"/>
+            </column>
+        </createTable>
+
+        <sqlFile path="sql/json_ids_init.sql" relativeToChangelogFile="true" endDelimiter=";" splitStatements="true"/>
 
         <createTable tableName="workout_completion_records">
             <column name="id" type="bigint" autoIncrement="true">
                 <constraints primaryKey="true"/>
             </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false" unique="false" foreignKeyName="fk_user_id" references="users(id)"/>
+            </column>
             <column name="workout_id" type="bigint">
-                <constraints nullable="false" unique="false" foreignKeyName="fk_workout_id" references="workouts(id)"/>
+                <constraints nullable="true" unique="false" foreignKeyName="fk_workout_id" references="workouts(id)"/>
             </column>
-            <column name="exercise_id" type="bigint">
-                <constraints nullable="true" unique="false" foreignKeyName="fk_exercise_id" references="exercises(id)"/>
+            <column name="workout_plan_id" type="bigint">
+                <constraints nullable="true" unique="false" foreignKeyName="fk_workout_plan_id" references="workout_plans(id)"/>
             </column>
-            <column name="created_at" type="date">
+            <column name="json_id" type="bigint">
+                <constraints nullable="false" unique="true" foreignKeyName="fk_workout_json_id" references="workout_json_ids(id)"/>
+            </column>
+            <column name="completed_exercises_json" type="jsonb">
+                <constraints nullable="false" unique="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
                 <constraints nullable="false" unique="false"/>
             </column>
         </createTable>
@@ -524,6 +469,16 @@
                 <constraints nullable="false" unique="false"/>
             </column>
         </createTable>
+    </changeSet>
+
+    <changeSet id="users_add_timezone" author="Volodymyr Bardakov" context="structure">
+        <comment>Add timezone column to user table</comment>
+        <addColumn tableName="users">
+            <column name="timezone_id"
+                    type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_timezone_id" references="timezones(id)"/>
+            </column>
+        </addColumn>
     </changeSet>
 
     <changeSet id="add_http_ref_types" author="Oleg Kucherenko">
