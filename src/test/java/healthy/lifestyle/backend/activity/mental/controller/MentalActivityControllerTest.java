@@ -648,12 +648,9 @@ public class MentalActivityControllerTest {
         MentalActivity customMental1 = dbUtil.createCustomMentalActivity(
                 1, List.of(customHttpRef1, customHttpRef2, defaultHttpRef1, defaultHttpRef2), mentalType1, user);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         MentalActivity customMental2 =
                 dbUtil.createCustomMentalActivity(2, List.of(customHttpRef1, defaultHttpRef1), mentalType1, user2);
-        User user2 = dbUtil.createUser(2, role, country, timezone);
-        Mental customMental2 =
-                dbUtil.createCustomMental(2, List.of(customHttpRef1, defaultHttpRef1), mentalType1, user2);
 
         MentalActivityUpdateRequestDto requestDto = dtoUtil.mentalActivityUpdateRequestDtoEmpty();
         requestDto.setMentalTypeId(customMental1.getType().getId());

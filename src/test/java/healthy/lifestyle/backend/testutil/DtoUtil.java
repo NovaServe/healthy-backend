@@ -2,8 +2,6 @@ package healthy.lifestyle.backend.testutil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import healthy.lifestyle.backend.activity.mental.dto.MentalCreateRequestDto;
-import healthy.lifestyle.backend.activity.mental.dto.MentalUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalActivityCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalActivityUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutCreateRequestDto;

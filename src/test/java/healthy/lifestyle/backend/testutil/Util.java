@@ -54,7 +54,6 @@ public interface Util {
 
     Timezone createTimezone(int seed);
 
-    Mental createDefaultMental(int seed, List<HttpRef> httpRefs, MentalType mentalType);
     MentalActivity createDefaultMentalActivity(int seed, List<HttpRef> httpRefs, MentalType mentalType);
 
     MentalActivity createCustomMentalActivity(int seed, List<HttpRef> httpRefs, MentalType mentalType, User user);
