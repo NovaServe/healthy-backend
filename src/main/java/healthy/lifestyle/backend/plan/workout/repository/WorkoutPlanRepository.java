@@ -17,4 +17,18 @@ public interface WorkoutPlanRepository extends JpaRepository<WorkoutPlan, Long> 
 
     @Query("SELECT wr FROM WorkoutPlan wr WHERE wr.user.id = :userId")
     List<WorkoutPlan> findByUserId(long userId);
+
+    @Query(
+            value = "SELECT DISTINCT w.id, w.title " + "FROM workouts w LEFT JOIN workout_plans wp "
+                    + "ON w.id = wp.workout_id AND wp.user_id = :userId "
+                    + "WHERE wp.id IS NULL AND w.is_custom = false;",
+            nativeQuery = true)
+    List<Object[]> getDefaultWorkoutsWithoutPlans(long userId);
+
+    @Query(
+            value = "SELECT DISTINCT w.id, w.title " + "FROM workouts w LEFT JOIN workout_plans wp "
+                    + "ON w.id = wp.workout_id AND w.user_id = :userId AND wp.user_id = :userId "
+                    + "WHERE wp.workout_id IS NULL AND w.is_custom = true;",
+            nativeQuery = true)
+    List<Object[]> getCustomWorkoutsWithoutPlans(long userId);
 }

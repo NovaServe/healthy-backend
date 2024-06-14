@@ -44,7 +44,12 @@ public class JsonUtil {
             WorkoutPlanDayId newWorkoutPlanDayId = workoutDayIdRepository.save(currentDayId);
 
             // Convert day and time from user's timezone to database's timezone
-            LocalDateTime userBaseDateTime = LocalDateTime.now(userTimeZone).with(jsonDescription.getDayOfWeek());
+            LocalDateTime userBaseDateTime;
+            if (jsonDescription.getDayOfWeek() != null) {
+                userBaseDateTime = LocalDateTime.now(userTimeZone).with(jsonDescription.getDayOfWeek());
+            } else {
+                userBaseDateTime = LocalDateTime.now(userTimeZone);
+            }
             LocalTime userTime = LocalTime.of(jsonDescription.getHours(), jsonDescription.getMinutes());
             LocalDateTime userDateTime = LocalDateTime.of(userBaseDateTime.toLocalDate(), userTime);
             ZonedDateTime userZonedDateTime = userDateTime.atZone(userTimeZone);
@@ -52,9 +57,13 @@ public class JsonUtil {
                     dateTimeService.convertToNewZone(userZonedDateTime, dateTimeService.getDatabaseTimezone());
 
             jsonDescription.setJson_id(newWorkoutPlanDayId.getJson_id());
-            jsonDescription.setDayOfWeek(databaseZonedDateTime.getDayOfWeek());
             jsonDescription.setHours(databaseZonedDateTime.getHour());
             jsonDescription.setMinutes(databaseZonedDateTime.getMinute());
+            if (jsonDescription.getDayOfWeek() != null) {
+                jsonDescription.setDayOfWeek(databaseZonedDateTime.getDayOfWeek());
+            } else {
+                jsonDescription.setDayOfWeek(null);
+            }
         }
 
         return jsonDescriptionList;
@@ -65,9 +74,15 @@ public class JsonUtil {
 
         for (JsonDescription jsonDescription : jsonDescriptionList) {
             // Convert day and time from db's timezone to user's timezone
-            LocalDateTime DBBaseDateTime = LocalDateTime.now(
-                            dateTimeService.getDatabaseTimezone().toZoneId())
-                    .with(jsonDescription.getDayOfWeek());
+            LocalDateTime DBBaseDateTime;
+            if (jsonDescription.getDayOfWeek() != null) {
+                DBBaseDateTime = LocalDateTime.now(
+                                dateTimeService.getDatabaseTimezone().toZoneId())
+                        .with(jsonDescription.getDayOfWeek());
+            } else {
+                DBBaseDateTime =
+                        LocalDateTime.now(dateTimeService.getDatabaseTimezone().toZoneId());
+            }
             LocalTime DBTime = LocalTime.of(jsonDescription.getHours(), jsonDescription.getMinutes());
             LocalDateTime DBDateTime = LocalDateTime.of(DBBaseDateTime.toLocalDate(), DBTime);
             ZonedDateTime DBZonedDateTime =
@@ -75,7 +90,9 @@ public class JsonUtil {
             ZonedDateTime userZonedDateTime =
                     dateTimeService.convertToNewZone(DBZonedDateTime, TimeZone.getTimeZone(userTimezoneName));
 
-            jsonDescription.setDayOfWeek(userZonedDateTime.getDayOfWeek());
+            if (jsonDescription.getDayOfWeek() != null) {
+                jsonDescription.setDayOfWeek(userZonedDateTime.getDayOfWeek());
+            }
             jsonDescription.setHours(userZonedDateTime.getHour());
             jsonDescription.setMinutes(userZonedDateTime.getMinute());
         }
