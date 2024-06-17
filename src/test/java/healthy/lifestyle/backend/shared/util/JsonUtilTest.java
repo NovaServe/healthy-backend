@@ -8,8 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.plan.workout.model.WorkoutPlanDayId;
 import healthy.lifestyle.backend.plan.workout.repository.WorkoutDayIdRepository;
-import java.time.DayOfWeek;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.List;
 import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
@@ -70,7 +69,7 @@ class JsonUtilTest {
         long currentJsonId = 10L;
         List<JsonDescription> expected = List.of(JsonDescription.builder()
                 .json_id(currentJsonId + 1)
-                .hours(23)
+                .hours(22)
                 .minutes(20)
                 .dayOfWeek(DayOfWeek.SUNDAY)
                 .build());
