@@ -28,6 +28,9 @@ public class UserUpdateRequestDto {
     @IdValidation
     private Long countryId;
 
+    @IdValidation
+    private Long timezoneId;
+
     @AgeOptionalValidation
     private Integer age;
 

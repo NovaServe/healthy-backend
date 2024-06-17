@@ -9,8 +9,10 @@ import healthy.lifestyle.backend.activity.workout.model.BodyPart;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.List;
 
@@ -30,21 +32,27 @@ public interface Util {
 
     Workout createCustomWorkout(int seed, List<Exercise> exercises, User user);
 
+    WorkoutPlan createWorkoutPlan(Long seed, User user, Workout workout);
+
     User createUser(int seed);
 
     User createUser(int seed, int age);
 
     User createAdminUser(int seed);
 
-    User createUser(int seed, Role role, Country country);
+    User createUser(int seed, Role role, Country country, Timezone timezone);
 
-    User createUser(int seed, Role role, Country country, int age);
+    User createUser(int seed, Role role, Country country, int age, Timezone timezone);
 
     Role createUserRole();
 
     Role createAdminRole();
 
     Country createCountry(int seed);
+
+    Timezone createTimezone();
+
+    Timezone createTimezone(int seed);
 
     MentalActivity createDefaultMentalActivity(int seed, List<HttpRef> httpRefs, MentalType mentalType);
 

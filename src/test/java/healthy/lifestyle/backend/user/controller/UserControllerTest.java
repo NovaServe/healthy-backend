@@ -16,19 +16,17 @@ import healthy.lifestyle.backend.activity.workout.model.BodyPart;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
 import healthy.lifestyle.backend.testutil.DtoUtil;
 import healthy.lifestyle.backend.testutil.URL;
-import healthy.lifestyle.backend.user.dto.CountryResponseDto;
-import healthy.lifestyle.backend.user.dto.SignupRequestDto;
-import healthy.lifestyle.backend.user.dto.UserResponseDto;
-import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
+import healthy.lifestyle.backend.user.dto.*;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import healthy.lifestyle.backend.user.validation.UserValidationMessage;
 import java.util.List;
@@ -101,7 +99,8 @@ public class UserControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
+        Timezone timezone = dbUtil.createTimezone();
+        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId(), timezone.getId());
         if (age != null) {
             requestDto.setAge(age);
         }
@@ -247,8 +246,9 @@ public class UserControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User alreayExistentUser = dbUtil.createUser(1, role, country);
-        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId());
+        Timezone timezone = dbUtil.createTimezone(1);
+        User alreayExistentUser = dbUtil.createUser(1, role, country, timezone);
+        SignupRequestDto requestDto = dtoUtil.signupRequestDto(1, country.getId(), timezone.getId());
 
         // When
         mockMvc.perform(post(URL.USERS)
@@ -279,7 +279,7 @@ public class UserControllerTest {
         UserResponseDto responseDto = objectMapper.readValue(responseContent, new TypeReference<UserResponseDto>() {});
         assertThat(responseDto)
                 .usingRecursiveComparison()
-                .ignoringFields("countryId")
+                .ignoringFields("countryId", "timezoneId")
                 .isEqualTo(user);
         assertEquals(user.getCountry().getId(), responseDto.getCountryId());
     }
@@ -292,6 +292,7 @@ public class UserControllerTest {
             String email,
             String fullName,
             String countryName,
+            String timezoneName,
             Integer age,
             String password,
             String confirmPassword)
@@ -304,10 +305,14 @@ public class UserControllerTest {
         int initialAge = user.getAge();
         String initialPassword = "Password-1";
         Country newCountry = dbUtil.createCountry(2);
+        Timezone newTimezone = dbUtil.createTimezone(2);
 
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
         if (countryName != null) requestDto.setCountryId(newCountry.getId());
         else requestDto.setCountryId(user.getCountry().getId());
+
+        if (timezoneName != null) requestDto.setTimezoneId(newTimezone.getId());
+        else requestDto.setTimezoneId(user.getTimezone().getId());
 
         if (username != null) requestDto.setUsername(username);
         if (email != null) requestDto.setEmail(email);
@@ -351,12 +356,13 @@ public class UserControllerTest {
 
     static Stream<Arguments> updateUserValidFields() {
         return Stream.of(
-                Arguments.of("new-username", null, null, null, null, null, null),
-                Arguments.of(null, "new-email@email.com", null, null, null, null, null),
-                Arguments.of(null, null, "New full name", null, null, null, null),
-                Arguments.of(null, null, null, "New Country", null, null, null),
-                Arguments.of(null, null, null, null, 30, null, null),
-                Arguments.of(null, null, null, null, null, "new-password", "new-password"));
+                Arguments.of("new-username", null, null, null, null, null, null, null),
+                Arguments.of(null, "new-email@email.com", null, null, null, null, null, null),
+                Arguments.of(null, null, "New full name", null, null, null, null, null),
+                Arguments.of(null, null, null, "New Country", null, null, null, null),
+                Arguments.of(null, null, null, null, "New Timezone", null, null, null),
+                Arguments.of(null, null, null, null, null, 25, null, null),
+                Arguments.of(null, null, null, null, null, null, "new-password", "new-password"));
     }
 
     @Test
@@ -370,6 +376,7 @@ public class UserControllerTest {
         requestDto.setFullName(user.getFullName());
         requestDto.setAge(user.getAge());
         requestDto.setCountryId(user.getCountry().getId());
+        requestDto.setTimezoneId(user.getTimezone().getId());
         requestDto.setPassword("Password-1");
         requestDto.setConfirmPassword("Password-1");
         String errorMessage =
@@ -493,6 +500,7 @@ public class UserControllerTest {
         User user = dbUtil.createUser(1);
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
         requestDto.setCountryId(user.getCountry().getId());
+        requestDto.setTimezoneId(user.getTimezone().getId());
 
         // When
         mockMvc.perform(patch(URL.USER_ID, user.getId())
@@ -511,11 +519,13 @@ public class UserControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         UserUpdateRequestDto requestDto = dtoUtil.userUpdateRequestDtoEmpty();
         requestDto.setCountryId(user1.getCountry().getId());
+        requestDto.setTimezoneId(user1.getTimezone().getId());
         requestDto.setUsername("New-username");
 
         ApiException expectedException =
@@ -542,6 +552,7 @@ public class UserControllerTest {
         requestDto.setUsername("New-username");
         long nonExistentCountryId = 1000L;
         requestDto.setCountryId(nonExistentCountryId);
+        requestDto.setTimezoneId(user.getTimezone().getId());
         ApiException expectedException =
                 new ApiException(ErrorMessage.COUNTRY_NOT_FOUND, nonExistentCountryId, HttpStatus.NOT_FOUND);
 
@@ -612,8 +623,9 @@ public class UserControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         ApiException expectedException =
                 new ApiException(ErrorMessage.USER_REQUESTED_ANOTHER_USER_PROFILE, null, HttpStatus.BAD_REQUEST);
 
@@ -664,5 +676,29 @@ public class UserControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessage())))
                 .andDo(print());
+    }
+
+    @Test
+    void getTimezones_shouldReturnDtoListWith200_whenValidRequest() throws Exception {
+        // Given
+        Timezone timezone1 = dbUtil.createTimezone(1);
+        Timezone timezone2 = dbUtil.createTimezone(2);
+        Timezone timezone3 = dbUtil.createTimezone(3);
+        List<Timezone> timezones = List.of(timezone1, timezone2, timezone3);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.TIMEZONES).contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        List<TimezoneResponseDto> responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<List<TimezoneResponseDto>>() {});
+
+        assertEquals(timezones.size(), responseDto.size());
+        assertThat(responseDto).usingRecursiveFieldByFieldElementComparator().isEqualTo(timezones);
     }
 }

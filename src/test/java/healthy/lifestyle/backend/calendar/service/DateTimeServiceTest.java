@@ -2,7 +2,7 @@ package healthy.lifestyle.backend.calendar.service;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import healthy.lifestyle.backend.calendar.shared.service.DateTimeService;
+import healthy.lifestyle.backend.shared.util.DateTimeService;
 import java.time.ZonedDateTime;
 import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
@@ -17,13 +17,13 @@ class DateTimeServiceTest {
 
     @Test
     void getCurrentServerZonedDateTime() {
-        ZonedDateTime serverZonedDateTime = dateTimeService.getCurrentServerZonedDateTime();
+        ZonedDateTime serverZonedDateTime = dateTimeService.getCurrentDatabaseZonedDateTime();
         assertNotNull(serverZonedDateTime);
     }
 
     @Test
     void convertZonedDateTime() {
-        ZonedDateTime serverZonedDateTime = dateTimeService.getCurrentServerZonedDateTime();
+        ZonedDateTime serverZonedDateTime = dateTimeService.getCurrentDatabaseZonedDateTime();
         ZonedDateTime convertedZonedDateTime =
                 dateTimeService.convertToNewZone(serverZonedDateTime, TimeZone.getTimeZone("Europe/Kyiv"));
         assertNotNull(convertedZonedDateTime);

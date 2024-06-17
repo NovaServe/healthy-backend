@@ -20,8 +20,8 @@ import healthy.lifestyle.backend.activity.workout.dto.HttpRefCreateRequestDto;
 import healthy.lifestyle.backend.activity.workout.dto.HttpRefResponseDto;
 import healthy.lifestyle.backend.activity.workout.dto.HttpRefUpdateRequestDto;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.shared.validation.ValidationMessage;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
@@ -30,6 +30,7 @@ import healthy.lifestyle.backend.testutil.DtoUtil;
 import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.List;
 import java.util.stream.Stream;
@@ -250,9 +251,10 @@ class HttpRefControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef = dbUtil.createCustomHttpRef(1, user2);
 
         ApiException expectedException =
@@ -277,7 +279,8 @@ class HttpRefControllerTest {
         HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user1);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(5, user1);
 
@@ -456,10 +459,11 @@ class HttpRefControllerTest {
         HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user1);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(5, user1);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(6, user2);
 
         int pageNumber = 0;
@@ -696,10 +700,11 @@ class HttpRefControllerTest {
         HttpRef defaultHttpRef3 = dbUtil.createDefaultHttpRef(3);
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(4, user1);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(5, user1);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef3 = dbUtil.createCustomHttpRef(6, user2);
 
         int pageNumber = 0;
@@ -753,10 +758,11 @@ class HttpRefControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user1);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user1);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef4 = dbUtil.createCustomHttpRef(5, user2);
 
         int pageNumber = 0;
@@ -919,11 +925,12 @@ class HttpRefControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user1 = dbUtil.createUser(1, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user1);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user2);
 
         HttpRefUpdateRequestDto requestDto = dtoUtil.httpRefUpdateRequestDto(2);
@@ -1023,11 +1030,12 @@ class HttpRefControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user1 = dbUtil.createUser(1, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(1, user1);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(2, user2);
 
         ApiException expectedException =

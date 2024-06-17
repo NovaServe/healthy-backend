@@ -21,8 +21,8 @@ import healthy.lifestyle.backend.activity.mental.dto.MentalActivityUpdateRequest
 import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
@@ -30,6 +30,7 @@ import healthy.lifestyle.backend.testutil.DtoUtil;
 import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.Collections;
 import java.util.Comparator;
@@ -224,10 +225,11 @@ public class MentalActivityControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
         MentalType mentalType1 = dbUtil.createAffirmationType();
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         MentalActivity customMental =
                 dbUtil.createCustomMentalActivity(3, List.of(defaultHttpRef1), mentalType1, user2);
@@ -306,8 +308,9 @@ public class MentalActivityControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         MentalType mentalType1 = dbUtil.createAffirmationType();
         MentalType mentalType2 = dbUtil.createMeditationType();
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -632,7 +635,8 @@ public class MentalActivityControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user = dbUtil.createUser(1, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user = dbUtil.createUser(1, role, country, timezone);
 
         MentalType mentalType1 = dbUtil.createMeditationType();
         MentalType mentalType2 = dbUtil.createAffirmationType();
@@ -644,7 +648,7 @@ public class MentalActivityControllerTest {
         MentalActivity customMental1 = dbUtil.createCustomMentalActivity(
                 1, List.of(customHttpRef1, customHttpRef2, defaultHttpRef1, defaultHttpRef2), mentalType1, user);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         MentalActivity customMental2 =
                 dbUtil.createCustomMentalActivity(2, List.of(customHttpRef1, defaultHttpRef1), mentalType1, user2);
 
@@ -986,8 +990,9 @@ public class MentalActivityControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         MentalActivity customMental1User1 =
                 dbUtil.createCustomMentalActivity(5, List.of(defaultHttpRef1), mentalType1, user1);
@@ -1081,8 +1086,9 @@ public class MentalActivityControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         MentalActivity customMental1User1 =
                 dbUtil.createCustomMentalActivity(5, List.of(defaultHttpRef1), mentalType1, user1);
@@ -1133,8 +1139,9 @@ public class MentalActivityControllerTest {
 
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
 
         MentalActivity customMental1User1 =
                 dbUtil.createCustomMentalActivity(5, List.of(defaultHttpRef1), mentalType1, user1);

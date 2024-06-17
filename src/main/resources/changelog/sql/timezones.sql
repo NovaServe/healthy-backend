@@ -1,7 +1,6 @@
 INSERT INTO timezones(name, gmt) VALUES
 ('Europe/Amsterdam', 'GMT+1:00'),
 ('Europe/Andorra', 'GMT+1:00'),
-('Europe/Astrakhan', 'GMT+4:00'),
 ('Europe/Athens', 'GMT+2:00'),
 ('Europe/Belfast', 'GMT0:00'),
 ('Europe/Belgrade', 'GMT+1:00'),
@@ -36,10 +35,8 @@ INSERT INTO timezones(name, gmt) VALUES
 ('Europe/Prague', 'GMT+1:00'),
 ('Europe/Riga', 'GMT+2:00'),
 ('Europe/Rome', 'GMT+1:00'),
-('Europe/Samara', 'GMT+4:00'),
 ('Europe/San_Marino', 'GMT+1:00'),
 ('Europe/Sarajevo', 'GMT+1:00'),
-('Europe/Saratov', 'GMT+4:00'),
 ('Europe/Skopje', 'GMT+1:00'),
 ('Europe/Sofia', 'GMT+2:00'),
 ('Europe/Stockholm', 'GMT+1:00'),

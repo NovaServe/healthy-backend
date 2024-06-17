@@ -12,6 +12,7 @@ import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,8 +62,9 @@ class WorkoutRepositoryTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user1 = dbUtil.createUser(1, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -74,7 +76,7 @@ class WorkoutRepositoryTest {
                 2, exerciseNeedsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user1);
         Workout customWorkout1 = dbUtil.createCustomWorkout(1, List.of(defaultExercise1, customExercise1), user1);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         BodyPart bodyPart3 = dbUtil.createBodyPart(3);
         BodyPart bodyPart4 = dbUtil.createBodyPart(4);
         HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(3);
@@ -98,8 +100,9 @@ class WorkoutRepositoryTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user1 = dbUtil.createUser(1, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -111,7 +114,7 @@ class WorkoutRepositoryTest {
                 2, exerciseNeedsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user1);
         Workout customWorkout1 = dbUtil.createCustomWorkout(1, List.of(defaultExercise1, customExercise1), user1);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         BodyPart bodyPart3 = dbUtil.createBodyPart(3);
         BodyPart bodyPart4 = dbUtil.createBodyPart(4);
         HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(3);

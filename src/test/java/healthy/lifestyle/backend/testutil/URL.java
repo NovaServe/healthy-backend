@@ -10,6 +10,7 @@ public class URL {
     public static final String USER_ID = "/api/v1/users/{userId}";
 
     public static final String COUNTRIES = "/api/v1/users/countries";
+    public static final String TIMEZONES = "/api/v1/users/timezones";
 
     public static final String BODY_PARTS = "/api/v1/workouts/bodyParts";
 
@@ -52,6 +53,8 @@ public class URL {
     public static final String CUSTOM_MENTALS = "/api/v1/mental_activities";
 
     public static final String CUSTOM_MENTAL_WORKOUTS = "/api/v1/mental_workouts";
+
+    public static final String WORKOUT_PLANS = "/api/v1/calendar/workouts/plans";
 
     public static final String DEFAULT_MENTAL_WORKOUT_ID = "/api/v1/mental_workouts/default/{mental_workout_id}";
 }

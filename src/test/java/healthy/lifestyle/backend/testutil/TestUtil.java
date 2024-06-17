@@ -2,6 +2,7 @@ package healthy.lifestyle.backend.testutil;
 
 import static java.util.Objects.isNull;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.activity.mental.model.MentalActivity;
 import healthy.lifestyle.backend.activity.mental.model.MentalType;
 import healthy.lifestyle.backend.activity.mental.model.MentalWorkout;
@@ -9,9 +10,17 @@ import healthy.lifestyle.backend.activity.nutrition.model.Nutrition;
 import healthy.lifestyle.backend.activity.nutrition.model.NutritionType;
 import healthy.lifestyle.backend.activity.workout.dto.HttpRefTypeEnum;
 import healthy.lifestyle.backend.activity.workout.model.*;
+import healthy.lifestyle.backend.activity.workout.model.BodyPart;
+import healthy.lifestyle.backend.activity.workout.model.Exercise;
+import healthy.lifestyle.backend.activity.workout.model.HttpRef;
+import healthy.lifestyle.backend.activity.workout.model.Workout;
+import healthy.lifestyle.backend.plan.workout.model.WorkoutPlan;
+import healthy.lifestyle.backend.shared.util.JsonDescription;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
+import java.time.*;
 import java.util.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,6 +30,8 @@ public class TestUtil implements Util {
     private final ModelMapper modelMapper = new ModelMapper();
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public BodyPart createBodyPart(int seed) {
@@ -62,6 +73,20 @@ public class TestUtil implements Util {
         return this.createExerciseBase(seed, false, needsEquipment, bodyParts, httpRefs, null);
     }
 
+    public Exercise createDefaultExercise(int seed) {
+        BodyPart bodyPart = createBodyPart(seed);
+        HttpRef httpRef = createDefaultHttpRef(seed);
+
+        return Exercise.builder()
+                .id(Long.valueOf(seed))
+                .isCustom(false)
+                .needsEquipment(false)
+                .bodyParts(Set.of(bodyPart))
+                .httpRefs(Set.of(httpRef))
+                .user(null)
+                .build();
+    }
+
     @Override
     public Exercise createCustomExercise(
             int seed, boolean needsEquipment, List<BodyPart> bodyParts, List<HttpRef> httpRefs, User user) {
@@ -95,6 +120,11 @@ public class TestUtil implements Util {
         return this.createWorkoutBase(seed, false, exercises, null);
     }
 
+    public Workout createDefaultWorkout(int seed) {
+        Exercise exercise = createDefaultExercise(seed);
+        return this.createWorkoutBase(seed, false, List.of(exercise), null);
+    }
+
     @Override
     public Workout createCustomWorkout(int seed, List<Exercise> exercises, User user) {
         Workout workout = this.createWorkoutBase(seed, true, exercises, user);
@@ -119,7 +149,8 @@ public class TestUtil implements Util {
         Role role = Role.builder().id((long) seed).name("ROLE_USER").build();
         Country country =
                 Country.builder().id((long) seed).name("Country-" + seed).build();
-        return this.createUserBase(seed, role, country, null, null, null, null);
+        Timezone timezone = createTimezone(seed);
+        return this.createUserBase(seed, role, country, null, timezone, null, null, null);
     }
 
     @Override
@@ -127,24 +158,26 @@ public class TestUtil implements Util {
         Role role = Role.builder().id((long) seed).name("ROLE_USER").build();
         Country country =
                 Country.builder().id((long) seed).name("Country-" + seed).build();
-        return this.createUserBase(seed, role, country, age, null, null, null);
+        Timezone timezone = createTimezone(seed);
+        return this.createUserBase(seed, role, country, age, timezone, null, null, null);
     }
 
     @Override
     public User createAdminUser(int seed) {
         Role role = Role.builder().name("ROLE_ADMIN").build();
         Country country = Country.builder().name("Country-" + seed).build();
-        return this.createUserBase(seed, role, country, null, null, null, null);
+        Timezone timezone = createTimezone(seed);
+        return this.createUserBase(seed, role, country, null, timezone, null, null, null);
     }
 
     @Override
-    public User createUser(int seed, Role role, Country country) {
-        return this.createUserBase(seed, role, country, null, null, null, null);
+    public User createUser(int seed, Role role, Country country, Timezone timezone) {
+        return this.createUserBase(seed, role, country, null, timezone, null, null, null);
     }
 
     @Override
-    public User createUser(int seed, Role role, Country country, int age) {
-        return this.createUserBase(seed, role, country, age, null, null, null);
+    public User createUser(int seed, Role role, Country country, int age, Timezone timezone) {
+        return this.createUserBase(seed, role, country, age, timezone, null, null, null);
     }
 
     private User createUserBase(
@@ -152,6 +185,7 @@ public class TestUtil implements Util {
             Role role,
             Country country,
             Integer age,
+            Timezone timezone,
             List<HttpRef> httpRefs,
             List<Exercise> exercises,
             List<Workout> workouts) {
@@ -160,9 +194,10 @@ public class TestUtil implements Util {
                 .id((long) seed)
                 .username("Username-" + seed)
                 .email("email-" + seed + "@email.com")
-                .fullName("Full Name " + Shared.numberToText(seed))
+                .fullName("Full Name " + SharedUtil.numberToText(seed))
                 .role(role)
                 .country(country)
+                .timezone(timezone)
                 .age(age == null ? AGE_CONST + seed : age)
                 .password(passwordEncoder.encode("Password-" + seed))
                 .httpRefs(isNull(httpRefs) ? null : new HashSet<>(httpRefs))
@@ -174,6 +209,27 @@ public class TestUtil implements Util {
     @Override
     public Country createCountry(int seed) {
         return Country.builder().id((long) seed).name("Country " + seed).build();
+    }
+
+    @Override
+    public Timezone createTimezone() {
+        return createTimezone(1);
+    }
+
+    @Override
+    public Timezone createTimezone(int seed) {
+        String[] zones = TimeZone.getAvailableIDs();
+        int Id = seed % zones.length;
+
+        ZoneId zoneId = ZoneId.of(zones[Id]);
+        ZonedDateTime zonedDateTime = ZonedDateTime.now(zoneId);
+        ZoneOffset offset = zonedDateTime.now().getOffset();
+
+        return Timezone.builder()
+                .id((long) seed)
+                .GMT("GMT" + offset)
+                .name(zones[Id])
+                .build();
     }
 
     @Override
@@ -319,5 +375,31 @@ public class TestUtil implements Util {
 
     private NutritionType createNutritionTypeBase(Long id, String nutritionType) {
         return NutritionType.builder().id(id).name(nutritionType).build();
+    }
+
+    @Override
+    public WorkoutPlan createWorkoutPlan(Long seed, User user, Workout workout) {
+        LocalDate startDate = LocalDate.of(
+                LocalDate.now().getYear(),
+                LocalDate.now().getMonth(),
+                LocalDate.now().getDayOfMonth());
+        LocalDate endDate = LocalDate.of(
+                LocalDate.now().getYear(),
+                LocalDate.now().getMonth(),
+                LocalDate.now().getDayOfMonth());
+
+        JsonDescription jsonDescription = SharedUtil.createJsonDescription(seed.intValue());
+
+        return WorkoutPlan.builder()
+                .id(seed)
+                .user(user)
+                .startDate(startDate)
+                .endDate(endDate)
+                .workout(workout)
+                .jsonDescription(List.of(jsonDescription))
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .deactivatedAt(null)
+                .build();
     }
 }

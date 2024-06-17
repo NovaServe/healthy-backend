@@ -20,8 +20,8 @@ import healthy.lifestyle.backend.activity.workout.model.BodyPart;
 import healthy.lifestyle.backend.activity.workout.model.Exercise;
 import healthy.lifestyle.backend.activity.workout.model.HttpRef;
 import healthy.lifestyle.backend.activity.workout.model.Workout;
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
 import healthy.lifestyle.backend.testconfig.BeanConfig;
 import healthy.lifestyle.backend.testconfig.ContainerConfig;
 import healthy.lifestyle.backend.testutil.DbUtil;
@@ -29,6 +29,7 @@ import healthy.lifestyle.backend.testutil.DtoUtil;
 import healthy.lifestyle.backend.testutil.URL;
 import healthy.lifestyle.backend.user.model.Country;
 import healthy.lifestyle.backend.user.model.Role;
+import healthy.lifestyle.backend.user.model.Timezone;
 import healthy.lifestyle.backend.user.model.User;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -192,9 +193,10 @@ class WorkoutControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);
@@ -479,9 +481,10 @@ class WorkoutControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -581,8 +584,9 @@ class WorkoutControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user = dbUtil.createUser(1, role, country);
+        User user = dbUtil.createUser(1, role, country, timezone);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
         HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
@@ -594,7 +598,7 @@ class WorkoutControllerTest {
                 dbUtil.createCustomExercise(2, needsEquipment, List.of(bodyPart2), List.of(customHttpRef1), user);
         Workout customWorkout = dbUtil.createCustomWorkout(1, List.of(defaultExercise, customExercise), user);
 
-        User user2 = dbUtil.createUser(2, role, country);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(3);
         HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user2);
         Exercise customExercise2 = dbUtil.createCustomExercise(
@@ -717,9 +721,10 @@ class WorkoutControllerTest {
         // Given
         Role role = dbUtil.createUserRole();
         Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
 
-        User user1 = dbUtil.createUser(1, role, country);
-        User user2 = dbUtil.createUser(2, role, country);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
         BodyPart bodyPart1 = dbUtil.createBodyPart(1);
         BodyPart bodyPart2 = dbUtil.createBodyPart(2);
         HttpRef defaultHttpRef = dbUtil.createDefaultHttpRef(1);

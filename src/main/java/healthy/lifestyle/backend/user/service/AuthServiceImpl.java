@@ -1,8 +1,8 @@
 package healthy.lifestyle.backend.user.service;
 
-import healthy.lifestyle.backend.shared.exception.ApiException;
-import healthy.lifestyle.backend.shared.exception.ErrorMessage;
-import healthy.lifestyle.backend.shared.security.JwtTokenProvider;
+import healthy.lifestyle.backend.exception.ApiException;
+import healthy.lifestyle.backend.exception.ErrorMessage;
+import healthy.lifestyle.backend.security.JwtTokenProvider;
 import healthy.lifestyle.backend.user.dto.LoginRequestDto;
 import healthy.lifestyle.backend.user.dto.LoginResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -61,7 +61,7 @@ public class NotificationService {
         addScheduledFuture(List.of(taskDto));
     }
 
-    public void cancelAndRemoveScheduledFuture(ActivityType activityType, long activityId, long reminderId) {
+    public void cancelAndRemoveScheduledFuture(ActivityType activityType, long activityId, long planId) {
         Iterator<Map.Entry<TaskDto, ScheduledFuture>> iterator =
                 taskMapping.entrySet().iterator();
 
@@ -72,7 +72,7 @@ public class NotificationService {
 
             if (taskDto.getActivityType().equals(activityType)
                     && taskDto.getActivityId() == activityId
-                    && taskDto.getReminderId() == reminderId) {
+                    && taskDto.getPlanId() == planId) {
                 scheduledFuture.cancel(true);
                 iterator.remove();
             }

@@ -1,16 +1,23 @@
 package healthy.lifestyle.backend.testutil;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import healthy.lifestyle.backend.activity.mental.dto.MentalActivityCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalActivityUpdateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutCreateRequestDto;
 import healthy.lifestyle.backend.activity.workout.dto.*;
+import healthy.lifestyle.backend.plan.workout.dto.WorkoutPlanCreateRequestDto;
+import healthy.lifestyle.backend.shared.util.JsonDescription;
 import healthy.lifestyle.backend.user.dto.LoginRequestDto;
 import healthy.lifestyle.backend.user.dto.SignupRequestDto;
 import healthy.lifestyle.backend.user.dto.UserUpdateRequestDto;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
 public class DtoUtil {
+
     public HttpRefCreateRequestDto httpRefCreateRequestDto(int seed) {
         return HttpRefCreateRequestDto.builder()
                 .name("HttpRef " + seed)
@@ -86,28 +93,29 @@ public class DtoUtil {
                 .build();
     }
 
-    public SignupRequestDto signupRequestDto(int seed, Long countryId, Integer age) {
-        return this.signupRequestDtoBase(seed, countryId, age);
+    public SignupRequestDto signupRequestDto(int seed, Long countryId, Integer age, long timezoneId) {
+        return this.signupRequestDtoBase(seed, countryId, age, timezoneId);
     }
 
-    public SignupRequestDto signupRequestDto(int seed, Long countryId) {
-        return this.signupRequestDtoBase(seed, countryId, null);
+    public SignupRequestDto signupRequestDto(int seed, Long countryId, long timezoneId) {
+        return this.signupRequestDtoBase(seed, countryId, null, timezoneId);
     }
 
     public SignupRequestDto signupRequestDtoEmpty() {
         return SignupRequestDto.builder().build();
     }
 
-    private SignupRequestDto signupRequestDtoBase(int seed, Long countryId, Integer age) {
+    private SignupRequestDto signupRequestDtoBase(int seed, Long countryId, Integer age, long timezoneId) {
         int AGE_CONST = 20;
         return SignupRequestDto.builder()
                 .username("Username-" + seed)
                 .email("email-" + seed + "@email.com")
                 .password("Password-" + seed)
                 .confirmPassword("Password-" + seed)
-                .fullName("Full Name " + Shared.numberToText(seed))
+                .fullName("Full Name " + SharedUtil.numberToText(seed))
                 .countryId(countryId)
                 .age(age == null ? AGE_CONST + seed : age)
+                .timezoneId(timezoneId)
                 .build();
     }
 
@@ -167,6 +175,44 @@ public class DtoUtil {
                 .title("MentalWorkout " + seed)
                 .description("Description " + seed)
                 .mentalActivityIds(mentalActivityIds)
+                .build();
+    }
+
+    public WorkoutPlanCreateRequestDto workoutPlanCreateRequestDto(
+            Long workoutId, LocalDate startDate, LocalDate endDate, String jsonDescription) {
+        return WorkoutPlanCreateRequestDto.builder()
+                .workoutId(workoutId)
+                .startDate(startDate)
+                .endDate(endDate)
+                .jsonDescription(jsonDescription)
+                .build();
+    }
+
+    public WorkoutPlanCreateRequestDto workoutPlanCreateRequestDto(int seed, Long workoutId) {
+        LocalDate startDate = LocalDate.now().plusDays(1);
+        LocalDate endDate = LocalDate.now().plusDays(7);
+
+        JsonDescription jsonDescription = JsonDescription.builder()
+                .dayOfWeek(LocalDateTime.now().getDayOfWeek())
+                .hours(seed % 24)
+                .minutes(seed % 60)
+                .build();
+
+        List<JsonDescription> jsonDescriptions = List.of(jsonDescription);
+
+        String jsonDescriptionStringified;
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            jsonDescriptionStringified = objectMapper.writeValueAsString(jsonDescriptions);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        return WorkoutPlanCreateRequestDto.builder()
+                .workoutId(workoutId)
+                .startDate(startDate)
+                .endDate(endDate)
+                .jsonDescription(jsonDescriptionStringified)
                 .build();
     }
 }

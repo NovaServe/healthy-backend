@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("${api.basePath}/${api.version}/calendar")
 public class CalendarController {
-
     @Autowired
     AuthUtil authUtil;
 
