@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.activity.mental.controller;
 import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutResponseDto;
 import healthy.lifestyle.backend.activity.mental.service.MentalWorkoutService;
+import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.user.service.AuthUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -13,9 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 @Validated
 @Controller
@@ -38,5 +37,13 @@ public class MentalWorkoutController {
                 SecurityContextHolder.getContext().getAuthentication());
         MentalWorkoutResponseDto responseDto = mentalWorkoutService.createCustomMentalWorkout(userId, requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Get default mental workout by id")
+    @GetMapping("/default/{mental_workout_id}")
+    public ResponseEntity<MentalWorkoutResponseDto> getDefaultMentalWorkoutById(
+            @PathVariable("mental_workout_id") @IdValidation long mentalWorkoutId) {
+        MentalWorkoutResponseDto responseDto = mentalWorkoutService.getMentalWorkoutById(mentalWorkoutId, true, null);
+        return ResponseEntity.ok(responseDto);
     }
 }
