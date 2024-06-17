@@ -11,4 +11,6 @@ public interface WorkoutPlanService {
             throws JsonProcessingException;
 
     List<WorkoutWithoutPlanResponseDto> getDefaultAndCustomWorkoutsWithoutPlans(long userId);
+
+    List<WorkoutPlanResponseDto> getWorkoutPlans(long userId);
 }

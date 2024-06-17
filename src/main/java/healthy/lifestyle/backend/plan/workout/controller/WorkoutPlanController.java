@@ -47,4 +47,14 @@ public class WorkoutPlanController {
                 workoutPlanService.getDefaultAndCustomWorkoutsWithoutPlans(userId);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
+
+    @GetMapping("/plans")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Operation(summary = "Get active workout plans")
+    public ResponseEntity<List<WorkoutPlanResponseDto>> getWorkoutPlans() {
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        List<WorkoutPlanResponseDto> responseDto = workoutPlanService.getWorkoutPlans(userId);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
 }
