@@ -1,8 +1,10 @@
 package healthy.lifestyle.backend.activity.mental.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -211,5 +213,55 @@ public class MentalWorkoutControllerTest {
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
                 .andDo(print())
                 .andReturn();
+    }
+
+    @Test
+    void getDefaultMentalWorkoutById_shouldReturnDefaultMentalWorkoutDtoWith200_whenValidRequest() throws Exception {
+        // Given
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        MentalType mentalType2 = dbUtil.createMeditationType();
+
+        MentalActivity defaultMental1 = dbUtil.createDefaultMentalActivity(1, List.of(defaultHttpRef1), mentalType1);
+        MentalActivity defaultMental2 = dbUtil.createDefaultMentalActivity(2, List.of(defaultHttpRef2), mentalType2);
+
+        MentalWorkout defaultMentalWorkout =
+                dbUtil.createDefaultMentalWorkout(1, List.of(defaultMental1, defaultMental2));
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.DEFAULT_MENTAL_WORKOUT_ID, defaultMentalWorkout.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        MentalWorkoutResponseDto responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<MentalWorkoutResponseDto>() {});
+
+        assertThat(responseDto)
+                .usingRecursiveComparison()
+                .ignoringFields("mentalActivities")
+                .isEqualTo(defaultMentalWorkout);
+    }
+
+    @Test
+    void getDefaultMentalWorkoutById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
+        // Given
+        long nonExistentDefaultMentalWorkoutId = 1000L;
+        ApiException expectedException = new ApiException(
+                ErrorMessage.MENTAL_WORKOUT_NOT_FOUND, nonExistentDefaultMentalWorkoutId, HttpStatus.NOT_FOUND);
+
+        // When
+        mockMvc.perform(get(URL.DEFAULT_MENTAL_WORKOUT_ID, nonExistentDefaultMentalWorkoutId)
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andDo(print());
     }
 }

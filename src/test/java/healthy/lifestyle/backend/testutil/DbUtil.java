@@ -366,6 +366,11 @@ public class DbUtil implements Util {
         return mentalWorkout;
     }
 
+    @Override
+    public MentalWorkout createDefaultMentalWorkout(int seed, List<MentalActivity> mentalActivities) {
+        return this.createMentalWorkoutBase(seed, false, mentalActivities, null);
+    }
+
     private MentalWorkout createMentalWorkoutBase(
             int seed, boolean isCustom, List<MentalActivity> mentalActivities, User user) {
         MentalWorkout mentalWorkout = MentalWorkout.builder()

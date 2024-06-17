@@ -56,6 +56,8 @@ public interface Util {
 
     MentalWorkout createCustomMentalWorkout(int seed, List<MentalActivity> mentalActivities, User user);
 
+    MentalWorkout createDefaultMentalWorkout(int seed, List<MentalActivity> mentalActivities);
+
     Nutrition createDefaultNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType);
 
     Nutrition createCustomNutrition(int seed, List<HttpRef> httpRefs, NutritionType nutritionType, User user);
