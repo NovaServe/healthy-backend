@@ -8,8 +8,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DateTimeService {
     public TimeZone getDatabaseTimezone() {
-        // GMT 0:00
-        return TimeZone.getTimeZone("Europe/London");
+        return TimeZone.getTimeZone("UTC");
     }
 
     public LocalDate getCurrentDatabaseDate() {

@@ -20,5 +20,5 @@ public class WorkoutPlanCreateRequestDto {
     @NotNull private LocalDate endDate; // in user's zone
 
     @NotBlank
-    private String jsonDescription; // {"week_day": string enum, "hours": [0..23], "minutes": [0..59]}
+    private String jsonDescription; //  in user's zone: {"week_day": string enum, "hours": [0..23], "minutes": [0..59]}
 }
