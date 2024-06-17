@@ -102,6 +102,32 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         return responseDtoList;
     }
 
+    @Override
+    @Transactional
+    public List<WorkoutPlanResponseDto> getWorkoutPlans(long userId) {
+        User user = userApi.getUserById(userId);
+        List<WorkoutPlan> workoutPlans = workoutPlanRepository.getAcitveWorkoutPlans(userId);
+        List<WorkoutPlanResponseDto> responseDtoList = workoutPlans.stream()
+                .map(elt -> {
+                    WorkoutPlanResponseDto responseDto = modelMapper.map(elt, WorkoutPlanResponseDto.class);
+                    responseDto.setStartDate(dateTimeService.convertToUserDate(
+                            elt.getStartDate(), user.getTimezone().getName()));
+                    responseDto.setEndDate(dateTimeService.convertToUserDate(
+                            elt.getEndDate(), user.getTimezone().getName()));
+                    try {
+                        responseDto.setJsonDescription(jsonUtil.serializeJsonDescriptionList(
+                                elt.getJsonDescription(), user.getTimezone().getName()));
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                    responseDto.setCreatedAt(dateTimeService.convertToUserDateTime(
+                            elt.getCreatedAt(), user.getTimezone().getName()));
+                    return responseDto;
+                })
+                .toList();
+        return responseDtoList;
+    }
+
     private Map<String, Object> validateCreateWorkoutPlan(WorkoutPlanCreateRequestDto requestDto, long userId) {
         User user = userApi.getUserById(userId);
         if (user == null) {

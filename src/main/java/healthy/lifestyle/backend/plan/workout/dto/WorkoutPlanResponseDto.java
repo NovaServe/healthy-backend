@@ -14,6 +14,8 @@ public class WorkoutPlanResponseDto {
 
     private Long workoutId;
 
+    private String workoutTitle;
+
     private LocalDate startDate; // in user's zone
 
     private LocalDate endDate; // in user's zone
