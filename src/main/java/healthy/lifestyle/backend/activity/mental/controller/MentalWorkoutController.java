@@ -46,4 +46,16 @@ public class MentalWorkoutController {
         MentalWorkoutResponseDto responseDto = mentalWorkoutService.getMentalWorkoutById(mentalWorkoutId, true, null);
         return ResponseEntity.ok(responseDto);
     }
+
+    @Operation(summary = "Get custom mental workout by id")
+    @GetMapping("/{mental_workout_id}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<MentalWorkoutResponseDto> getCustomMentalWorkoutById(
+            @PathVariable("mental_activity_id") @IdValidation long mentalWorkoutId) {
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        MentalWorkoutResponseDto responseDto =
+                mentalWorkoutService.getMentalWorkoutById(mentalWorkoutId, false, userId);
+        return ResponseEntity.ok(responseDto);
+    }
 }
