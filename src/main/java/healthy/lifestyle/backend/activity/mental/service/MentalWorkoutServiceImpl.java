@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.Set;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,5 +95,21 @@ public class MentalWorkoutServiceImpl implements MentalWorkoutService {
 
         mentalWorkoutResponseDto.setMentalActivities(mentalActivityResponseDtoList);
         return mentalWorkoutResponseDto;
+    }
+
+    @Override
+    @Transactional
+    public Page<MentalWorkoutResponseDto> getMentalWorkouts(
+            Long userId, String sortField, String sortDirection, int currentPageNumber, int pageSize) {
+        Pageable pageable = PageRequest.of(
+                currentPageNumber, pageSize, Sort.by(Sort.Direction.fromString(sortDirection), sortField));
+
+        Page<MentalWorkout> entityPage = mentalWorkoutRepository.findDefaultAndCustomMentalWorkouts(userId, pageable);
+
+        Page<MentalWorkoutResponseDto> dtoPage = entityPage.map(entity -> {
+            MentalWorkoutResponseDto mentalWorkoutResponseDto = modelMapper.map(entity, MentalWorkoutResponseDto.class);
+            return mentalWorkoutResponseDto;
+        });
+        return dtoPage;
     }
 }
