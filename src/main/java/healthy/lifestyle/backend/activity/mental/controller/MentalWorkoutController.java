@@ -51,7 +51,7 @@ public class MentalWorkoutController {
     @GetMapping("/{mental_workout_id}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<MentalWorkoutResponseDto> getCustomMentalWorkoutById(
-            @PathVariable("mental_activity_id") @IdValidation long mentalWorkoutId) {
+            @PathVariable("mental_workout_id") @IdValidation long mentalWorkoutId) {
         Long userId = authUtil.getUserIdFromAuthentication(
                 SecurityContextHolder.getContext().getAuthentication());
         MentalWorkoutResponseDto responseDto =

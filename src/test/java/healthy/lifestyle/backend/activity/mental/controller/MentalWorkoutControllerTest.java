@@ -265,4 +265,97 @@ public class MentalWorkoutControllerTest {
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
                 .andDo(print());
     }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getCustomMentalWorkoutById_shouldReturnDtoWith200_whenValidRequest() throws Exception {
+        // Given
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        HttpRef defaultHttpRef2 = dbUtil.createDefaultHttpRef(2);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        MentalType mentalType2 = dbUtil.createMeditationType();
+
+        MentalActivity defaultMental1 = dbUtil.createDefaultMentalActivity(1, List.of(defaultHttpRef1), mentalType1);
+        MentalActivity defaultMental2 = dbUtil.createDefaultMentalActivity(2, List.of(defaultHttpRef2), mentalType2);
+
+        User user = dbUtil.createUser(1);
+        HttpRef customHttpRef1 = dbUtil.createCustomHttpRef(3, user);
+        HttpRef customHttpRef2 = dbUtil.createCustomHttpRef(4, user);
+
+        MentalActivity customMental1 =
+                dbUtil.createCustomMentalActivity(3, List.of(defaultHttpRef1, customHttpRef1), mentalType1, user);
+
+        MentalWorkout customMentalWorkout =
+                dbUtil.createCustomMentalWorkout(1, List.of(defaultMental1, defaultMental2, customMental1), user);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_MENTAL_WORKOUT_ID, customMentalWorkout.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        MentalWorkoutResponseDto responseDto =
+                objectMapper.readValue(responseContent, new TypeReference<MentalWorkoutResponseDto>() {});
+
+        assertThat(responseDto)
+                .usingRecursiveComparison()
+                .ignoringFields("mentalActivities")
+                .isEqualTo(customMentalWorkout);
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getCustomMentalWorkoutById_shouldReturnErrorMessageWith404_whenNotFound() throws Exception {
+        // Given
+        long nonExistentCustomMentalWorkoutId = 1000L;
+        ApiException expectedException = new ApiException(
+                ErrorMessage.MENTAL_WORKOUT_NOT_FOUND, nonExistentCustomMentalWorkoutId, HttpStatus.NOT_FOUND);
+
+        // When
+        mockMvc.perform(get(URL.CUSTOM_MENTAL_WORKOUT_ID, nonExistentCustomMentalWorkoutId)
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getCustomMentalWorkoutById_shouldReturnErrorMessageWith400_whenMentalWorkoutUserMismatch() throws Exception {
+        // Given
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        MentalType mentalType2 = dbUtil.createMeditationType();
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
+
+        MentalActivity defaultMental1 = dbUtil.createDefaultMentalActivity(1, List.of(defaultHttpRef1), mentalType1);
+        MentalActivity defaultMental2 = dbUtil.createDefaultMentalActivity(2, List.of(defaultHttpRef1), mentalType2);
+        MentalActivity customMental =
+                dbUtil.createCustomMentalActivity(3, List.of(defaultHttpRef1), mentalType1, user2);
+
+        MentalWorkout customMentalWorkout1 =
+                dbUtil.createCustomMentalWorkout(1, List.of(defaultMental1, defaultMental2, customMental), user2);
+
+        ApiException expectedException = new ApiException(
+                ErrorMessage.USER_MENTAL_WORKOUT_MISMATCH, customMentalWorkout1.getId(), HttpStatus.BAD_REQUEST);
+
+        // When
+        mockMvc.perform(get(URL.CUSTOM_MENTAL_WORKOUT_ID, customMentalWorkout1.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
+                .andDo(print());
+    }
 }
