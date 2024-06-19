@@ -99,7 +99,9 @@ jobs:
           docker push healthylifestyle/backend:latest-test
 
   deploy-to-ec2:
-    needs: checkversions
+    needs:
+      - checkversions
+      - build-and-push
     runs-on: ubuntu-latest
     if: ${{ needs.checkversions.outputs.current == needs.checkversions.outputs.target }}
     steps:
