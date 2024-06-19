@@ -30,17 +30,6 @@ jobs:
           echo ">> >> >> TARGET VERSION: ${{ steps.set.outputs.target }}"
           echo ">> >> >> TEST FLAG: ${{ steps.set.outputs.test }}"
 
-      - name: Test EC2 connection
-        env:
-          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          HOSTNAME: ${{ secrets.EC2_DNS }}
-          USERNAME: ${{secrets.EC2_USERNAME}}
-        run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${USERNAME}@${HOSTNAME}
-          ls -al &&
-          echo "Hello EC2"
-
   build-and-push:
     needs: checkversions
     runs-on: ubuntu-latest
@@ -108,3 +97,34 @@ jobs:
         run: | 
           docker push healthylifestyle/backend:${{ needs.checkversions.outputs.current }}-test
           docker push healthylifestyle/backend:latest-test
+
+  deploy-to-ec2:
+    needs: checkversions
+    runs-on: ubuntu-latest
+    if: ${{ needs.checkversions.outputs.current == needs.checkversions.outputs.target }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOSTNAME: ${{ secrets.EC2_DNS }}
+          USERNAME: ${{secrets.EC2_USERNAME}}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key && 
+          ssh -o StrictHostKeyChecking=no -i private_key ${USERNAME}@${HOSTNAME} && 
+          cd ~/healthy-frontend &&
+          git pull origin main &&
+          npm install && 
+          npm run build &&
+          sudo rm -rf /var/www/html/healthy-frontend-build/* && 
+          sudo cp -r ~/healthy-frontend/build/. /var/www/html/healthy-frontend-build/ && 
+          sudo docker stop backend &&
+          sudo docker rm backend && 
+          sudo docker image rm healthylifestyle/backend:latest && 
+          cd ~/hosting/backend &&
+          sudo docker compose up --force-recreate -d &&
+          sudo nginx -t && 
+          sudo systemctl reload nginx && 
+          sudo systemctl status nginx
