@@ -113,18 +113,19 @@ jobs:
           USERNAME: ${{secrets.EC2_USERNAME}}
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key && 
-          ssh -o StrictHostKeyChecking=no -i private_key ${USERNAME}@${HOSTNAME} && 
-          cd ~/healthy-frontend &&
-          git pull origin main &&
-          npm install && 
-          npm run build &&
-          sudo rm -rf /var/www/html/healthy-frontend-build/* && 
-          sudo cp -r ~/healthy-frontend/build/. /var/www/html/healthy-frontend-build/ && 
-          sudo docker stop backend &&
-          sudo docker rm backend && 
-          sudo docker image rm healthylifestyle/backend:latest && 
-          cd ~/hosting/backend &&
-          sudo docker compose up --force-recreate -d &&
-          sudo nginx -t && 
-          sudo systemctl reload nginx && 
-          sudo systemctl status nginx
+          ssh -o StrictHostKeyChecking=no -i private_key ${USERNAME}@${HOSTNAME} '
+            cd ~/healthy-frontend &&
+            git pull origin main &&
+            npm install && 
+            npm run build &&
+            sudo rm -rf /var/www/html/healthy-frontend-build/* && 
+            sudo cp -r ~/healthy-frontend/build/. /var/www/html/healthy-frontend-build/ && 
+            sudo docker stop backend &&
+            sudo docker rm backend && 
+            sudo docker image rm healthylifestyle/backend:latest && 
+            cd ~/hosting/backend &&
+            sudo docker compose up --force-recreate -d &&
+            sudo nginx -t && 
+            sudo systemctl reload nginx && 
+            sudo systemctl status nginx
+            '
