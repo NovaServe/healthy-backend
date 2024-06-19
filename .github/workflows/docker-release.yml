@@ -12,7 +12,6 @@ jobs:
       current: ${{ steps.set.outputs.current }}
       target: ${{ steps.set.outputs.target }}
       test: ${{ steps.set.outputs.test }}
-      tag: ${{ steps.set.outputs.tag }}"
 
     steps:
       - name: Checkout
@@ -24,14 +23,23 @@ jobs:
           echo "current=$(grep '^current=' version | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
           echo "target=$(grep '^target=' version | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
           echo "test=$(grep '^test=' version | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
-          echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
       - name: Display version
         run: |
           echo ">> >> >> CURRENT VERSION: ${{ steps.set.outputs.current }}"
           echo ">> >> >> TARGET VERSION: ${{ steps.set.outputs.target }}"
           echo ">> >> >> TEST FLAG: ${{ steps.set.outputs.test }}"
-          echo ">> >> >> TAG: ${{ steps.set.outputs.tag }}"
+
+      - name: Test EC2 connection
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOSTNAME: ${{ secrets.EC2_DNS }}
+          USERNAME: ${{secrets.EC2_USERNAME}}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USERNAME}@${HOSTNAME}
+          ls -al &&
+          echo "Hello EC2"
 
   build-and-push:
     needs: checkversions
