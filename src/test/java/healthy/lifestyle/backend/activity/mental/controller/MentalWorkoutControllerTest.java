@@ -247,6 +247,13 @@ public class MentalWorkoutControllerTest {
                 .usingRecursiveComparison()
                 .ignoringFields("mentalActivities")
                 .isEqualTo(defaultMentalWorkout);
+        assertThat(responseDto.getMentalActivities())
+                .usingRecursiveComparison()
+                .ignoringFields("httpRefs", "user", "mentalTypeId")
+                .isEqualTo(defaultMentalWorkout.getMentalActivitiesSortedById());
+        assertEquals(
+                defaultMentalWorkout.getMentalActivities().size(),
+                responseDto.getMentalActivities().size());
     }
 
     @Test
@@ -305,6 +312,13 @@ public class MentalWorkoutControllerTest {
                 .usingRecursiveComparison()
                 .ignoringFields("mentalActivities")
                 .isEqualTo(customMentalWorkout);
+        assertThat(responseDto.getMentalActivities())
+                .usingRecursiveComparison()
+                .ignoringFields("httpRefs", "user", "mentalTypeId")
+                .isEqualTo(customMentalWorkout.getMentalActivitiesSortedById());
+        assertEquals(
+                customMentalWorkout.getMentalActivities().size(),
+                responseDto.getMentalActivities().size());
     }
 
     @Test
