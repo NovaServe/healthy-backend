@@ -70,6 +70,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getAllMentalActivitiesUrl())
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, apiUrl.getDefaultMentalWorkouts())
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, apiUrl.getErrorUrl())
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, apiUrl.getErrorUrl())
@@ -79,8 +81,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, apiUrl.getErrorUrl())
                         .permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.GET, apiUrl.getAllMentalWorkouts())
                         .permitAll()
                         .anyRequest()
                         .authenticated());

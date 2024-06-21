@@ -8,6 +8,14 @@ public interface MentalWorkoutService {
 
     MentalWorkoutResponseDto createCustomMentalWorkout(long userId, MentalWorkoutCreateRequestDto requestDto);
 
-    Page<MentalWorkoutResponseDto> getMentalWorkouts(
-            Long userId, String sortField, String sortDirection, int currentPageNumber, int pageSize);
+    Page<MentalWorkoutResponseDto> getMentalWorkoutsWithFilters(
+            Boolean isCustom,
+            Long userId,
+            String title,
+            String description,
+            Long mentalTypeId,
+            String sortField,
+            String sortDirection,
+            int currentPageNumber,
+            int pageSize);
 }
