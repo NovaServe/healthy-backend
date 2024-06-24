@@ -55,4 +55,25 @@ public class MentalWorkoutController {
                 false, null, title, description, mentalTypeId, sortField, sortDirection, pageNumber, pageSize);
         return ResponseEntity.ok(responseDtoPage);
     }
+
+    @Operation(summary = "Get list default and custom mental workouts")
+    @GetMapping()
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<Page<MentalWorkoutResponseDto>> getMentalWorkouts(
+            @RequestParam(required = false) Boolean isCustom,
+            @RequestParam(required = false) @TitleOptionalValidation(min = 2) String title,
+            @RequestParam(required = false) @DescriptionOptionalValidation(min = 2) String description,
+            @RequestParam(required = false) Long mentalTypeId,
+            @RequestParam(required = false, defaultValue = "title") String sortField,
+            @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
+            @RequestParam(required = false, defaultValue = "10") int pageSize,
+            @RequestParam(required = false, defaultValue = "0") int pageNumber) {
+        Long userId = null;
+        if (isCustom == null || isCustom)
+            userId = authUtil.getUserIdFromAuthentication(
+                    SecurityContextHolder.getContext().getAuthentication());
+        Page<MentalWorkoutResponseDto> dtoPage = mentalWorkoutService.getMentalWorkoutsWithFilters(
+                isCustom, userId, title, description, mentalTypeId, sortField, sortDirection, pageSize, pageNumber);
+        return ResponseEntity.ok(dtoPage);
+    }
 }
