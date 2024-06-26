@@ -1,4 +1,4 @@
-name: Release Pipeline
+name: Deploy
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set version
         id: set
@@ -43,19 +43,19 @@ jobs:
           echo ">> >> >> TEST FLAG: ${{ steps.set.outputs.test }}"
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'corretto'
@@ -97,3 +97,36 @@ jobs:
         run: | 
           docker push healthylifestyle/backend:${{ needs.checkversions.outputs.current }}-test
           docker push healthylifestyle/backend:latest-test
+
+  deploy-to-ec2:
+    needs:
+      - checkversions
+      - build-and-push
+    runs-on: ubuntu-latest
+    if: ${{ needs.checkversions.outputs.current == needs.checkversions.outputs.target }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOSTNAME: ${{ secrets.EC2_DNS }}
+          USERNAME: ${{secrets.EC2_USERNAME}}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key && 
+          ssh -o StrictHostKeyChecking=no -o "ServerAliveInterval 60" -o "ServerAliveCountMax 10" -i private_key ${USERNAME}@${HOSTNAME} '
+            cd ~/healthy-frontend &&
+            git checkout origin/build &&
+            git pull origin build &&
+            sudo rm -rf /var/www/html/healthy-frontend-build/* && 
+            sudo cp -r ./build/. /var/www/html/healthy-frontend-build/ && 
+            sudo docker stop backend &&
+            sudo docker rm backend && 
+            sudo docker image rm healthylifestyle/backend:latest && 
+            cd ~/hosting/backend &&
+            sudo docker compose up --force-recreate -d &&
+            sudo nginx -t && 
+            sudo systemctl reload nginx && 
+            sudo systemctl status nginx
+            '

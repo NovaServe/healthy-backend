@@ -8,6 +8,8 @@ public interface MentalWorkoutService {
 
     MentalWorkoutResponseDto createCustomMentalWorkout(long userId, MentalWorkoutCreateRequestDto requestDto);
 
+    MentalWorkoutResponseDto getMentalWorkoutById(long mentalWorkoutId, boolean requiredDefault, Long userId);
+
     Page<MentalWorkoutResponseDto> getMentalWorkoutsWithFilters(
             Boolean isCustom,
             Long userId,

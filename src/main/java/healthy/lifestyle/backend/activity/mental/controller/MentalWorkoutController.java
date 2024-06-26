@@ -3,6 +3,7 @@ package healthy.lifestyle.backend.activity.mental.controller;
 import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutResponseDto;
 import healthy.lifestyle.backend.activity.mental.service.MentalWorkoutService;
+import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
 import healthy.lifestyle.backend.user.service.AuthUtil;
@@ -39,6 +40,26 @@ public class MentalWorkoutController {
                 SecurityContextHolder.getContext().getAuthentication());
         MentalWorkoutResponseDto responseDto = mentalWorkoutService.createCustomMentalWorkout(userId, requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Get default mental workout by id")
+    @GetMapping("/default/{mental_workout_id}")
+    public ResponseEntity<MentalWorkoutResponseDto> getDefaultMentalWorkoutById(
+            @PathVariable("mental_workout_id") @IdValidation long mentalWorkoutId) {
+        MentalWorkoutResponseDto responseDto = mentalWorkoutService.getMentalWorkoutById(mentalWorkoutId, true, null);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @Operation(summary = "Get custom mental workout by id")
+    @GetMapping("/{mental_workout_id}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<MentalWorkoutResponseDto> getCustomMentalWorkoutById(
+            @PathVariable("mental_workout_id") @IdValidation long mentalWorkoutId) {
+        Long userId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        MentalWorkoutResponseDto responseDto =
+                mentalWorkoutService.getMentalWorkoutById(mentalWorkoutId, false, userId);
+        return ResponseEntity.ok(responseDto);
     }
 
     @Operation(summary = "Get default mental workouts")

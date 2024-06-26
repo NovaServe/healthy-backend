@@ -100,6 +100,42 @@ public class MentalWorkoutServiceImpl implements MentalWorkoutService {
 
     @Override
     @Transactional
+    public MentalWorkoutResponseDto getMentalWorkoutById(long mentalWorkoutId, boolean requiredDefault, Long userId) {
+
+        MentalWorkout mentalWorkout = mentalWorkoutRepository
+                .findById(mentalWorkoutId)
+                .orElseThrow(() ->
+                        new ApiException(ErrorMessage.MENTAL_WORKOUT_NOT_FOUND, mentalWorkoutId, HttpStatus.NOT_FOUND));
+
+        if (mentalWorkout.isCustom() && requiredDefault)
+            throw new ApiException(
+                    ErrorMessage.CUSTOM_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_DEFAULT, null, HttpStatus.BAD_REQUEST);
+
+        if (!mentalWorkout.isCustom() && !requiredDefault)
+            throw new ApiException(
+                    ErrorMessage.DEFAULT_RESOURCE_HAS_BEEN_REQUESTED_INSTEAD_OF_CUSTOM, null, HttpStatus.BAD_REQUEST);
+
+        if (userId != null) {
+            User user = userService.getUserById(userId);
+            if (mentalWorkout.isCustom()
+                    && (user.getMentalWorkouts() == null
+                            || !user.getMentalWorkouts().contains(mentalWorkout)))
+                throw new ApiException(
+                        ErrorMessage.USER_MENTAL_WORKOUT_MISMATCH, mentalWorkoutId, HttpStatus.BAD_REQUEST);
+        }
+
+        MentalWorkoutResponseDto mentalWorkoutDto = modelMapper.map(mentalWorkout, MentalWorkoutResponseDto.class);
+
+        List<MentalActivityResponseDto> mentalActivitiesSorted = mentalWorkoutDto.getMentalActivities().stream()
+                .sorted(Comparator.comparingLong(MentalActivityResponseDto::getId))
+                .toList();
+
+        mentalWorkoutDto.setMentalActivities(mentalActivitiesSorted);
+        return mentalWorkoutDto;
+    }
+
+    @Override
+    @Transactional
     public Page<MentalWorkoutResponseDto> getMentalWorkoutsWithFilters(
             Boolean isCustom,
             Long userId,
