@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.messaging.FirebaseMessaging;
 import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutCreateRequestDto;
@@ -371,5 +372,112 @@ public class MentalWorkoutControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is(expectedException.getMessageWithResourceId())))
                 .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getMentalWorkoutsWithFilter_shouldReturnValidationErrorMessageWith400_whenInvalidFilters() throws Exception {
+        // Given
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        MentalType mentalType2 = dbUtil.createMeditationType();
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+        User user = dbUtil.createUser(1, role, country, timezone);
+
+        MentalActivity defaultMental1 = dbUtil.createDefaultMentalActivity(1, List.of(defaultHttpRef1), mentalType1);
+        MentalActivity defaultMental2 = dbUtil.createDefaultMentalActivity(2, List.of(defaultHttpRef1), mentalType2);
+        MentalActivity customMental = dbUtil.createCustomMentalActivity(3, List.of(defaultHttpRef1), mentalType1, user);
+
+        MentalWorkout customMentalWorkout1 =
+                dbUtil.createCustomMentalWorkout(1, List.of(defaultMental1, defaultMental2, customMental), user);
+
+        // When
+        mockMvc.perform(get(URL.CUSTOM_MENTAL_WORKOUTS)
+                        .param("title", "title!")
+                        .param("description", "description^")
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath(
+                        "$.title",
+                        is("Title can include lower and upper-case letters, digits, spaces, and symbols . , - ( ) /")))
+                .andExpect(
+                        jsonPath(
+                                "$.description",
+                                is(
+                                        "Description can include lower and upper-case letters, digits, spaces, and symbols: . , - : ; ! ? ' \" # % ( ) + =")))
+                .andDo(print());
+    }
+
+    @Test
+    @WithMockUser(username = "Username-1", password = "Password-1", roles = "USER")
+    void getMentalWorkoutsWithFilter_shouldReturnDefaultAndCustomFilteredPageWith200_whenFilteredWithMentalTypeId()
+            throws Exception {
+        // Given
+        MentalType mentalType1 = dbUtil.createAffirmationType();
+        MentalType mentalType2 = dbUtil.createMeditationType();
+        HttpRef defaultHttpRef1 = dbUtil.createDefaultHttpRef(1);
+
+        MentalActivity defaultMental1 = dbUtil.createDefaultMentalActivity(1, List.of(defaultHttpRef1), mentalType1);
+        MentalActivity defaultMental2 = dbUtil.createDefaultMentalActivity(2, List.of(defaultHttpRef1), mentalType2);
+
+        Role role = dbUtil.createUserRole();
+        Country country = dbUtil.createCountry(1);
+        Timezone timezone = dbUtil.createTimezone(1);
+        User user1 = dbUtil.createUser(1, role, country, timezone);
+        User user2 = dbUtil.createUser(2, role, country, timezone);
+
+        MentalActivity customMental1 =
+                dbUtil.createCustomMentalActivity(3, List.of(defaultHttpRef1), mentalType1, user1);
+        MentalActivity customMental2 =
+                dbUtil.createCustomMentalActivity(4, List.of(defaultHttpRef1), mentalType2, user1);
+        MentalActivity customMental3 =
+                dbUtil.createCustomMentalActivity(5, List.of(defaultHttpRef1), mentalType1, user2);
+        MentalActivity customMental4 =
+                dbUtil.createCustomMentalActivity(6, List.of(defaultHttpRef1), mentalType2, user2);
+
+        MentalWorkout defaultMentalWorkout1 = dbUtil.createDefaultMentalWorkout(1, List.of(defaultMental1));
+        MentalWorkout defaultMentalWorkout2 = dbUtil.createDefaultMentalWorkout(2, List.of(defaultMental2));
+        MentalWorkout defaultMentalWorkout3 =
+                dbUtil.createDefaultMentalWorkout(3, List.of(defaultMental1, defaultMental2));
+        MentalWorkout customMentalWorkout1 =
+                dbUtil.createCustomMentalWorkout(4, List.of(defaultMental1, defaultMental2, customMental1), user1);
+        MentalWorkout customMentalWorkout2 =
+                dbUtil.createCustomMentalWorkout(5, List.of(defaultMental1, defaultMental2, customMental2), user1);
+        MentalWorkout customMentalWorkout3 =
+                dbUtil.createCustomMentalWorkout(6, List.of(defaultMental1, defaultMental2, customMental3), user2);
+        MentalWorkout customMentalWorkout4 =
+                dbUtil.createCustomMentalWorkout(7, List.of(defaultMental1, defaultMental2, customMental4), user2);
+
+        List<MentalWorkout> expectedFilteredMentalWorkouts =
+                List.of(defaultMentalWorkout1, defaultMentalWorkout3, customMentalWorkout1, customMentalWorkout2);
+
+        // When
+        MvcResult mvcResult = mockMvc.perform(get(URL.CUSTOM_MENTAL_WORKOUTS)
+                        .param("mentalTypeId", mentalType1.getId() + "")
+                        .contentType(MediaType.APPLICATION_JSON))
+
+                // Then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(4)))
+                .andExpect(jsonPath("$.totalPages", is(1)))
+                .andExpect(jsonPath("$.size", is(10)))
+                .andExpect(jsonPath("$.numberOfElements", is(4)))
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        JsonNode rootNode = objectMapper.readTree(responseContent);
+        JsonNode contentNode = rootNode.path("content");
+        List<MentalWorkoutResponseDto> mentalWorkoutResponseDtoList =
+                objectMapper.readValue(contentNode.toString(), new TypeReference<List<MentalWorkoutResponseDto>>() {});
+        assertEquals(4, mentalWorkoutResponseDtoList.size());
+        assertThat(mentalWorkoutResponseDtoList)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("user", "mentalActivities", "mentalTypeId")
+                .isEqualTo(expectedFilteredMentalWorkouts);
+        assertEquals(expectedFilteredMentalWorkouts.size(), mentalWorkoutResponseDtoList.size());
     }
 }

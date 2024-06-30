@@ -3,8 +3,8 @@ package healthy.lifestyle.backend.activity.mental.controller;
 import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutCreateRequestDto;
 import healthy.lifestyle.backend.activity.mental.dto.MentalWorkoutResponseDto;
 import healthy.lifestyle.backend.activity.mental.service.MentalWorkoutService;
-import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.DescriptionOptionalValidation;
+import healthy.lifestyle.backend.shared.validation.annotation.IdValidation;
 import healthy.lifestyle.backend.shared.validation.annotation.TitleOptionalValidation;
 import healthy.lifestyle.backend.user.service.AuthUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -94,7 +94,7 @@ public class MentalWorkoutController {
             userId = authUtil.getUserIdFromAuthentication(
                     SecurityContextHolder.getContext().getAuthentication());
         Page<MentalWorkoutResponseDto> dtoPage = mentalWorkoutService.getMentalWorkoutsWithFilters(
-                isCustom, userId, title, description, mentalTypeId, sortField, sortDirection, pageSize, pageNumber);
+                isCustom, userId, title, description, mentalTypeId, sortField, sortDirection, pageNumber, pageSize);
         return ResponseEntity.ok(dtoPage);
     }
 }
