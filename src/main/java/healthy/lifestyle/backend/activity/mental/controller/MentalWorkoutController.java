@@ -58,4 +58,15 @@ public class MentalWorkoutController {
                 mentalWorkoutService.getMentalWorkoutById(mentalWorkoutId, false, userId);
         return ResponseEntity.ok(responseDto);
     }
+
+    @Operation(summary = "Delete custom mental workout by id")
+    @DeleteMapping("/{mental_workout_id}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<?> deleteCustomMentalWorkout(
+            @PathVariable("mentalWorkoutId") @IdValidation long mentalWorkoutId) {
+        Long authenticatedUserId = authUtil.getUserIdFromAuthentication(
+                SecurityContextHolder.getContext().getAuthentication());
+        mentalWorkoutService.deleteCustomMentalWorkout(authenticatedUserId, mentalWorkoutId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }
